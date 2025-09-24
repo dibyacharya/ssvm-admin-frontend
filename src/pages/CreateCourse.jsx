@@ -1,0 +1,637 @@
+import React, { useState, useEffect } from 'react';
+import { createCourse } from '../services/courses.service'; // Adjust import path as needed
+import { getAllSemester } from '../services/semester.services'; // Add this import
+import { useParams } from 'react-router-dom';
+
+const CreateCourse = () => {
+  const { codeid } = useParams();
+  console.log("Course Code ID from URL:", codeid);
+
+  const [formData, setFormData] = useState({
+    title: '',
+    aboutCourse: '',
+    courseCode: '',
+    semester: '',
+    learningOutcomes: [''],
+    courseSchedule: {
+      classStartDate: '',
+      classEndDate: '',
+      midSemesterExamDate: '',
+      endSemesterExamDate: '',
+      classDaysAndTimes: [{ day: '', time: '' }]
+    },
+    weeklyPlan: [{ weekNumber: 1, topics: [''] }],
+    creditPoints: {
+      lecture: 0,
+      tutorial: 0,
+      practical: 0,
+      project: 0
+    },
+    syllabus: {
+      modules: [{
+        moduleNumber: 1,
+        moduleTitle: '',
+        description: ''
+      }]
+    }
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
+  const [semesters, setSemesters] = useState([]);
+  const [loadingSemesters, setLoadingSemesters] = useState(true);
+  const [semesterError, setSemesterError] = useState(null);
+
+  // Fetch semesters when component mounts
+  useEffect(() => {
+    const fetchSemesters = async () => {
+      try {
+        setLoadingSemesters(true);
+        setSemesterError(null);
+        const semesterData = await getAllSemester();
+        setSemesters(semesterData);
+        console.log('Fetched semesters:', semesterData);
+      } catch (error) {
+        setSemesterError('Failed to load semesters');
+        console.error('Error fetching semesters:', error);
+      } finally {
+        setLoadingSemesters(false);
+      }
+    };
+
+    fetchSemesters();
+  }, []);
+
+  // Set the course code from URL parameter when component mounts
+  useEffect(() => {
+    if (codeid) {
+      setFormData(prev => ({
+        ...prev,
+        courseCode: codeid
+      }));
+    }
+  }, [codeid]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleNestedInputChange = (section, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleArrayInputChange = (field, index, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: prev[field].map((item, i) => i === index ? value : item)
+    }));
+  };
+
+  const addArrayItem = (field, defaultValue = '') => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: [...prev[field], defaultValue]
+    }));
+  };
+
+  const removeArrayItem = (field, index) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: prev[field].filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleClassDayTimeChange = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      courseSchedule: {
+        ...prev.courseSchedule,
+        classDaysAndTimes: prev.courseSchedule.classDaysAndTimes.map((item, i) => 
+          i === index ? { ...item, [field]: value } : item
+        )
+      }
+    }));
+  };
+
+  const addClassDayTime = () => {
+    setFormData(prev => ({
+      ...prev,
+      courseSchedule: {
+        ...prev.courseSchedule,
+        classDaysAndTimes: [...prev.courseSchedule.classDaysAndTimes, { day: '', time: '' }]
+      }
+    }));
+  };
+
+  const removeClassDayTime = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      courseSchedule: {
+        ...prev.courseSchedule,
+        classDaysAndTimes: prev.courseSchedule.classDaysAndTimes.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
+  const handleWeeklyPlanChange = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      weeklyPlan: prev.weeklyPlan.map((week, i) => 
+        i === index ? { ...week, [field]: value } : week
+      )
+    }));
+  };
+
+  const handleWeeklyTopicChange = (weekIndex, topicIndex, value) => {
+    setFormData(prev => ({
+      ...prev,
+      weeklyPlan: prev.weeklyPlan.map((week, i) => 
+        i === weekIndex ? {
+          ...week,
+          topics: week.topics.map((topic, j) => j === topicIndex ? value : topic)
+        } : week
+      )
+    }));
+  };
+
+  const addWeeklyPlan = () => {
+    setFormData(prev => ({
+      ...prev,
+      weeklyPlan: [...prev.weeklyPlan, { 
+        weekNumber: prev.weeklyPlan.length + 1, 
+        topics: [''] 
+      }]
+    }));
+  };
+
+  const addTopicToWeek = (weekIndex) => {
+    setFormData(prev => ({
+      ...prev,
+      weeklyPlan: prev.weeklyPlan.map((week, i) => 
+        i === weekIndex ? { ...week, topics: [...week.topics, ''] } : week
+      )
+    }));
+  };
+
+  const handleModuleChange = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      syllabus: {
+        ...prev.syllabus,
+        modules: prev.syllabus.modules.map((module, i) => 
+          i === index ? { ...module, [field]: value } : module
+        )
+      }
+    }));
+  };
+
+  const addModule = () => {
+    setFormData(prev => ({
+      ...prev,
+      syllabus: {
+        ...prev.syllabus,
+        modules: [...prev.syllabus.modules, {
+          moduleNumber: prev.syllabus.modules.length + 1,
+          moduleTitle: '',
+          description: ''
+        }]
+      }
+    }));
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    setSubmitMessage('');
+
+    try {
+      // Filter out empty learning outcomes and topics
+      const cleanedData = {
+        ...formData,
+        learningOutcomes: formData.learningOutcomes.filter(outcome => outcome.trim() !== ''),
+        weeklyPlan: formData.weeklyPlan.map(week => ({
+          ...week,
+          topics: week.topics.filter(topic => topic.trim() !== '')
+        })).filter(week => week.topics.length > 0),
+        courseSchedule: {
+          ...formData.courseSchedule,
+          classDaysAndTimes: formData.courseSchedule.classDaysAndTimes.filter(
+            item => item.day && item.time
+          )
+        },
+        syllabus: {
+          modules: formData.syllabus.modules.filter(
+            module => module.moduleTitle.trim() !== '' || module.description.trim() !== ''
+          ).map(module => ({
+            ...module,
+            videos: [],
+            links: [],
+            pdfs: [],
+            ppts: []
+          }))
+        },
+        attendance: { sessions: {} }
+      };
+
+      const response = await createCourse(cleanedData);
+      setSubmitMessage('Course created successfully!');
+      
+      // Reset form but keep the course code from URL
+      setFormData({
+        title: '',
+        aboutCourse: '',
+        courseCode: codeid, // Keep the course code from URL
+        semester: '',
+        learningOutcomes: [''],
+        courseSchedule: {
+          classStartDate: '',
+          classEndDate: '',
+          midSemesterExamDate: '',
+          endSemesterExamDate: '',
+          classDaysAndTimes: [{ day: '', time: '' }]
+        },
+        weeklyPlan: [{ weekNumber: 1, topics: [''] }],
+        creditPoints: {
+          lecture: 0,
+          tutorial: 0,
+          practical: 0,
+          project: 0
+        },
+        syllabus: {
+          modules: [{
+            moduleNumber: 1,
+            moduleTitle: '',
+            description: ''
+          }]
+        }
+      });
+    } catch (error) {
+      setSubmitMessage('Error creating course. Please try again.');
+      console.error('Error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg">
+      <h1 className="text-3xl font-bold mb-8 text-gray-800">Create New Course</h1>
+      
+      <div className="space-y-8">
+        {/* Basic Information */}
+        <div className="bg-gray-50 p-6 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4 text-gray-700">Basic Information</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Course Title *</label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Course Code</label>
+              <input
+                type="text"
+                name="courseCode"
+                value={formData.courseCode}
+                disabled
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
+              />
+              <p className="text-xs text-gray-500 mt-1">Course code is fixed and cannot be modified</p>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Semester *</label>
+            {loadingSemesters ? (
+              <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                Loading semesters...
+              </div>
+            ) : semesterError ? (
+              <div className="w-full px-3 py-2 border border-red-300 rounded-md bg-red-50 text-red-700">
+                {semesterError}
+              </div>
+            ) : (
+              <select
+                name="semester"
+                value={formData.semester}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select a semester</option>
+                {semesters.map((semester) => (
+                  <option key={semester._id} value={semester._id}>
+                    {semester.name} ({formatDate(semester.startDate)} - {formatDate(semester.endDate)})
+                  </option>
+                ))}
+              </select>
+            )}
+            {!loadingSemesters && !semesterError && semesters.length === 0 && (
+              <p className="text-xs text-orange-600 mt-1">No semesters available. Please create a semester first.</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">About Course *</label>
+            <textarea
+              name="aboutCourse"
+              value={formData.aboutCourse}
+              onChange={handleInputChange}
+              required
+              rows="4"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        {/* Learning Outcomes */}
+        <div className="bg-gray-50 p-6 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4 text-gray-700">Learning Outcomes</h2>
+          {formData.learningOutcomes.map((outcome, index) => (
+            <div key={index} className="mb-2 flex gap-2">
+              <input
+                type="text"
+                value={outcome}
+                onChange={(e) => handleArrayInputChange('learningOutcomes', index, e.target.value)}
+                placeholder={`Learning outcome ${index + 1}`}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {index > 0 && (
+                <button
+                  type="button"
+                  onClick={() => removeArrayItem('learningOutcomes', index)}
+                  className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => addArrayItem('learningOutcomes')}
+            className="mt-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+          >
+            Add Learning Outcome
+          </button>
+        </div>
+
+        {/* Course Schedule */}
+        <div className="bg-gray-50 p-6 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4 text-gray-700">Course Schedule</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Class Start Date</label>
+              <input
+                type="date"
+                value={formData.courseSchedule.classStartDate}
+                onChange={(e) => handleNestedInputChange('courseSchedule', 'classStartDate', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Class End Date</label>
+              <input
+                type="date"
+                value={formData.courseSchedule.classEndDate}
+                onChange={(e) => handleNestedInputChange('courseSchedule', 'classEndDate', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mid Semester Exam Date</label>
+              <input
+                type="date"
+                value={formData.courseSchedule.midSemesterExamDate}
+                onChange={(e) => handleNestedInputChange('courseSchedule', 'midSemesterExamDate', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">End Semester Exam Date</label>
+              <input
+                type="date"
+                value={formData.courseSchedule.endSemesterExamDate}
+                onChange={(e) => handleNestedInputChange('courseSchedule', 'endSemesterExamDate', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <h3 className="text-lg font-medium mb-2 text-gray-700">Class Days and Times</h3>
+          {formData.courseSchedule.classDaysAndTimes.map((classTime, index) => (
+            <div key={index} className="mb-2 flex gap-2">
+              <select
+                value={classTime.day}
+                onChange={(e) => handleClassDayTimeChange(index, 'day', e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Day</option>
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+                <option value="Sunday">Sunday</option>
+              </select>
+              <input
+                type="text"
+                value={classTime.time}
+                onChange={(e) => handleClassDayTimeChange(index, 'time', e.target.value)}
+                placeholder="e.g., 10:00-11:30"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {index > 0 && (
+                <button
+                  type="button"
+                  onClick={() => removeClassDayTime(index)}
+                  className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addClassDayTime}
+            className="mt-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+          >
+            Add Class Time
+          </button>
+        </div>
+
+        {/* Credit Points */}
+        <div className="bg-gray-50 p-6 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4 text-gray-700">Credit Points</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {Object.keys(formData.creditPoints).map((key) => (
+              <div key={key}>
+                <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">{key}</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.creditPoints[key]}
+                  onChange={(e) => handleNestedInputChange('creditPoints', key, parseInt(e.target.value) || 0)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Weekly Plan */}
+        <div className="bg-gray-50 p-6 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4 text-gray-700">Weekly Plan</h2>
+          {formData.weeklyPlan.map((week, weekIndex) => (
+            <div key={weekIndex} className="mb-6 p-4 border border-gray-200 rounded-md">
+              <h3 className="text-lg font-medium mb-2">Week {week.weekNumber}</h3>
+              {week.topics.map((topic, topicIndex) => (
+                <div key={topicIndex} className="mb-2 flex gap-2">
+                  <input
+                    type="text"
+                    value={topic}
+                    onChange={(e) => handleWeeklyTopicChange(weekIndex, topicIndex, e.target.value)}
+                    placeholder={`Topic ${topicIndex + 1}`}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {topicIndex > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({
+                          ...prev,
+                          weeklyPlan: prev.weeklyPlan.map((w, i) => 
+                            i === weekIndex ? {
+                              ...w,
+                              topics: w.topics.filter((_, j) => j !== topicIndex)
+                            } : w
+                          )
+                        }));
+                      }}
+                      className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => addTopicToWeek(weekIndex)}
+                className="mt-2 px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
+              >
+                Add Topic
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addWeeklyPlan}
+            className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+          >
+            Add Week
+          </button>
+        </div>
+
+        {/* Syllabus Modules */}
+        <div className="bg-gray-50 p-6 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4 text-gray-700">Syllabus Modules</h2>
+          {formData.syllabus.modules.map((module, index) => (
+            <div key={index} className="mb-6 p-4 border border-gray-200 rounded-md">
+              <h3 className="text-lg font-medium mb-2">Module {module.moduleNumber}</h3>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Module Title</label>
+                <input
+                  type="text"
+                  value={module.moduleTitle}
+                  onChange={(e) => handleModuleChange(index, 'moduleTitle', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Module Description</label>
+                <textarea
+                  value={module.description}
+                  onChange={(e) => handleModuleChange(index, 'description', e.target.value)}
+                  rows="3"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addModule}
+            className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+          >
+            Add Module
+          </button>
+        </div>
+
+        {/* Submit Button */}
+        <div className="flex justify-center">
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className={`px-8 py-3 rounded-md text-white font-semibold ${
+              isSubmitting 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+          >
+            {isSubmitting ? 'Creating Course...' : 'Create Course'}
+          </button>
+        </div>
+
+        {/* Submit Message */}
+        {submitMessage && (
+          <div className={`text-center p-3 rounded-md ${
+            submitMessage.includes('Error') 
+              ? 'bg-red-100 text-red-700' 
+              : 'bg-green-100 text-green-700'
+          }`}>
+            {submitMessage}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default CreateCourse;

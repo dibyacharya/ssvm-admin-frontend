@@ -17,7 +17,7 @@ import { CourseManagement } from './pages/CourseManagement';
 import CreateCourse from './pages/CreateCourse';
 import { Scheduling } from './pages/Scheduling';
 import EditCourse from './pages/EditCourse';
-import UploadedFile from './pages/uploadedFile';
+import UploadedFile from './pages/UploadedFile';
 import CourseContext, { CourseProvider } from './contexts/CourseContext';
 
 // Protected Route Component

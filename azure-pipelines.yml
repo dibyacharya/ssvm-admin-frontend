@@ -15,7 +15,7 @@ stages:
   - template: devops_template/azure-image-build.yml
     parameters:
       containerRegistry: 'svc_acr_connection'
-      imageRepository: 'kiit_lms_frontend'
+      imageRepository: 'kiit_lms_admin_frontend'
       dockerfilePath: 'Dockerfile'
       tag: $(tag)
 

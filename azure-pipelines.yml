@@ -1,0 +1,31 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - group: DEV
+  - name: tag
+    value: '$(Build.BuildId)'
+
+stages:
+  - template: devops_template/azure-image-build.yml
+    parameters:
+      containerRegistry: 'svc_acr_connection'
+      imageRepository: 'kiit_lms_frontend'
+      dockerfilePath: 'Dockerfile'
+      tag: $(tag)
+
+  # - template: devops_template/azure-image-deploy.yml
+  #   parameters:
+  #     tag: $(tag)
+  #     imageRepository: $[ stageDependencies.DetectAndSetModule.ModuleDetection.outputs['setModuleConfig.imageRepository'] ]
+  #     registry_name: '$(registry_name)'
+  #     acrusername: '$(acrusername)'
+  #     acrpassword: '$(acrpassword)'
+  #     containerapp_name: $[ stageDependencies.DetectAndSetModule.ModuleDetection.outputs['setModuleConfig.containerapp_name'] ]
+  #     google_api_key: '$(google_api_key)'
+  #     groq_api_key: '$(groq_api_key)'

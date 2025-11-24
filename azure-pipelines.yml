@@ -10,22 +10,122 @@ variables:
   - group: DEV
   - name: tag
     value: '$(Build.BuildId)'
+  - name: devRepo
+    value: 'kiit/dev/lms/kiit_lms_admin_frontend'
+  - name: uatRepo
+    value: 'kiit/uat/lms/kiit_lms_admin_frontend'
+  - name: prodRepo
+    value: 'kiit/prod/lms/kiit_lms_admin_frontend'
 
+########################
+# BUILD (DEV REPO)
+########################
 stages:
-  - template: devops_template/azure-image-build.yml
-    parameters:
-      containerRegistry: 'svc_acr_connection'
-      imageRepository: 'kiit_lms_admin_frontend'
-      dockerfilePath: 'Dockerfile'
-      tag: $(tag)
+  - stage: Build
+    displayName: "Build Image"
+    jobs:
+      - template: devops_template/azure-image-build.yml
+        parameters:
+          containerRegistry: 'svc_acr_connection'
+          imageRepository: '$(devRepo)'
+          dockerfilePath: 'Dockerfile'
+          tag: $(tag)
 
-  # - template: devops_template/azure-image-deploy.yml
-  #   parameters:
-  #     tag: $(tag)
-  #     imageRepository: $[ stageDependencies.DetectAndSetModule.ModuleDetection.outputs['setModuleConfig.imageRepository'] ]
-  #     registry_name: '$(registry_name)'
-  #     acrusername: '$(acrusername)'
-  #     acrpassword: '$(acrpassword)'
-  #     containerapp_name: $[ stageDependencies.DetectAndSetModule.ModuleDetection.outputs['setModuleConfig.containerapp_name'] ]
-  #     google_api_key: '$(google_api_key)'
-  #     groq_api_key: '$(groq_api_key)'
+########################
+# DEPLOY TO DEV
+########################
+  - stage: Deploy_Dev
+    displayName: "Deploy to DEV"
+    dependsOn: Build
+    variables:
+      - group: DEV
+    jobs:
+      - template: devops_template/azure-image-deploy.yml
+        parameters:
+          tag: $(tag)
+          imageRepository: '$(devRepo)'
+          registry_name: '$(registry_name)'
+          acrusername: '$(acrusername)'
+          acrpassword: '$(acrpassword)'
+          containerapp_name: 'kiit-lms-admin-dev'
+          # google_api_key: '$(google_api_key)'
+          # groq_api_key: '$(groq_api_key)'
+
+  - stage: Deploy_UAT
+    displayName: "Promote & Deploy to UAT"
+    dependsOn: Deploy_Dev
+    condition: succeeded()
+
+    environment: "UAT"
+
+    variables:
+      - group: UAT
+
+    jobs:
+      - job: PromoteAndDeploy
+        displayName: "Promote image → UAT & Deploy"
+
+        steps:
+          - task: AzureCLI@2
+            displayName: "Promote Image to UAT"
+            inputs:
+              azureSubscription: 'kiit-it-analytics'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Promoting image..."
+                az acr import \
+                  --name $(registry_name) \
+                  --source $(registry_name).azurecr.io/$(devRepo):$(tag) \
+                  --image $(uatRepo):$(tag)
+
+          - template: devops_template/azure-image-deploy.yml
+            parameters:
+              tag: $(tag)
+              imageRepository: '$(uatRepo)'
+              registry_name: '$(registry_name)'
+              acrusername: '$(acrusername)'
+              acrpassword: '$(acrpassword)'
+              containerapp_name: 'kiit-lms-admin-uat'
+              # google_api_key: '$(google_api_key)'
+              # groq_api_key: '$(groq_api_key)'
+
+
+  - stage: Deploy_Prod
+    displayName: "Promote & Deploy to PROD"
+    dependsOn: Deploy_UAT
+    condition: succeeded()
+
+    environment: "PROD"
+
+    variables:
+      - group: PROD
+
+    jobs:
+      - job: PromoteAndDeployProd
+        displayName: "Promote image → PROD & Deploy"
+
+        steps:
+          - task: AzureCLI@2
+            displayName: "Promote Image to PROD"
+            inputs:
+              azureSubscription: 'kiit-it-analytics'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Promoting image..."
+                az acr import \
+                  --name $(registry_name) \
+                  --source $(registry_name).azurecr.io/$(uatRepo):$(tag) \
+                  --image $(prodRepo):$(tag)
+
+          - template: devops_template/azure-image-deploy.yml
+            parameters:
+              tag: $(tag)
+              imageRepository: '$(prodRepo)'
+              registry_name: '$(registry_name)'
+              acrusername: '$(acrusername)'
+              acrpassword: '$(acrpassword)'
+              containerapp_name: 'kiit-lms-admin-prod'
+              # google_api_key: '$(google_api_key)'
+              # groq_api_key: '$(groq_api_key)'

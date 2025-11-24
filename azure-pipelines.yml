@@ -48,20 +48,20 @@ stages:
           acrusername: '$(acrusername)'
           acrpassword: '$(acrpassword)'
           containerapp_name: 'kiit-lms-admin-dev'
-          # google_api_key: '$(google_api_key)'
-          # groq_api_key: '$(groq_api_key)'
 
+########################
+# DEPLOY TO UAT
+########################
   - stage: Deploy_UAT
     displayName: "Promote & Deploy to UAT"
     dependsOn: Deploy_Dev
     condition: succeeded()
-    
     variables:
       - group: UAT
+
     jobs:
       - job: PromoteImageUAT
         displayName: "Promote Image → UAT"
-
         steps:
           - task: AzureCLI@2
             displayName: "Promote Image to UAT"
@@ -80,28 +80,32 @@ stages:
         displayName: "Deploy to UAT"
         environment: "UAT"
 
-        steps:
-          - template: devops_template/azure-image-deploy.yml
-            parameters:
-              tag: $(tag)
-              imageRepository: '$(uatRepo)'
-              registry_name: '$(registry_name)'
-              acrusername: '$(acrusername)'
-              acrpassword: '$(acrpassword)'
-              containerapp_name: 'kiit-lms-admin-uat'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: devops_template/azure-image-deploy.yml
+                  parameters:
+                    tag: $(tag)
+                    imageRepository: '$(uatRepo)'
+                    registry_name: '$(registry_name)'
+                    acrusername: '$(acrusername)'
+                    acrpassword: '$(acrpassword)'
+                    containerapp_name: 'kiit-lms-admin-uat'
 
+########################
+# DEPLOY TO PROD
+########################
   - stage: Deploy_Prod
     displayName: "Promote & Deploy to PROD"
     dependsOn: Deploy_UAT
     condition: succeeded()
-
     variables:
       - group: PROD
 
     jobs:
       - job: PromoteImageProd
         displayName: "Promote Image → PROD"
-
         steps:
           - task: AzureCLI@2
             displayName: "Promote Image to PROD"
@@ -119,12 +123,16 @@ stages:
       - deployment: DeployProd
         displayName: "Deploy to PROD"
         environment: "PROD"
-        steps:
-          - template: devops_template/azure-image-deploy.yml
-            parameters:
-              tag: $(tag)
-              imageRepository: '$(prodRepo)'
-              registry_name: '$(registry_name)'
-              acrusername: '$(acrusername)'
-              acrpassword: '$(acrpassword)'
-              containerapp_name: 'kiit-lms-admin-prod'
+
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: devops_template/azure-image-deploy.yml
+                  parameters:
+                    tag: $(tag)
+                    imageRepository: '$(prodRepo)'
+                    registry_name: '$(registry_name)'
+                    acrusername: '$(acrusername)'
+                    acrpassword: '$(acrpassword)'
+                    containerapp_name: 'kiit-lms-admin-prod'

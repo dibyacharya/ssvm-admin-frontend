@@ -61,7 +61,6 @@ stages:
     jobs:
       - job: PromoteImageUAT
         displayName: "Promote Image → UAT"
-        environment: "UAT"
 
         steps:
           - task: AzureCLI@2
@@ -79,6 +78,7 @@ stages:
 
       - deployment: DeployUAT
         displayName: "Deploy to UAT"
+        environment: "UAT"
 
         steps:
           - template: devops_template/azure-image-deploy.yml
@@ -119,7 +119,6 @@ stages:
       - deployment: DeployProd
         displayName: "Deploy to PROD"
         environment: "PROD"
-
         steps:
           - template: devops_template/azure-image-deploy.yml
             parameters:

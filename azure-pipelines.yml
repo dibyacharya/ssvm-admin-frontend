@@ -55,15 +55,12 @@ stages:
     displayName: "Promote & Deploy to UAT"
     dependsOn: Deploy_Dev
     condition: succeeded()
-
     environment: "UAT"
-
     variables:
       - group: UAT
-
     jobs:
-      - job: PromoteAndDeploy
-        displayName: "Promote image → UAT & Deploy"
+      - job: PromoteImageUAT
+        displayName: "Promote Image → UAT"
 
         steps:
           - task: AzureCLI@2
@@ -73,12 +70,16 @@ stages:
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                echo "Promoting image..."
+                echo "Promoting image from DEV to UAT..."
                 az acr import \
                   --name $(registry_name) \
                   --source $(registry_name).azurecr.io/$(devRepo):$(tag) \
                   --image $(uatRepo):$(tag)
 
+      - job: DeployUAT
+        displayName: "Deploy to UAT"
+
+        steps:
           - template: devops_template/azure-image-deploy.yml
             parameters:
               tag: $(tag)
@@ -87,9 +88,6 @@ stages:
               acrusername: '$(acrusername)'
               acrpassword: '$(acrpassword)'
               containerapp_name: 'kiit-lms-admin-uat'
-              # google_api_key: '$(google_api_key)'
-              # groq_api_key: '$(groq_api_key)'
-
 
   - stage: Deploy_Prod
     displayName: "Promote & Deploy to PROD"
@@ -97,13 +95,12 @@ stages:
     condition: succeeded()
 
     environment: "PROD"
-
     variables:
       - group: PROD
 
     jobs:
-      - job: PromoteAndDeployProd
-        displayName: "Promote image → PROD & Deploy"
+      - job: PromoteImageProd
+        displayName: "Promote Image → PROD"
 
         steps:
           - task: AzureCLI@2
@@ -113,12 +110,16 @@ stages:
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                echo "Promoting image..."
+                echo "Promoting image from UAT to PROD..."
                 az acr import \
                   --name $(registry_name) \
                   --source $(registry_name).azurecr.io/$(uatRepo):$(tag) \
                   --image $(prodRepo):$(tag)
 
+      - job: DeployProd
+        displayName: "Deploy to PROD"
+
+        steps:
           - template: devops_template/azure-image-deploy.yml
             parameters:
               tag: $(tag)
@@ -127,5 +128,3 @@ stages:
               acrusername: '$(acrusername)'
               acrpassword: '$(acrpassword)'
               containerapp_name: 'kiit-lms-admin-prod'
-              # google_api_key: '$(google_api_key)'
-              # groq_api_key: '$(groq_api_key)'

@@ -77,7 +77,7 @@ stages:
                   --source $(registry_name).azurecr.io/$(devRepo):$(tag) \
                   --image $(uatRepo):$(tag)
 
-      - job: DeployUAT
+      - deployment: DeployUAT
         displayName: "Deploy to UAT"
 
         steps:
@@ -116,7 +116,7 @@ stages:
                   --source $(registry_name).azurecr.io/$(uatRepo):$(tag) \
                   --image $(prodRepo):$(tag)
 
-      - job: DeployProd
+      - deployment: DeployProd
         displayName: "Deploy to PROD"
         environment: "PROD"
 

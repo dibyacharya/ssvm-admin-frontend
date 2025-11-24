@@ -55,12 +55,13 @@ stages:
     displayName: "Promote & Deploy to UAT"
     dependsOn: Deploy_Dev
     condition: succeeded()
-    environment: "UAT"
+    
     variables:
       - group: UAT
     jobs:
       - job: PromoteImageUAT
         displayName: "Promote Image → UAT"
+        environment: "UAT"
 
         steps:
           - task: AzureCLI@2
@@ -94,7 +95,6 @@ stages:
     dependsOn: Deploy_UAT
     condition: succeeded()
 
-    environment: "PROD"
     variables:
       - group: PROD
 
@@ -118,6 +118,7 @@ stages:
 
       - job: DeployProd
         displayName: "Deploy to PROD"
+        environment: "PROD"
 
         steps:
           - template: devops_template/azure-image-deploy.yml

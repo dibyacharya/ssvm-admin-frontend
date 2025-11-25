@@ -27,8 +27,7 @@ parameters:
 steps:
   - script: |
       echo "DEBUG (Build Job): Variables used by Docker task:"
-      echo "Dockerfile: $(Build_Dockerfile)"
-      echo "repository: $(Build_ImageRepository)"
+      echo "repository: ${{ parameters.imageRepository }}"
       echo "repository: ${{ parameters.containerapp_name }}"
     displayName: 'Print Vars for Docker Task'
   - task: AzureCLI@2
@@ -45,9 +44,8 @@ steps:
           GOOGLE_API_KEY=\"$(Build_google_api_key)\"
           GROQ_API_KEY=\"$(Build_groq_api_key)\""
 
-        echo "Dockerfile: $(Build_Dockerfile)"
-        echo "repository: $(Build_ImageRepository)"
-        echo "repository: ${{ parameters.containerapp_name }}"
+        echo "repository: ${{ parameters.imageRepository }}"
+        echo "containerapp_name: ${{ parameters.containerapp_name }}"
 
         echo "Deploying container app..."
         if az containerapp show \

@@ -29,7 +29,7 @@ steps:
       echo "DEBUG (Build Job): Variables used by Docker task:"
       echo "Dockerfile: $(Build_Dockerfile)"
       echo "repository: $(Build_ImageRepository)"
-      echo "repository: $(Build_containerapp_name)"
+      echo "repository: ${{ parameters.containerapp_name }}"
     displayName: 'Print Vars for Docker Task'
   - task: AzureCLI@2
     displayName: 'Deploy Container App using Azure CLI'
@@ -47,17 +47,17 @@ steps:
 
         echo "Dockerfile: $(Build_Dockerfile)"
         echo "repository: $(Build_ImageRepository)"
-        echo "repository: $(Build_containerapp_name)"
+        echo "repository: ${{ parameters.containerapp_name }}"
 
         echo "Deploying container app..."
         if az containerapp show \
-            --name $(Build_containerapp_name)\
+            --name ${{ parameters.containerapp_name }}\
             --resource-group ${{ parameters.resource_group }} \
             --only-show-errors &>/dev/null; then
           echo "Container app exists. Updating..."
 
           az containerapp update \
-            --name $(Build_containerapp_name)\
+            --name ${{ parameters.containerapp_name }}\
             --resource-group ${{ parameters.resource_group }} \
             --image ${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }} 
 
@@ -65,7 +65,7 @@ steps:
           echo "Container app does not exist. Creating..."
 
           az containerapp create \
-            --name $(Build_containerapp_name) \
+            --name ${{ parameters.containerapp_name }} \
             --resource-group ${{ parameters.resource_group }} \
             --environment ${{ parameters.containerapp_environment }} \
             --image ${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }} \

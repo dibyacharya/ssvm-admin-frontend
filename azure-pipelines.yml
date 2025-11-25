@@ -57,7 +57,7 @@ stages:
                     acrpassword: '$(acrpassword)'
                     resource_group: '$(resource_group)'
                     containerapp_environment: '$(containerapp_environment)'
-                    containerapp_name: 'kiit-lms-admin-dev'
+                    containerapp_name: '$(containerapp_name)'
 
 ########################
 # DEPLOY TO UAT
@@ -103,7 +103,7 @@ stages:
                     acrpassword: '$(acrpassword)'
                     resource_group: '$(resource_group)'
                     containerapp_environment: '$(containerapp_environment)'
-                    containerapp_name: 'kiit-lms-admin-uat'
+                    containerapp_name: '$(containerapp_name)'
 
 ########################
 # DEPLOY TO PROD
@@ -149,4 +149,4 @@ stages:
                     acrpassword: '$(acrpassword)'
                     resource_group: '$(resource_group)'
                     containerapp_environment: '$(containerapp_environment)'
-                    containerapp_name: 'kiit-lms-admin-prod'
+                    containerapp_name: '$(containerapp_name)'

@@ -1,6 +1,4 @@
 parameters:
-- name: containerRegistry
-  type: string
 - name: imageRepository
   type: string
 - name: dockerfilePath
@@ -8,31 +6,30 @@ parameters:
 - name: tag
   type: string
 
-stages:
-  - stage: Build
-    variables:
-      Build_ImageRepository: ${{ parameters.imageRepository }}
-      Build_Dockerfile: ${{ parameters.dockerfilePath }}
-    jobs:
-      - job: 'BuildDockerImage'
-        displayName: 'Build Docker Image'
-        steps:
-          - task: Docker@2
-            displayName: 'Build Docker Image'
-            inputs:
-              command: build
-              containerRegistry: 'svc_acr_connection'
-              Dockerfile: '$(Build_Dockerfile)'
-              repository: '$(Build_ImageRepository)'
-              tags: ${{ parameters.tag }}
+stage: Build
+  variables:
+    Build_ImageRepository: ${{ parameters.imageRepository }}
+    Build_Dockerfile: ${{ parameters.dockerfilePath }}
 
-          - task: Docker@2
-            displayName: 'Push Docker Image'
-            continueOnError: false
-            inputs:
-              command: push
-              containerRegistry: 'svc_acr_connection'
-              repository: '$(Build_ImageRepository)'
-              tags: |
-                ${{ parameters.tag }}
-                latest
+  jobs:
+    - job: BuildDockerImage
+      displayName: Build Docker Image
+      steps:
+        - task: Docker@2
+          displayName: Build Docker Image
+          inputs:
+            command: build
+            containerRegistry: 'svc_acr_connection'
+            Dockerfile: $(Build_Dockerfile)
+            repository: $(Build_ImageRepository)
+            tags: |
+              ${{ parameters.tag }}
+
+        - task: Docker@2
+          displayName: Push Docker Image
+          inputs:
+            command: push
+            containerRegistry: 'svc_acr_connection'
+            repository: $(Build_ImageRepository)
+            tags: |
+              ${{ parameters.tag }}

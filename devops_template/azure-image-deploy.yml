@@ -28,7 +28,7 @@ steps:
   - task: AzureCLI@2
     displayName: 'Deploy Container App using Azure CLI'
     inputs:
-      azureSubscription: 'kiit-it-analytics'
+      azureSubscription: 'subs_connection'
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |

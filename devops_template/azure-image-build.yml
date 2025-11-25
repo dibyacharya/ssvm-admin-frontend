@@ -6,8 +6,6 @@ parameters:
 - name: tag
   type: string
 
-stage: Build
-
 jobs:
   - job: BuildDockerImage
     displayName: Build Docker Image

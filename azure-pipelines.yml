@@ -8,12 +8,14 @@ pool:
 
 variables:
   - group: DEV
-
-variables:
-  tag: '$(Build.BuildId)'
-  devRepo: 'kiit/dev/lms/kiit_lms_admin_frontend'
-  uatRepo: 'kiit/uat/lms/kiit_lms_admin_frontend'
-  prodRepo: 'kiit/prod/lms/kiit_lms_admin_frontend'
+  - name: tag
+    value: '$(Build.BuildId)'
+  - name: devRepo
+    value: 'kiit/dev/lms/kiit_lms_admin_frontend'
+  - name: uatRepo
+    value: 'kiit/uat/lms/kiit_lms_admin_frontend'
+  - name: prodRepo
+    value: 'kiit/prod/lms/kiit_lms_admin_frontend'
 
 ########################
 # BUILD (DEV REPO)

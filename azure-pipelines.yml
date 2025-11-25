@@ -81,10 +81,10 @@ stages:
               scriptLocation: 'inlineScript'
               inlineScript: |
                 echo "Promoting image from DEV to UAT..."
-                echo $(registry_name)
+                echo $(acrusername)
                 echo source $(registry_name).azurecr.io/$(devRepo):$(tag)
                 az acr import \
-                  --name $(registry_name) \
+                  --name $(acrusername) \
                   --source $(registry_name).azurecr.io/$(devRepo):$(tag) \
                   --image $(uatRepo):$(tag)
 

@@ -17,6 +17,12 @@ parameters:
   - name: groq_api_key
     type: string
     default: ''
+  - name: resource_group
+    type: string
+    default: 'rg-kiit-lms-dev'
+  - name: containerapp_environment
+    type: string
+    default: 'caenv-kiit-lms-dev'
   
 steps:
   - script: |
@@ -46,13 +52,13 @@ steps:
         echo "Deploying container app..."
         if az containerapp show \
             --name $(Build_containerapp_name)\
-            --resource-group rg-kiit-lms-dev \
+            --resource-group ${{ parameters.resource_group }} \
             --only-show-errors &>/dev/null; then
           echo "Container app exists. Updating..."
 
           az containerapp update \
             --name $(Build_containerapp_name)\
-            --resource-group rg-kiit-lms-dev \
+            --resource-group ${{ parameters.resource_group }} \
             --image ${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }} 
 
         else
@@ -60,8 +66,8 @@ steps:
 
           az containerapp create \
             --name $(Build_containerapp_name) \
-            --resource-group rg-kiit-lms-dev \
-            --environment caenv-kiit-lms-dev \
+            --resource-group ${{ parameters.resource_group }} \
+            --environment ${{ parameters.containerapp_environment }} \
             --image ${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }} \
             --ingress external \
             --target-port 8000 \

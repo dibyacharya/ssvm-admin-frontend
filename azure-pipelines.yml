@@ -74,7 +74,7 @@ stages:
           - task: AzureCLI@2
             displayName: "Promote Image to UAT"
             inputs:
-              azureSubscription: 'kiit-it-analytics'
+              azureSubscription: 'subs_connection'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
@@ -118,7 +118,7 @@ stages:
           - task: AzureCLI@2
             displayName: "Promote Image to PROD"
             inputs:
-              azureSubscription: 'kiit-it-analytics'
+              azureSubscription: 'subs_connection'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |

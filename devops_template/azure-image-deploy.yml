@@ -16,73 +16,57 @@ parameters:
   - name: groq_api_key
     type: string
   
-stages:
-  - stage: DeployBuild
-    variables:
-      Build_ImageRepository: '${{ parameters.imageRepository }}'
-      Build_containerapp_name: '${{ parameters.containerapp_name }}'
-      Build_google_api_key: '${{ parameters.google_api_key }}'
-      Build_groq_api_key: '${{ parameters.groq_api_key }}'
-    dependsOn: Build
-    displayName: 'Deploy the Image'
-    jobs:
-      - deployment: DeployBuild 
-        displayName: 'Deploy the Image'
-        environment: 'dev'      
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - script: |
-                    echo "DEBUG (Build Job): Variables used by Docker task:"
-                    echo "Dockerfile: $(Build_Dockerfile)"
-                    echo "repository: $(Build_ImageRepository)"
-                    echo "repository: $(Build_containerapp_name)"
-                  displayName: 'Print Vars for Docker Task'
-                - task: AzureCLI@2
-                  displayName: 'Deploy Container App using Azure CLI'
-                  inputs:
-                    azureSubscription: 'kiit-it-analytics'
-                    scriptType: 'bash'
-                    scriptLocation: 'inlineScript'
-                    inlineScript: |
-                      echo "Logging into ACR..."
-                      echo "${{ parameters.acrpassword }}" | docker login ${{ parameters.registry_name }}.azurecr.io -u ${{ parameters.acrusername }} --password-stdin
-                      echo "setting up environment variables for the container app..."
-                      ENV_VARS="\
-                        GOOGLE_API_KEY=\"$(Build_google_api_key)\"
-                        GROQ_API_KEY=\"$(Build_groq_api_key)\""
+steps:
+  - script: |
+      echo "DEBUG (Build Job): Variables used by Docker task:"
+      echo "Dockerfile: $(Build_Dockerfile)"
+      echo "repository: $(Build_ImageRepository)"
+      echo "repository: $(Build_containerapp_name)"
+    displayName: 'Print Vars for Docker Task'
+  - task: AzureCLI@2
+    displayName: 'Deploy Container App using Azure CLI'
+    inputs:
+      azureSubscription: 'kiit-it-analytics'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "Logging into ACR..."
+        echo "${{ parameters.acrpassword }}" | docker login ${{ parameters.registry_name }}.azurecr.io -u ${{ parameters.acrusername }} --password-stdin
+        echo "setting up environment variables for the container app..."
+        ENV_VARS="\
+          GOOGLE_API_KEY=\"$(Build_google_api_key)\"
+          GROQ_API_KEY=\"$(Build_groq_api_key)\""
 
-                      echo "Dockerfile: $(Build_Dockerfile)"
-                      echo "repository: $(Build_ImageRepository)"
-                      echo "repository: $(Build_containerapp_name)"
+        echo "Dockerfile: $(Build_Dockerfile)"
+        echo "repository: $(Build_ImageRepository)"
+        echo "repository: $(Build_containerapp_name)"
 
-                      echo "Deploying container app..."
-                      if az containerapp show \
-                          --name $(Build_containerapp_name)\
-                          --resource-group rg-kiit-lms-dev \
-                          --only-show-errors &>/dev/null; then
-                        echo "Container app exists. Updating..."
+        echo "Deploying container app..."
+        if az containerapp show \
+            --name $(Build_containerapp_name)\
+            --resource-group rg-kiit-lms-dev \
+            --only-show-errors &>/dev/null; then
+          echo "Container app exists. Updating..."
 
-                        az containerapp update \
-                          --name $(Build_containerapp_name)\
-                          --resource-group rg-kiit-lms-dev \
-                          --image ${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }} 
+          az containerapp update \
+            --name $(Build_containerapp_name)\
+            --resource-group rg-kiit-lms-dev \
+            --image ${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }} 
 
-                      else
-                        echo "Container app does not exist. Creating..."
+        else
+          echo "Container app does not exist. Creating..."
 
-                        az containerapp create \
-                          --name $(Build_containerapp_name) \
-                          --resource-group rg-kiit-lms-dev \
-                          --environment caenv-kiit-lms-dev \
-                          --image ${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }} \
-                          --ingress external \
-                          --target-port 8000 \
-                          --registry-server ${{ parameters.registry_name }}.azurecr.io \
-                          --registry-username ${{ parameters.acrusername }} \
-                          --registry-password ${{ parameters.acrpassword }}\
-                          --env-vars ${ENV_VARS} 
-                      fi
+          az containerapp create \
+            --name $(Build_containerapp_name) \
+            --resource-group rg-kiit-lms-dev \
+            --environment caenv-kiit-lms-dev \
+            --image ${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }} \
+            --ingress external \
+            --target-port 8000 \
+            --registry-server ${{ parameters.registry_name }}.azurecr.io \
+            --registry-username ${{ parameters.acrusername }} \
+            --registry-password ${{ parameters.acrpassword }}\
+            --env-vars ${ENV_VARS} 
+        fi
 
-                      echo "Container app deployment completed."
+        echo "Container app deployment completed."

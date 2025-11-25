@@ -81,6 +81,8 @@ stages:
               scriptLocation: 'inlineScript'
               inlineScript: |
                 echo "Promoting image from DEV to UAT..."
+                echo $(registry_name)
+                echo source $(registry_name).azurecr.io/$(devRepo):$(tag)
                 az acr import \
                   --name $(registry_name) \
                   --source $(registry_name).azurecr.io/$(devRepo):$(tag) \

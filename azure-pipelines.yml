@@ -26,7 +26,7 @@ stages:
     jobs:
       - template: devops_template/azure-image-build.yml
         parameters:
-          containerRegistry: 'svc_acr_connection'
+          # containerRegistry: 'svc_acr_connection'
           imageRepository: '$(devRepo)'
           dockerfilePath: 'Dockerfile'
           tag: '$(tag)'

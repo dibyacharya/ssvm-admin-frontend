@@ -13,8 +13,10 @@ parameters:
     type: string
   - name: google_api_key
     type: string
+    default: ''
   - name: groq_api_key
     type: string
+    default: ''
   
 steps:
   - script: |

@@ -49,90 +49,90 @@ stages:
           acrpassword: '$(acrpassword)'
           containerapp_name: 'kiit-lms-admin-dev'
 
-########################
-# DEPLOY TO UAT
-########################
-  - stage: Deploy_UAT
-    displayName: "Promote & Deploy to UAT"
-    dependsOn: Deploy_Dev
-    condition: succeeded()
-    variables:
-      - group: UAT
+# ########################
+# # DEPLOY TO UAT
+# ########################
+#   - stage: Deploy_UAT
+#     displayName: "Promote & Deploy to UAT"
+#     dependsOn: Deploy_Dev
+#     condition: succeeded()
+#     variables:
+#       - group: UAT
 
-    jobs:
-      - job: PromoteImageUAT
-        displayName: "Promote Image → UAT"
-        steps:
-          - task: AzureCLI@2
-            displayName: "Promote Image to UAT"
-            inputs:
-              azureSubscription: 'kiit-it-analytics'
-              scriptType: 'bash'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                echo "Promoting image from DEV to UAT..."
-                az acr import \
-                  --name $(registry_name) \
-                  --source $(registry_name).azurecr.io/$(devRepo):$(tag) \
-                  --image $(uatRepo):$(tag)
+#     jobs:
+#       - job: PromoteImageUAT
+#         displayName: "Promote Image → UAT"
+#         steps:
+#           - task: AzureCLI@2
+#             displayName: "Promote Image to UAT"
+#             inputs:
+#               azureSubscription: 'kiit-it-analytics'
+#               scriptType: 'bash'
+#               scriptLocation: 'inlineScript'
+#               inlineScript: |
+#                 echo "Promoting image from DEV to UAT..."
+#                 az acr import \
+#                   --name $(registry_name) \
+#                   --source $(registry_name).azurecr.io/$(devRepo):$(tag) \
+#                   --image $(uatRepo):$(tag)
 
-      - deployment: DeployUAT
-        displayName: "Deploy to UAT"
-        environment: "UAT"
+#       - deployment: DeployUAT
+#         displayName: "Deploy to UAT"
+#         environment: "UAT"
 
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - template: devops_template/azure-image-deploy.yml
-                  parameters:
-                    tag: $(tag)
-                    imageRepository: '$(uatRepo)'
-                    registry_name: '$(registry_name)'
-                    acrusername: '$(acrusername)'
-                    acrpassword: '$(acrpassword)'
-                    containerapp_name: 'kiit-lms-admin-uat'
+#         strategy:
+#           runOnce:
+#             deploy:
+#               steps:
+#                 - template: devops_template/azure-image-deploy.yml
+#                   parameters:
+#                     tag: $(tag)
+#                     imageRepository: '$(uatRepo)'
+#                     registry_name: '$(registry_name)'
+#                     acrusername: '$(acrusername)'
+#                     acrpassword: '$(acrpassword)'
+#                     containerapp_name: 'kiit-lms-admin-uat'
 
-########################
-# DEPLOY TO PROD
-########################
-  - stage: Deploy_Prod
-    displayName: "Promote & Deploy to PROD"
-    dependsOn: Deploy_UAT
-    condition: succeeded()
-    variables:
-      - group: PROD
+# ########################
+# # DEPLOY TO PROD
+# ########################
+#   - stage: Deploy_Prod
+#     displayName: "Promote & Deploy to PROD"
+#     dependsOn: Deploy_UAT
+#     condition: succeeded()
+#     variables:
+#       - group: PROD
 
-    jobs:
-      - job: PromoteImageProd
-        displayName: "Promote Image → PROD"
-        steps:
-          - task: AzureCLI@2
-            displayName: "Promote Image to PROD"
-            inputs:
-              azureSubscription: 'kiit-it-analytics'
-              scriptType: 'bash'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                echo "Promoting image from UAT to PROD..."
-                az acr import \
-                  --name $(registry_name) \
-                  --source $(registry_name).azurecr.io/$(uatRepo):$(tag) \
-                  --image $(prodRepo):$(tag)
+#     jobs:
+#       - job: PromoteImageProd
+#         displayName: "Promote Image → PROD"
+#         steps:
+#           - task: AzureCLI@2
+#             displayName: "Promote Image to PROD"
+#             inputs:
+#               azureSubscription: 'kiit-it-analytics'
+#               scriptType: 'bash'
+#               scriptLocation: 'inlineScript'
+#               inlineScript: |
+#                 echo "Promoting image from UAT to PROD..."
+#                 az acr import \
+#                   --name $(registry_name) \
+#                   --source $(registry_name).azurecr.io/$(uatRepo):$(tag) \
+#                   --image $(prodRepo):$(tag)
 
-      - deployment: DeployProd
-        displayName: "Deploy to PROD"
-        environment: "PROD"
+#       - deployment: DeployProd
+#         displayName: "Deploy to PROD"
+#         environment: "PROD"
 
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - template: devops_template/azure-image-deploy.yml
-                  parameters:
-                    tag: $(tag)
-                    imageRepository: '$(prodRepo)'
-                    registry_name: '$(registry_name)'
-                    acrusername: '$(acrusername)'
-                    acrpassword: '$(acrpassword)'
-                    containerapp_name: 'kiit-lms-admin-prod'
+#         strategy:
+#           runOnce:
+#             deploy:
+#               steps:
+#                 - template: devops_template/azure-image-deploy.yml
+#                   parameters:
+#                     tag: $(tag)
+#                     imageRepository: '$(prodRepo)'
+#                     registry_name: '$(registry_name)'
+#                     acrusername: '$(acrusername)'
+#                     acrpassword: '$(acrpassword)'
+#                     containerapp_name: 'kiit-lms-admin-prod'

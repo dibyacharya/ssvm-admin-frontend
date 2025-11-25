@@ -55,6 +55,8 @@ stages:
                     registry_name: '$(registry_name)'
                     acrusername: '$(acrusername)'
                     acrpassword: '$(acrpassword)'
+                    resource_group: '$(resource_group)'
+                    containerapp_environment: '$(containerapp_environment)'
                     containerapp_name: 'kiit-lms-admin-dev'
 
 ########################
@@ -99,6 +101,8 @@ stages:
                     registry_name: '$(registry_name)'
                     acrusername: '$(acrusername)'
                     acrpassword: '$(acrpassword)'
+                    resource_group: '$(resource_group)'
+                    containerapp_environment: '$(containerapp_environment)'
                     containerapp_name: 'kiit-lms-admin-uat'
 
 ########################
@@ -143,4 +147,6 @@ stages:
                     registry_name: '$(registry_name)'
                     acrusername: '$(acrusername)'
                     acrpassword: '$(acrpassword)'
+                    resource_group: '$(resource_group)'
+                    containerapp_environment: '$(containerapp_environment)'
                     containerapp_name: 'kiit-lms-admin-prod'

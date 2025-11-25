@@ -40,9 +40,9 @@ steps:
         echo "Logging into ACR..."
         echo "${{ parameters.acrpassword }}" | docker login ${{ parameters.registry_name }}.azurecr.io -u ${{ parameters.acrusername }} --password-stdin
         echo "setting up environment variables for the container app..."
-        ENV_VARS="\
-          GOOGLE_API_KEY=\"$(Build_google_api_key)\"
-          GROQ_API_KEY=\"$(Build_groq_api_key)\""
+        # ENV_VARS="\
+        #   GOOGLE_API_KEY=\"$(Build_google_api_key)\"
+        #   GROQ_API_KEY=\"$(Build_groq_api_key)\""
 
         echo "repository: ${{ parameters.imageRepository }}"
         echo "containerapp_name: ${{ parameters.containerapp_name }}"
@@ -57,7 +57,7 @@ steps:
           az containerapp update \
             --name ${{ parameters.containerapp_name }}\
             --resource-group ${{ parameters.resource_group }} \
-            --image ${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }} 
+            --image ${{ parameters.registry_name }}.azurecr.io/${{ parameters.imageRepository }}:${{ parameters.tag }} 
 
         else
           echo "Container app does not exist. Creating..."
@@ -66,7 +66,7 @@ steps:
             --name ${{ parameters.containerapp_name }} \
             --resource-group ${{ parameters.resource_group }} \
             --environment ${{ parameters.containerapp_environment }} \
-            --image ${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }} \
+            --image ${{ parameters.registry_name }}.azurecr.io/${{ parameters.imageRepository }}:${{ parameters.tag }} \
             --ingress external \
             --target-port 8000 \
             --registry-server ${{ parameters.registry_name }}.azurecr.io \

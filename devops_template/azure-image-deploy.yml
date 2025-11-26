@@ -71,7 +71,7 @@ steps:
           az containerapp create \
             --name ${{ parameters.containerapp_name }} \
             --resource-group rg-kiit-lms-${{ parameters.env }} \
-            --environment caenv-kiit-lms-${{ parameters.env }} \
+            --environment '${{ parameters.containerapp_environment }}' \
             --image ${{ parameters.registry_name }}.azurecr.io/${{ parameters.imageRepository }}:${{ parameters.tag }} \
             --ingress external \
             --target-port 8000 \

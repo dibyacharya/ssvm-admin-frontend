@@ -19,13 +19,13 @@ parameters:
     default: ''
   - name: resource_group
     type: string
-    default: 'rg-kiit-lms-dev'
+    # default: 'rg-kiit-lms-dev'
   - name: containerapp_environment
     type: string
-    default: 'caenv-kiit-lms-dev'
+    # default: 'caenv-kiit-lms-dev'
   - name: env
     type: string
-    default: 'dev'
+    # default: 'dev'
   
 steps:
   - script: |

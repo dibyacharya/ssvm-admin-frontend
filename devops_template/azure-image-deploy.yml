@@ -65,7 +65,7 @@ steps:
           az containerapp create \
             --name ${{ parameters.containerapp_name }} \
             --resource-group ${{ parameters.resource_group }} \
-            --environment '${{ parameters.containerapp_environment }}' \
+            --environment ${{ parameters.containerapp_environment }} \
             --image ${{ parameters.registry_name }}.azurecr.io/${{ parameters.imageRepository }}:${{ parameters.tag }} \
             --ingress external \
             --target-port 8000 \

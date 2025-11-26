@@ -40,7 +40,7 @@ steps:
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
-
+        az account set --subscription 8252c205-6329-476f-83e9-97264014e82a
         echo "Logging into ACR..."
         echo "${{ parameters.acrpassword }}" | docker login \
           ${{ parameters.registry_name }}.azurecr.io \

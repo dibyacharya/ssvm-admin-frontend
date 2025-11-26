@@ -28,7 +28,8 @@ steps:
   - script: |
       echo "DEBUG (Build Job): Variables used by Docker task:"
       echo "repository: ${{ parameters.imageRepository }}"
-      echo "repository: ${{ parameters.containerapp_name }}"
+      echo "containerapp_name: ${{ parameters.containerapp_name }}"
+      echo "container_environment: ${{ parameters.containerapp_environment }}"
     displayName: 'Print Vars for Docker Task'
   - task: AzureCLI@2
     displayName: 'Deploy Container App using Azure CLI'
@@ -61,6 +62,8 @@ steps:
 
         else
           echo "Container app does not exist. Creating..."
+          echo "DEBUG → containerapp_environment = '${{ parameters.containerapp_environment }}'"
+          echo "DEBUG → Build_containerapp_environment = '$(containerapp_environment)'"
 
           az containerapp create \
             --name ${{ parameters.containerapp_name }} \

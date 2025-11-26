@@ -55,13 +55,13 @@ steps:
         echo "Deploying container app..."
         if az containerapp show \
             --name ${{ parameters.containerapp_name }}\
-            --resource-group ${{ parameters.resource_group }} \
+            --resource-group rg-kiit-lms-${{ parameters.env }} \
             --only-show-errors &>/dev/null; then
           echo "Container app exists. Updating..."
 
           az containerapp update \
             --name ${{ parameters.containerapp_name }}\
-            --resource-group ${{ parameters.resource_group }} \
+            --resource-group rg-kiit-lms-${{ parameters.env }} \
             --image ${{ parameters.registry_name }}.azurecr.io/${{ parameters.imageRepository }}:${{ parameters.tag }} 
 
         else

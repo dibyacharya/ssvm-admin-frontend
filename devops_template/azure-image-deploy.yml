@@ -19,21 +19,20 @@ parameters:
     default: ''
   - name: resource_group
     type: string
-    # default: 'rg-kiit-lms-dev'
   - name: containerapp_environment
     type: string
-    # default: 'caenv-kiit-lms-dev'
   - name: env
     type: string
-    # default: 'dev'
-  
+
 steps:
+
   - script: |
       echo "DEBUG (Build Job): Variables used by Docker task:"
       echo "repository: ${{ parameters.imageRepository }}"
       echo "containerapp_name: ${{ parameters.containerapp_name }}"
       echo "container_environment: ${{ parameters.containerapp_environment }}"
     displayName: 'Print Vars for Docker Task'
+
   - task: AzureCLI@2
     displayName: 'Deploy Container App using Azure CLI'
     inputs:
@@ -41,45 +40,54 @@ steps:
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
-        echo "Logging into ACR..."
-        echo "${{ parameters.acrpassword }}" | docker login ${{ parameters.registry_name }}.azurecr.io -u ${{ parameters.acrusername }} --password-stdin
-        echo "setting up environment variables for the container app..."
-        # ENV_VARS="\
-        #   GOOGLE_API_KEY=\"$(Build_google_api_key)\"
-        #   GROQ_API_KEY=\"$(Build_groq_api_key)\""
 
-        echo "repository: '${{ parameters.imageRepository }}'"
-        echo "containerapp_name: '${{ parameters.containerapp_name }}'"
-        echo "resouce_group: '${{ parameters.resource_group }}'"
-        echo "resouce_group: '${{ parameters.env }}'"
+        echo "Logging into ACR..."
+        echo "${{ parameters.acrpassword }}" | docker login \
+          ${{ parameters.registry_name }}.azurecr.io \
+          -u ${{ parameters.acrusername }} \
+          --password-stdin
+
+        echo "==== ENVIRONMENT VARS ===="
+        echo "repository: ${{ parameters.imageRepository }}"
+        echo "containerapp_name: ${{ parameters.containerapp_name }}"
+        echo "resource_group: rg-kiit-lms-${{ parameters.env }}"
+        echo "containerapp_environment: ${{ parameters.containerapp_environment }}"
+        echo "env: ${{ parameters.env }}"
+        echo "==========================="
+
+        RESOURCE_GROUP="rg-kiit-lms-${{ parameters.env }}"
+        ENVIRONMENT="${{ parameters.containerapp_environment }}"
 
         echo "Deploying container app..."
+
         if az containerapp show \
-            --name ${{ parameters.containerapp_name }}\
-            --resource-group rg-kiit-lms-${{ parameters.env }} \
+            --name "${{ parameters.containerapp_name }}" \
+            --resource-group "$RESOURCE_GROUP" \
             --only-show-errors &>/dev/null; then
+
           echo "Container app exists. Updating..."
 
           az containerapp update \
-            --name ${{ parameters.containerapp_name }}\
-            --resource-group rg-kiit-lms-${{ parameters.env }} \
-            --image ${{ parameters.registry_name }}.azurecr.io/${{ parameters.imageRepository }}:${{ parameters.tag }} 
+            --name "${{ parameters.containerapp_name }}" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "${{ parameters.registry_name }}.azurecr.io/${{ parameters.imageRepository }}:${{ parameters.tag }}"
 
         else
+
           echo "Container app does not exist. Creating..."
-          echo "DEBUG → containerapp_environment = '${{ parameters.containerapp_environment }}'"
-          echo "DEBUG → env = '${{ parameters.env }}'"
+          echo "DEBUG → environment = $ENVIRONMENT"
 
           az containerapp create \
-            --name ${{ parameters.containerapp_name }} \
-            --resource-group rg-kiit-lms-${{ parameters.env }} \
-            --environment '${{ parameters.containerapp_environment }}' \
-            --image ${{ parameters.registry_name }}.azurecr.io/${{ parameters.imageRepository }}:${{ parameters.tag }} \
+            --name "${{ parameters.containerapp_name }}" \
+            --resource-group "$RESOURCE_GROUP" \
+            --environment "$ENVIRONMENT" \
+            --image "${{ parameters.registry_name }}.azurecr.io/${{ parameters.imageRepository }}:${{ parameters.tag }}" \
             --ingress external \
             --target-port 8000 \
-            --registry-server ${{ parameters.registry_name }}.azurecr.io \
-            --registry-username ${{ parameters.acrusername }} \
-            --registry-password ${{ parameters.acrpassword }}
+            --registry-server "${{ parameters.registry_name }}.azurecr.io" \
+            --registry-username "${{ parameters.acrusername }}" \
+            --registry-password "${{ parameters.acrpassword }}"
+
         fi
 
         echo "Container app deployment completed."

@@ -83,7 +83,7 @@ steps:
             --environment "$ENVIRONMENT" \
             --image "${{ parameters.registry_name }}.azurecr.io/${{ parameters.imageRepository }}:${{ parameters.tag }}" \
             --ingress external \
-            --target-port 8000 \
+            --target-port 3000 \
             --registry-server "${{ parameters.registry_name }}.azurecr.io" \
             --registry-username "${{ parameters.acrusername }}" \
             --registry-password "${{ parameters.acrpassword }}"

@@ -132,7 +132,7 @@ stages:
               inlineScript: |
                 echo "Promoting image from UAT to PROD..."
                 az acr import \
-                  --name $(registry_name) \
+                  --name $(acrusername) \
                   --source $(registry_name).azurecr.io/$(uatRepo):$(tag) \
                   --image $(prodRepo):$(tag)
 

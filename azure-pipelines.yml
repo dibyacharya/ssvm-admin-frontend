@@ -153,3 +153,4 @@ stages:
                     resource_group: '$(resource_group)'
                     containerapp_environment: '$(containerapp_environment)'
                     containerapp_name: '$(containerapp_name)'
+                    env: '$(env)'

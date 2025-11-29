@@ -9,17 +9,7 @@ parameters:
     type: string
   - name: acrpassword
     type: string
-  - name: containerapp_name
-    type: string
-  - name: google_api_key
-    type: string
-    default: ''
-  - name: groq_api_key
-    type: string
-    default: ''
   - name: resource_group
-    type: string
-  - name: containerapp_environment
     type: string
   - name: env
     type: string
@@ -29,8 +19,7 @@ steps:
   - script: |
       echo "DEBUG (Build Job): Variables used by Docker task:"
       echo "repository: ${{ parameters.imageRepository }}"
-      echo "containerapp_name: ${{ parameters.containerapp_name }}"
-      echo "container_environment: ${{ parameters.containerapp_environment }}"
+      echo "environment: ${{ parameters.env }}"
     displayName: 'Print Vars for Docker Task'
 
   - task: AzureCLI@2
@@ -47,28 +36,55 @@ steps:
           -u ${{ parameters.acrusername }} \
           --password-stdin
 
-        echo "==== ENVIRONMENT VARS ===="
+        echo "==== READING CONFIG ENVIRONMENT VARS ===="
+
+        pip install pyyaml
+        eval $(python3 <<EOF
+        import yaml, os
+        CONFIG_FILE = os.path.join(os.environ["BUILD_SOURCESDIRECTORY"], "devops_template/module_config.yml")
+        env = "${{ parameters.env }}"
+        module = "deployconfig"
+
+        with open(CONFIG_FILE, "r") as file:
+            f_data = yaml.safe_load(file)
+
+        data = f_data[module][env]
+
+        containerapp_name = data.get("containerapp_name")
+        containerapp_environment = data.get("containerapp_environment")
+        ingress = data.get("ingress")
+        target_port = data.get("target_port")
+
+        env_vars = data.get("env_vars", {})
+        ENV_VARS = " ".join(f'{key}="{value}"' for key, value in env_vars.items())
+        print(f'containerapp_name="{containerapp_name}"')
+        print(f'containerapp_environment="{containerapp_environment}"')
+        print(f'ingress="{ingress}"')
+        print(f'target_port="{target_port}"')
+        print(f'ENV_VARS="{ENV_VARS}"')
+        EOF)
         echo "repository: ${{ parameters.imageRepository }}"
-        echo "containerapp_name: ${{ parameters.containerapp_name }}"
+        echo "containerapp_name: $containerapp_name"
         echo "resource_group: rg-kiit-lms-${{ parameters.env }}"
-        echo "containerapp_environment: ${{ parameters.containerapp_environment }}"
+        echo "containerapp_environment: $containerapp_environment"
         echo "env: ${{ parameters.env }}"
+    
         echo "==========================="
 
         RESOURCE_GROUP="rg-kiit-lms-${{ parameters.env }}"
-        ENVIRONMENT="${{ parameters.containerapp_environment }}"
+        ENVIRONMENT="$containerapp_environment"
 
         echo "Deploying container app..."
 
         if az containerapp show \
-            --name "${{ parameters.containerapp_name }}" \
+            --name "$containerapp_name" \
             --resource-group "$RESOURCE_GROUP" \
             --only-show-errors &>/dev/null; then
 
           echo "Container app exists. Updating..."
 
           az containerapp update \
-            --name "${{ parameters.containerapp_name }}" \
+            --name "$containerapp_name" \
             --resource-group "$RESOURCE_GROUP" \
             --image "${{ parameters.registry_name }}.azurecr.io/${{ parameters.imageRepository }}:${{ parameters.tag }}"
 
@@ -78,15 +94,16 @@ steps:
           echo "DEBUG → environment = $ENVIRONMENT"
 
           az containerapp create \
-            --name "${{ parameters.containerapp_name }}" \
+            --name "$containerapp_name" \
             --resource-group "$RESOURCE_GROUP" \
             --environment "$ENVIRONMENT" \
             --image "${{ parameters.registry_name }}.azurecr.io/${{ parameters.imageRepository }}:${{ parameters.tag }}" \
-            --ingress external \
-            --target-port 3000 \
+            --ingress "$ingress" \
+            --target-port "$target_port" \
             --registry-server "${{ parameters.registry_name }}.azurecr.io" \
             --registry-username "${{ parameters.acrusername }}" \
-            --registry-password "${{ parameters.acrpassword }}"
+            --registry-password "${{ parameters.acrpassword }}" \
+            --env-vars "$ENV_VARS"
 
         fi
 

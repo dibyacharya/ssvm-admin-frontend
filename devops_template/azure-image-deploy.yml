@@ -57,6 +57,14 @@ stages:
                       echo "repository: $(Build_ImageRepository)"
                       echo "repository: $(Build_containerapp_name)"
 
+                      # Get current revision before update (for rollback tracking)
+                      CURRENT_REVISION=$(az containerapp revision list \
+                        --name $(Build_containerapp_name) \
+                        --resource-group rg-kiit-lms-dev \
+                        --query "[?properties.active].name" -o tsv 2>/dev/null || echo "")
+                      
+                      echo "Current active revision: ${CURRENT_REVISION}"
+
                       echo "Deploying container app..."
                       if az containerapp show \
                           --name $(Build_containerapp_name)\
@@ -67,7 +75,8 @@ stages:
                         az containerapp update \
                           --name $(Build_containerapp_name)\
                           --resource-group rg-kiit-lms-dev \
-                          --image ${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }} 
+                          --image ${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }} \
+                          --revision-suffix build-${{ parameters.tag }}
 
                       else
                         echo "Container app does not exist. Creating..."
@@ -78,11 +87,44 @@ stages:
                           --environment caenv-kiit-lms-dev \
                           --image ${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }} \
                           --ingress external \
-                          --target-port 8000 \
+                          --target-port 3000 \
                           --registry-server ${{ parameters.registry_name }}.azurecr.io \
                           --registry-username ${{ parameters.acrusername }} \
                           --registry-password ${{ parameters.acrpassword }}\
-                          --env-vars ${ENV_VARS} 
+                          --env-vars ${ENV_VARS} \
+                          --revision-suffix build-${{ parameters.tag }}
                       fi
 
+                      # Get new revision details
+                      NEW_REVISION=$(az containerapp revision list \
+                        --name $(Build_containerapp_name) \
+                        --resource-group rg-kiit-lms-dev \
+                        --query "[?properties.active].name" -o tsv | head -n 1)
+                      
+                      # Store deployment history for rollback
+                      DEPLOYMENT_INFO=$(cat <<EOF
+{
+  "buildId": "${{ parameters.tag }}",
+  "image": "${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }}",
+  "revision": "${NEW_REVISION}",
+  "previousRevision": "${CURRENT_REVISION}",
+  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "pipelineRunId": "$(Build.BuildId)",
+  "pipelineRunUrl": "$(System.CollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)",
+  "environment": "$(Build_containerapp_name)"
+}
+EOF
+)
+                      
+                      echo "##vso[task.setvariable variable=DeploymentInfo]$DEPLOYMENT_INFO"
+                      echo "##vso[task.setvariable variable=CurrentRevision]${NEW_REVISION}"
+                      echo "##vso[task.setvariable variable=PreviousRevision]${CURRENT_REVISION}"
+                      
+                      # Store deployment history in a file for reference
+                      mkdir -p $(Pipeline.Workspace)/deployment-history
+                      echo "$DEPLOYMENT_INFO" > $(Pipeline.Workspace)/deployment-history/$(Build_containerapp_name)-${{ parameters.tag }}.json
+                      
                       echo "Container app deployment completed."
+                      echo "New revision: ${NEW_REVISION}"
+                      echo "Previous revision: ${CURRENT_REVISION}"
+                      echo "Deployment info saved for rollback tracking."

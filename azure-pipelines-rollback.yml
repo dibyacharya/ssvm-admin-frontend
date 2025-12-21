@@ -1,0 +1,87 @@
+# Rollback Pipeline
+# This pipeline can be triggered manually to rollback deployments
+# Usage: Run pipeline manually and provide parameters for rollback
+
+trigger: none  # Manual trigger only
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+parameters:
+  - name: environment
+    displayName: 'Environment'
+    type: string
+    default: 'dev'
+    values:
+      - dev
+      - uat
+      - prod
+  - name: deployment_type
+    displayName: 'Deployment Type'
+    type: string
+    default: 'containerapp'
+    values:
+      - containerapp
+      - kubernetes
+  - name: rollback_to_build_id
+    displayName: 'Rollback to Build ID (optional)'
+    type: string
+    default: ''
+  - name: rollback_to_revision
+    displayName: 'Rollback to Revision (optional)'
+    type: string
+    default: ''
+
+variables:
+  - name: containerapp_name_dev
+    value: 'kiit-lms-admin-dev'
+  - name: containerapp_name_uat
+    value: 'kiit-lms-admin-uat'
+  - name: containerapp_name_prod
+    value: 'kiit-lms-admin-prod'
+  - name: resource_group_dev
+    value: 'rg-kiit-lms-dev'
+  - name: resource_group_uat
+    value: 'rg-kiit-lms-uat'
+  - name: resource_group_prod
+    value: 'rg-kiit-lms-prod'
+
+stages:
+  - stage: Rollback
+    displayName: "Rollback Deployment"
+    variables:
+      - ${{ if eq(parameters.environment, 'dev') }}:
+        - name: containerapp_name
+          value: 'kiit-lms-admin-dev'
+        - name: resource_group
+          value: 'rg-kiit-lms-dev'
+      - ${{ if eq(parameters.environment, 'uat') }}:
+        - name: containerapp_name
+          value: 'kiit-lms-admin-uat'
+        - name: resource_group
+          value: 'rg-kiit-lms-uat'
+      - ${{ if eq(parameters.environment, 'prod') }}:
+        - name: containerapp_name
+          value: 'kiit-lms-admin-prod'
+        - name: resource_group
+          value: 'rg-kiit-lms-prod'
+      - group: ${{ parameters.environment }}
+    jobs:
+      - ${{ if eq(parameters.deployment_type, 'containerapp') }}:
+        - template: devops_template/azure-containerapp-rollback.yml
+          parameters:
+            containerapp_name: $(containerapp_name)
+            resource_group: $(resource_group)
+            revision_name: ${{ parameters.rollback_to_revision }}
+            build_id: ${{ parameters.rollback_to_build_id }}
+
+      - ${{ if eq(parameters.deployment_type, 'kubernetes') }}:
+        - template: devops_template/azure-k8s-rollback.yml
+          parameters:
+            k8s_cluster_name: $(k8s_cluster_name)
+            k8s_resource_group: $(k8s_resource_group)
+            namespace: default
+            deployment_name: 'kiit-lms-admin-frontend'
+            revision_number: ${{ parameters.rollback_to_revision }}
+            build_id: ${{ parameters.rollback_to_build_id }}
+

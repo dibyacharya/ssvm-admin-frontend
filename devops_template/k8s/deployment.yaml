@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kiit-lms-admin-frontend
+  namespace: default
+  labels:
+    app: kiit-lms-admin-frontend
+    version: "{{IMAGE_TAG}}"
+    managed-by: azure-pipelines
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10  # Keep last 10 revisions for rollback
+  selector:
+    matchLabels:
+      app: kiit-lms-admin-frontend
+  template:
+    metadata:
+      labels:
+        app: kiit-lms-admin-frontend
+        version: "{{IMAGE_TAG}}"
+        build-id: "{{IMAGE_TAG}}"
+        managed-by: azure-pipelines
+    spec:
+      containers:
+      - name: frontend
+        image: "{{IMAGE_FULL_PATH}}"
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        env:
+        - name: GOOGLE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: kiit-lms-secrets
+              key: google-api-key
+              optional: true
+        - name: GROQ_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: kiit-lms-secrets
+              key: groq-api-key
+              optional: true
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      imagePullSecrets:
+      - name: acr-secret
+

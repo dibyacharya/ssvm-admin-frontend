@@ -1,0 +1,212 @@
+parameters:
+  - name: tag
+    type: string
+  - name: imageRepository
+    type: string
+  - name: registry_name
+    type: string
+  - name: acrusername
+    type: string
+  - name: acrpassword
+    type: string
+  - name: k8s_cluster_name
+    type: string
+  - name: k8s_resource_group
+    type: string
+  - name: ingress_host
+    type: string
+    default: ''
+  - name: environment
+    type: string
+    default: 'dev'
+  - name: api_base_url
+    type: string
+    default: ''
+
+stages:
+  - stage: DeployK8s
+    displayName: 'Deploy to Kubernetes'
+    variables:
+      Build_ImageRepository: '${{ parameters.imageRepository }}'
+      Build_K8sClusterName: '${{ parameters.k8s_cluster_name }}'
+      Build_K8sResourceGroup: '${{ parameters.k8s_resource_group }}'
+      Build_IngressHost: '${{ parameters.ingress_host }}'
+      Build_Environment: '${{ parameters.environment }}'
+      Build_ApiBaseUrl: '${{ parameters.api_base_url }}'
+    jobs:
+      - deployment: DeployK8s
+        displayName: 'Deploy to Kubernetes Cluster'
+        environment: '${{ parameters.environment }}'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureCLI@2
+                  displayName: 'Get AKS Credentials'
+                  inputs:
+                    azureSubscription: 'kiit-it-analytics'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Getting AKS credentials..."
+                      az aks get-credentials \
+                        --resource-group $(Build_K8sResourceGroup) \
+                        --name $(Build_K8sClusterName) \
+                        --overwrite-existing
+                      
+                      echo "Verifying kubectl connection..."
+                      kubectl cluster-info
+                      kubectl get nodes
+
+                - task: AzureCLI@2
+                  displayName: 'Create ACR Secret in Kubernetes'
+                  inputs:
+                    azureSubscription: 'kiit-it-analytics'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Creating ACR pull secret..."
+                      kubectl create secret docker-registry acr-secret \
+                        --docker-server=${{ parameters.registry_name }}.azurecr.io \
+                        --docker-username=${{ parameters.acrusername }} \
+                        --docker-password='${{ parameters.acrpassword }}' \
+                        --namespace=default \
+                        --dry-run=client -o yaml | kubectl apply -f -
+                      
+                      # Create secrets for API keys if they exist
+                      kubectl create secret generic kiit-lms-secrets \
+                        --from-literal=google-api-key='' \
+                        --from-literal=groq-api-key='' \
+                        --namespace=default \
+                        --dry-run=client -o yaml | kubectl apply -f - || true
+
+                - task: Bash@3
+                  displayName: 'Prepare Kubernetes Manifests'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      echo "Preparing Kubernetes manifests..."
+                      
+                      IMAGE_FULL_PATH="${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }}"
+                      INGRESS_HOST=$(Build_IngressHost)
+                      ENVIRONMENT=$(Build_Environment)
+                      API_BASE_URL=$(Build_ApiBaseUrl)
+                      
+                      # Create temporary directory for processed manifests
+                      mkdir -p $(Pipeline.Workspace)/k8s-manifests
+                      
+                      # Process deployment.yaml
+                      sed -e "s|{{IMAGE_TAG}}|${{ parameters.tag }}|g" \
+                          -e "s|{{IMAGE_FULL_PATH}}|${IMAGE_FULL_PATH}|g" \
+                          $(Build.SourcesDirectory)/devops_template/k8s/deployment.yaml > $(Pipeline.Workspace)/k8s-manifests/deployment.yaml
+                      
+                      # Process service.yaml (no replacements needed, but copy it)
+                      cp $(Build.SourcesDirectory)/devops_template/k8s/service.yaml $(Pipeline.Workspace)/k8s-manifests/service.yaml
+                      
+                      # Process ingress.yaml
+                      if [ -n "$INGRESS_HOST" ]; then
+                        sed -e "s|{{INGRESS_HOST}}|${INGRESS_HOST}|g" \
+                            $(Build.SourcesDirectory)/devops_template/k8s/ingress.yaml > $(Pipeline.Workspace)/k8s-manifests/ingress.yaml
+                      else
+                        echo "Warning: INGRESS_HOST not set, skipping ingress deployment"
+                        touch $(Pipeline.Workspace)/k8s-manifests/ingress.yaml.skip
+                      fi
+                      
+                      # Process configmap.yaml
+                      sed -e "s|{{ENVIRONMENT}}|${ENVIRONMENT}|g" \
+                          -e "s|{{API_BASE_URL}}|${API_BASE_URL}|g" \
+                          $(Build.SourcesDirectory)/devops_template/k8s/configmap.yaml > $(Pipeline.Workspace)/k8s-manifests/configmap.yaml
+                      
+                      # Copy network policy
+                      cp $(Build.SourcesDirectory)/devops_template/k8s/network-policy.yaml $(Pipeline.Workspace)/k8s-manifests/network-policy.yaml
+                      
+                      echo "Manifests prepared in $(Pipeline.Workspace)/k8s-manifests"
+
+                - task: AzureCLI@2
+                  displayName: 'Deploy to Kubernetes'
+                  inputs:
+                    azureSubscription: 'kiit-it-analytics'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Deploying to Kubernetes..."
+                      
+                      # Apply ConfigMap
+                      kubectl apply -f $(Pipeline.Workspace)/k8s-manifests/configmap.yaml
+                      
+                      # Apply Deployment
+                      kubectl apply -f $(Pipeline.Workspace)/k8s-manifests/deployment.yaml
+                      
+                      # Apply Service
+                      kubectl apply -f $(Pipeline.Workspace)/k8s-manifests/service.yaml
+                      
+                      # Apply Network Policy
+                      kubectl apply -f $(Pipeline.Workspace)/k8s-manifests/network-policy.yaml
+                      
+                      # Apply Ingress if host is configured
+                      if [ -f $(Pipeline.Workspace)/k8s-manifests/ingress.yaml ]; then
+                        kubectl apply -f $(Pipeline.Workspace)/k8s-manifests/ingress.yaml
+                      fi
+                      
+                      # Get current deployment revision before update
+                      CURRENT_REVISION=$(kubectl get deployment kiit-lms-admin-frontend -n default -o jsonpath='{.metadata.annotations.deployment\.kubernetes\.io/revision}' 2>/dev/null || echo "0")
+                      
+                      # Add deployment annotations and labels for tracking
+                      kubectl annotate deployment kiit-lms-admin-frontend -n default \
+                        deployment.kubernetes.io/previous-revision="${CURRENT_REVISION}" \
+                        deployment.kubernetes.io/build-id="${{ parameters.tag }}" \
+                        deployment.kubernetes.io/deployed-at="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                        deployment.kubernetes.io/pipeline-run-id="$(Build.BuildId)" \
+                        deployment.kubernetes.io/image="${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }}" \
+                        --overwrite || true
+                      
+                      kubectl label deployment kiit-lms-admin-frontend -n default \
+                        build-id="${{ parameters.tag }}" \
+                        deployed-by="azure-pipelines" \
+                        environment="${{ parameters.environment }}" \
+                        --overwrite || true
+                      
+                      echo "Waiting for deployment to be ready..."
+                      kubectl rollout status deployment/kiit-lms-admin-frontend -n default --timeout=300s
+                      
+                      # Get new revision after deployment
+                      NEW_REVISION=$(kubectl get deployment kiit-lms-admin-frontend -n default -o jsonpath='{.metadata.annotations.deployment\.kubernetes\.io/revision}')
+                      
+                      # Store deployment history for rollback
+                      DEPLOYMENT_INFO=$(cat <<EOF
+{
+  "buildId": "${{ parameters.tag }}",
+  "image": "${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }}",
+  "revision": "${NEW_REVISION}",
+  "previousRevision": "${CURRENT_REVISION}",
+  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "pipelineRunId": "$(Build.BuildId)",
+  "pipelineRunUrl": "$(System.CollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)",
+  "environment": "${{ parameters.environment }}",
+  "cluster": "$(Build_K8sClusterName)"
+}
+EOF
+)
+                      
+                      echo "##vso[task.setvariable variable=K8sDeploymentInfo]$DEPLOYMENT_INFO"
+                      echo "##vso[task.setvariable variable=K8sCurrentRevision]${NEW_REVISION}"
+                      echo "##vso[task.setvariable variable=K8sPreviousRevision]${CURRENT_REVISION}"
+                      
+                      # Store deployment history
+                      mkdir -p $(Pipeline.Workspace)/deployment-history
+                      echo "$DEPLOYMENT_INFO" > $(Pipeline.Workspace)/deployment-history/k8s-${{ parameters.environment }}-${{ parameters.tag }}.json
+                      
+                      echo "Deployment completed successfully!"
+                      echo "New revision: ${NEW_REVISION}"
+                      echo "Previous revision: ${CURRENT_REVISION}"
+                      echo "Getting deployment status..."
+                      kubectl get deployment kiit-lms-admin-frontend -n default -o wide
+                      kubectl get pods -l app=kiit-lms-admin-frontend -n default
+                      kubectl get service kiit-lms-admin-frontend-service -n default
+                      
+                      if [ -f $(Pipeline.Workspace)/k8s-manifests/ingress.yaml ]; then
+                        kubectl get ingress kiit-lms-admin-frontend-ingress -n default
+                      fi
+                      
+                      echo "Deployment info saved for rollback tracking."
+

@@ -117,7 +117,7 @@ stages:
                   --image $(prodRepo):$(tag)
 
       - deployment: DeployProd
-        displayName: "Deploy to PROD"
+        displayName: "Deploy to PROD (Container Apps)"
         environment: "PROD"
 
         steps:
@@ -129,3 +129,26 @@ stages:
               acrusername: '$(acrusername)'
               acrpassword: '$(acrpassword)'
               containerapp_name: 'kiit-lms-admin-prod'
+
+########################
+# DEPLOY TO KUBERNETES (PROD ONLY)
+########################
+  - stage: Deploy_K8s_Prod
+    displayName: "Deploy to Kubernetes (PROD)"
+    dependsOn: Deploy_Prod
+    condition: succeeded()
+    variables:
+      - group: PROD
+    jobs:
+      - template: devops_template/azure-k8s-deploy.yml
+        parameters:
+          tag: $(tag)
+          imageRepository: '$(prodRepo)'
+          registry_name: '$(registry_name)'
+          acrusername: '$(acrusername)'
+          acrpassword: '$(acrpassword)'
+          k8s_cluster_name: '$(k8s_cluster_name)'
+          k8s_resource_group: '$(k8s_resource_group)'
+          ingress_host: '$(k8s_ingress_host)'
+          environment: 'prod'
+          api_base_url: '$(api_base_url)'

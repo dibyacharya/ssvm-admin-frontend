@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kiit-lms-admin-frontend-service
+  namespace: default
+  labels:
+    app: kiit-lms-admin-frontend
+spec:
+  type: ClusterIP  # Internal service - not exposed to public
+  ports:
+  - port: 80
+    targetPort: 3000
+    protocol: TCP
+    name: http
+  selector:
+    app: kiit-lms-admin-frontend
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+

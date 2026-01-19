@@ -48,6 +48,7 @@ stages:
           acrusername: '$(acrusername)'
           acrpassword: '$(acrpassword)'
           containerapp_name: 'kiit-lms-admin-dev'
+          resource_group_name: 'rg-kiit-lms-dev'
           # google_api_key: '$(google_api_key)'
           # groq_api_key: '$(groq_api_key)'
 
@@ -79,7 +80,6 @@ stages:
 
       - deployment: DeployUAT
         displayName: "Deploy to UAT"
-
         steps:
           - template: devops_template/azure-image-deploy.yml
             parameters:
@@ -89,6 +89,7 @@ stages:
               acrusername: '$(acrusername)'
               acrpassword: '$(acrpassword)'
               containerapp_name: 'kiit-lms-admin-uat'
+              resource_group_name: 'rg-kiit-lms-uat'
 
   - stage: Deploy_Prod
     displayName: "Promote & Deploy to PROD"
@@ -129,26 +130,27 @@ stages:
               acrusername: '$(acrusername)'
               acrpassword: '$(acrpassword)'
               containerapp_name: 'kiit-lms-admin-prod'
+              resource_group_name: 'rg-kiit-lms-prod'
 
-########################
-# DEPLOY TO KUBERNETES (PROD ONLY)
-########################
-  - stage: Deploy_K8s_Prod
-    displayName: "Deploy to Kubernetes (PROD)"
-    dependsOn: Deploy_Prod
-    condition: succeeded()
-    variables:
-      - group: PROD
-    jobs:
-      - template: devops_template/azure-k8s-deploy.yml
-        parameters:
-          tag: $(tag)
-          imageRepository: '$(prodRepo)'
-          registry_name: '$(registry_name)'
-          acrusername: '$(acrusername)'
-          acrpassword: '$(acrpassword)'
-          k8s_cluster_name: '$(k8s_cluster_name)'
-          k8s_resource_group: '$(k8s_resource_group)'
-          ingress_host: '$(k8s_ingress_host)'
-          environment: 'prod'
-          api_base_url: '$(api_base_url)'
+# ########################
+# # DEPLOY TO KUBERNETES (PROD ONLY)
+# ########################
+#   - stage: Deploy_K8s_Prod
+#     displayName: "Deploy to Kubernetes (PROD)"
+#     dependsOn: Deploy_Prod
+#     condition: succeeded()
+#     variables:
+#       - group: PROD
+#     jobs:
+#       - template: devops_template/azure-k8s-deploy.yml
+#         parameters:
+#           tag: $(tag)
+#           imageRepository: '$(prodRepo)'
+#           registry_name: '$(registry_name)'
+#           acrusername: '$(acrusername)'
+#           acrpassword: '$(acrpassword)'
+#           k8s_cluster_name: '$(k8s_cluster_name)'
+#           k8s_resource_group: '$(k8s_resource_group)'
+#           ingress_host: '$(k8s_ingress_host)'
+#           environment: 'prod'
+#           api_base_url: '$(api_base_url)'

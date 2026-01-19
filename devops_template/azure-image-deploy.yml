@@ -11,16 +11,22 @@ parameters:
     type: string
   - name: containerapp_name
     type: string
+  - name: resource_group_name
+    type: string
+    default: 'rg-kiit-lms-dev'
   - name: google_api_key
     type: string
+    default: ''
   - name: groq_api_key
     type: string
+    default: ''
   
 stages:
   - stage: DeployBuild
     variables:
       Build_ImageRepository: '${{ parameters.imageRepository }}'
       Build_containerapp_name: '${{ parameters.containerapp_name }}'
+      Build_resource_group_name: '${{ parameters.resource_group_name }}'
       Build_google_api_key: '${{ parameters.google_api_key }}'
       Build_groq_api_key: '${{ parameters.groq_api_key }}'
     dependsOn: Build
@@ -60,7 +66,7 @@ stages:
                       # Get current revision before update (for rollback tracking)
                       CURRENT_REVISION=$(az containerapp revision list \
                         --name $(Build_containerapp_name) \
-                        --resource-group rg-kiit-lms-dev \
+                        --resource-group $(Build_resource_group_name) \
                         --query "[?properties.active].name" -o tsv 2>/dev/null || echo "")
                       
                       echo "Current active revision: ${CURRENT_REVISION}"
@@ -68,13 +74,13 @@ stages:
                       echo "Deploying container app..."
                       if az containerapp show \
                           --name $(Build_containerapp_name)\
-                          --resource-group rg-kiit-lms-dev \
+                          --resource-group $(Build_resource_group_name) \
                           --only-show-errors &>/dev/null; then
                         echo "Container app exists. Updating..."
 
                         az containerapp update \
                           --name $(Build_containerapp_name)\
-                          --resource-group rg-kiit-lms-dev \
+                          --resource-group $(Build_resource_group_name) \
                           --image ${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }} \
                           --revision-suffix build-${{ parameters.tag }}
 
@@ -83,7 +89,7 @@ stages:
 
                         az containerapp create \
                           --name $(Build_containerapp_name) \
-                          --resource-group rg-kiit-lms-dev \
+                          --resource-group $(Build_resource_group_name) \
                           --environment caenv-kiit-lms-dev \
                           --image ${{ parameters.registry_name }}.azurecr.io/$(Build_ImageRepository):${{ parameters.tag }} \
                           --ingress external \
@@ -98,7 +104,7 @@ stages:
                       # Get new revision details
                       NEW_REVISION=$(az containerapp revision list \
                         --name $(Build_containerapp_name) \
-                        --resource-group rg-kiit-lms-dev \
+                        --resource-group $(Build_resource_group_name) \
                         --query "[?properties.active].name" -o tsv | head -n 1)
                       
                       # Store deployment history for rollback

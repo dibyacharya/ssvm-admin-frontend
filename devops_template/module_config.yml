@@ -4,6 +4,7 @@ deployconfig:
     containerapp_environment: "caenv-kiit-lms-dev"
     ingress: "external"
     target_port: 3000
+    min_replicas: 0
     AZURE_STORAGE_ACCOUNT_NAME: "stgkiitlmsdev"
     env_vars:
       REACT_APP_BACKEND_URL: "https://lmsbackend.bluehill-eb07d9c6.centralindia.azurecontainerapps.io"
@@ -19,6 +20,7 @@ deployconfig:
     containerapp_environment: "caenv-kiit-lms-uat"
     ingress: "external"
     target_port: 3000
+    min_replicas: 0
     AZURE_STORAGE_ACCOUNT_NAME: "stgkiitlmsuat"
     env_vars:
       REACT_APP_BACKEND_URL: "https://lmsbackend.mangoplant-048dc06b.centralindia.azurecontainerapps.io"
@@ -34,6 +36,7 @@ deployconfig:
     containerapp_environment: "caenv-kiit-lms-prd"
     ingress: "external"
     target_port: 3000
+    min_replicas: 1
     AZURE_STORAGE_ACCOUNT_NAME: "stgkiitlmsprd"
     env_vars:
       REACT_APP_BACKEND_URL: "https://lmsbackend.happybay-a98257cb.centralindia.azurecontainerapps.io"

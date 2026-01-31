@@ -37,6 +37,9 @@ steps:
           --password-stdin
 
         echo "==== READING CONFIG ENVIRONMENT VARS ===="
+        echo "=== DEBUG FILE STRUCTURE ==="
+        pwd
+        ls -R
 
         pip install pyyaml
         eval $(python3 <<EOF
@@ -54,20 +57,61 @@ steps:
         containerapp_environment = data.get("containerapp_environment")
         ingress = data.get("ingress")
         target_port = data.get("target_port")
+        min_replicas = data.get("min_replicas")
+        keyvault_name = data.get("keyvault_name")
 
-        env_vars = data.get("env_vars", {})
-        ENV_VARS = " ".join(f'{key}="{value}"' for key, value in env_vars.items())
-        print(f'containerapp_name="{containerapp_name}"')
-        print(f'containerapp_environment="{containerapp_environment}"')
-        print(f'ingress="{ingress}"')
-        print(f'target_port="{target_port}"')
-        print(f'ENV_VARS="{ENV_VARS}"')
+        # Get secrets from Key Vault (these will be referenced as secretref in env vars)
+        secrets_dict = data.get("secrets", {})
+        # Get regular environment variables (non-sensitive)
+        env_vars_dict = data.get("env_vars", {})
+        
+        # Build secrets string for --secrets parameter
+        # Format: secretname=keyvaultref:https://keyvault.vault.azure.net/secrets/SECRET-NAME,identityref:system
+        secrets_list = []
+        for env_var_name, kv_secret_name in secrets_dict.items():
+            # Convert env var name to secret name (lowercase with hyphens)
+            secret_ref_name = env_var_name.lower().replace("_", "-")
+            kv_url = f"https://{keyvault_name}.vault.azure.net/secrets/{kv_secret_name}"
+            secrets_list.append(f'{secret_ref_name}=keyvaultref:{kv_url},identityref:system')
+        
+        SECRETS = " ".join(secrets_list)
+        
+        # Build environment variables string for --env-vars parameter
+        # For secrets: ENV_VAR_NAME=secretref:secret-name
+        # For regular vars: ENV_VAR_NAME=value
+        env_vars_list = []
+        
+        # Add secret references
+        for env_var_name in secrets_dict.keys():
+            secret_ref_name = env_var_name.lower().replace("_", "-")
+            env_vars_list.append(f'{env_var_name}=secretref:{secret_ref_name}')
+        
+        # Add regular env vars
+        for key, value in env_vars_dict.items():
+            env_vars_list.append(f'{key}={value}')
+        
+        ENV_VARS = " ".join(env_vars_list)
+        
+        print(f'export containerapp_name="{containerapp_name}"')
+        print(f'export containerapp_environment="{containerapp_environment}"')
+        print(f'export ingress="{ingress}"')
+        print(f'export target_port="{target_port}"')
+        print(f'export min_replicas="{min_replicas if min_replicas is not None else ""}"')
+        print(f'export keyvault_name="{keyvault_name}"')
+        print(f'export SECRETS="{SECRETS}"')
+        print(f'export ENV_VARS="{ENV_VARS}"')
         EOF)
         echo "repository: ${{ parameters.imageRepository }}"
         echo "containerapp_name: $containerapp_name"
         echo "resource_group: rg-kiit-lms-${{ parameters.env }}"
         echo "containerapp_environment: $containerapp_environment"
         echo "env: ${{ parameters.env }}"
+        echo "min_replicas: ${min_replicas:-}"
+        echo "keyvault_name: $keyvault_name"
+        echo "=== SECRETS (Key Vault References) ==="
+        echo "$SECRETS"
+        echo "=== ENVIRONMENT VARIABLES ==="
+        echo "$ENV_VARS"
     
         echo "==========================="
 
@@ -83,28 +127,102 @@ steps:
 
           echo "Container app exists. Updating..."
 
-          az containerapp update \
+          # Enable system-assigned managed identity if not already enabled
+          az containerapp identity assign \
             --name "$containerapp_name" \
             --resource-group "$RESOURCE_GROUP" \
-            --image "${{ parameters.registry_name }}.azurecr.io/${{ parameters.imageRepository }}:${{ parameters.tag }}"
+            --system-assigned \
+            --only-show-errors || true
+
+          # Update secrets and environment variables
+          if [ -n "$SECRETS" ]; then
+            # First set secrets via the dedicated command (per CLI docs)
+            az containerapp secret set \
+              --name "$containerapp_name" \
+              --resource-group "$RESOURCE_GROUP" \
+              --secrets $SECRETS
+
+            # Then update image and env vars; add min-replicas only if provided
+            az containerapp update \
+              --name "$containerapp_name" \
+              --resource-group "$RESOURCE_GROUP" \
+              --image "${{ parameters.registry_name }}.azurecr.io/${{ parameters.imageRepository }}:${{ parameters.tag }}" \
+              --min-replicas $min_replicas \
+              --set-env-vars $ENV_VARS
+          else
+            az containerapp update \
+              --name "$containerapp_name" \
+              --resource-group "$RESOURCE_GROUP" \
+              --image "${{ parameters.registry_name }}.azurecr.io/${{ parameters.imageRepository }}:${{ parameters.tag }}" \
+              --min-replicas $min_replicas \
+              --set-env-vars $ENV_VARS
+          fi
 
         else
 
           echo "Container app does not exist. Creating..."
           echo "DEBUG → environment = $ENVIRONMENT"
 
-          az containerapp create \
-            --name "$containerapp_name" \
-            --resource-group "$RESOURCE_GROUP" \
-            --environment "$ENVIRONMENT" \
-            --image "${{ parameters.registry_name }}.azurecr.io/${{ parameters.imageRepository }}:${{ parameters.tag }}" \
-            --ingress "$ingress" \
-            --target-port "$target_port" \
-            --registry-server "${{ parameters.registry_name }}.azurecr.io" \
-            --registry-username "${{ parameters.acrusername }}" \
-            --registry-password "${{ parameters.acrpassword }}" \
-            --env-vars "$ENV_VARS"
+          # Create container app with system-assigned identity
+          if [ -n "$SECRETS" ]; then
+            az containerapp create \
+              --name "$containerapp_name" \
+              --resource-group "$RESOURCE_GROUP" \
+              --environment "$ENVIRONMENT" \
+              --image "${{ parameters.registry_name }}.azurecr.io/${{ parameters.imageRepository }}:${{ parameters.tag }}" \
+              --ingress "$ingress" \
+              --target-port "$target_port" \
+              --registry-server "${{ parameters.registry_name }}.azurecr.io" \
+              --registry-username "${{ parameters.acrusername }}" \
+              --registry-password "${{ parameters.acrpassword }}" \
+              ${min_replicas:+--min-replicas $min_replicas} \
+              --system-assigned \
+              --secrets $SECRETS \
+              --env-vars $ENV_VARS
+          else
+            az containerapp create \
+              --name "$containerapp_name" \
+              --resource-group "$RESOURCE_GROUP" \
+              --environment "$ENVIRONMENT" \
+              --image "${{ parameters.registry_name }}.azurecr.io/${{ parameters.imageRepository }}:${{ parameters.tag }}" \
+              --ingress "$ingress" \
+              --target-port "$target_port" \
+              --registry-server "${{ parameters.registry_name }}.azurecr.io" \
+              --registry-username "${{ parameters.acrusername }}" \
+              --registry-password "${{ parameters.acrpassword }}" \
+              ${min_replicas:+--min-replicas $min_replicas} \
+              --system-assigned \
+              --env-vars $ENV_VARS
+          fi
 
         fi
 
         echo "Container app deployment completed."
+
+        # Grant Key Vault access to the container app's managed identity
+        if [ -n "$SECRETS" ]; then
+          echo "Granting Key Vault access to container app managed identity..."
+          
+          # Get the principal ID of the container app's managed identity
+          PRINCIPAL_ID=$(az containerapp show \
+            --name "$containerapp_name" \
+            --resource-group "$RESOURCE_GROUP" \
+            --query "identity.principalId" \
+            --output tsv)
+          
+          if [ -n "$PRINCIPAL_ID" ]; then
+            echo "Principal ID: $PRINCIPAL_ID"
+            echo "Key Vault Name: $keyvault_name"
+            
+            # Grant get and list permissions on secrets
+            az keyvault set-policy \
+              --name "$keyvault_name" \
+              --object-id "$PRINCIPAL_ID" \
+              --secret-permissions get list \
+              --only-show-errors || echo "Warning: Failed to set Key Vault policy. Please ensure the service principal has permissions."
+            
+            echo "Key Vault access granted successfully."
+          else
+            echo "Warning: Could not retrieve managed identity principal ID."
+          fi
+        fi

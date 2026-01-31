@@ -1,30 +1,25 @@
 #!/bin/sh
+set -e
 
-# ------------------------------
-# Fail fast if required env vars are missing
-# ------------------------------
-: "${REACT_APP_BACKEND_URL:?Missing BACKEND_URL}"
+echo "🟢 Container entrypoint started (Node + serve)"
 
-echo "===================================="
-echo "Runtime environment variables received:"
-echo "REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL"
-echo "===================================="
+: "${REACT_APP_BACKEND_URL:?Missing REACT_APP_BACKEND_URL}"
 
-# ------------------------------
-# Write runtime config for React
-# ------------------------------
-cat <<EOF > /usr/share/nginx/html/config.js
+CONFIG_PATH="/app/dist/config.js"
+
+echo "🟢 Writing runtime config to $CONFIG_PATH"
+
+cat <<EOF > $CONFIG_PATH
 window.RUNTIME_CONFIG = {
-  BACKEND_URL: "${REACT_APP_BACKEND_URL}"
+  BACKEND_URL: "${REACT_APP_BACKEND_URL}",
+  DEBUG_AUTH: false
 };
+
+console.info("[config.js] Injected RUNTIME_CONFIG", window.RUNTIME_CONFIG);
 EOF
 
-echo "Injected config.js successfully:"
-cat /usr/share/nginx/html/config.js
-echo "===================================="
+echo "🟢 Final config.js:"
+cat $CONFIG_PATH
 
-# ------------------------------
-# Start Nginx
-# ------------------------------
-exec nginx -g "daemon off;"
-
+echo "🟢 Starting static server on port 3000"
+exec serve -s dist -l 3000

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { createCourse } from '../services/courses.service'; // Adjust import path as needed
-import { getAllSemester } from '../services/semester.services'; // Add this import
-import { useParams } from 'react-router-dom';
+import { createCourse } from '../services/courses.service';
+import { getAllSemester } from '../services/semester.services';
+import { useParams, useNavigate } from 'react-router-dom';
 
 const CreateCourse = () => {
   const { codeid } = useParams();
+  const navigate = useNavigate();
   console.log("Course Code ID from URL:", codeid);
 
   const [formData, setFormData] = useState({
@@ -12,6 +13,7 @@ const CreateCourse = () => {
     aboutCourse: '',
     courseCode: '',
     semester: '',
+    courseType: '',
     learningOutcomes: [''],
     courseSchedule: {
       classStartDate: '',
@@ -25,7 +27,6 @@ const CreateCourse = () => {
       lecture: 0,
       tutorial: 0,
       practical: 0,
-      project: 0
     },
     syllabus: {
       modules: [{
@@ -42,15 +43,19 @@ const CreateCourse = () => {
   const [loadingSemesters, setLoadingSemesters] = useState(true);
   const [semesterError, setSemesterError] = useState(null);
 
-  // Fetch semesters when component mounts
+  // Computed total credits (read-only)
+  const totalCredits = (formData.creditPoints.lecture || 0) +
+    (formData.creditPoints.tutorial || 0) +
+    (formData.creditPoints.practical || 0);
+
+  // Fetch semesters and teachers when component mounts
   useEffect(() => {
     const fetchSemesters = async () => {
       try {
         setLoadingSemesters(true);
         setSemesterError(null);
         const semesterData = await getAllSemester();
-        setSemesters(semesterData);
-        console.log('Fetched semesters:', semesterData);
+        setSemesters(Array.isArray(semesterData) ? semesterData : semesterData.semesters || []);
       } catch (error) {
         setSemesterError('Failed to load semesters');
         console.error('Error fetching semesters:', error);
@@ -217,6 +222,7 @@ const CreateCourse = () => {
       // Filter out empty learning outcomes and topics
       const cleanedData = {
         ...formData,
+        courseType: formData.courseType || undefined,
         learningOutcomes: formData.learningOutcomes.filter(outcome => outcome.trim() !== ''),
         weeklyPlan: formData.weeklyPlan.map(week => ({
           ...week,
@@ -243,39 +249,15 @@ const CreateCourse = () => {
       };
 
       const response = await createCourse(cleanedData);
-      setSubmitMessage('Course created successfully!');
-      
-      // Reset form but keep the course code from URL
-      setFormData({
-        title: '',
-        aboutCourse: '',
-        courseCode: codeid, // Keep the course code from URL
-        semester: '',
-        learningOutcomes: [''],
-        courseSchedule: {
-          classStartDate: '',
-          classEndDate: '',
-          midSemesterExamDate: '',
-          endSemesterExamDate: '',
-          classDaysAndTimes: [{ day: '', time: '' }]
-        },
-        weeklyPlan: [{ weekNumber: 1, topics: [''] }],
-        creditPoints: {
-          lecture: 0,
-          tutorial: 0,
-          practical: 0,
-          project: 0
-        },
-        syllabus: {
-          modules: [{
-            moduleNumber: 1,
-            moduleTitle: '',
-            description: ''
-          }]
-        }
-      });
+      const createdCourseId = response?.course?._id;
+      if (createdCourseId) {
+        navigate(`/courses/${createdCourseId}?tab=description`, { replace: true });
+      } else {
+        navigate('/courses/list', { replace: true });
+      }
     } catch (error) {
-      setSubmitMessage('Error creating course. Please try again.');
+      const msg = error.response?.data?.error || error.response?.data?.message || 'Error creating course. Please try again.';
+      setSubmitMessage(msg);
       console.error('Error:', error);
     } finally {
       setIsSubmitting(false);
@@ -297,6 +279,9 @@ const CreateCourse = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg">
+      <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+        Legacy Create Page. After creation, continue in the Course Details tabs.
+      </div>
       <h1 className="text-3xl font-bold mb-8 text-gray-800">Create New Course</h1>
       
       <div className="space-y-8">
@@ -359,6 +344,24 @@ const CreateCourse = () => {
             {!loadingSemesters && !semesterError && semesters.length === 0 && (
               <p className="text-xs text-orange-600 mt-1">No semesters available. Please create a semester first.</p>
             )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Course Type</label>
+            <select
+              name="courseType"
+              value={formData.courseType}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Type</option>
+              <option value="theory">Theory</option>
+              <option value="practical">Practical</option>
+              <option value="project">Project</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           </div>
 
           <div>
@@ -496,22 +499,49 @@ const CreateCourse = () => {
           </button>
         </div>
 
-        {/* Credit Points */}
+        {/* Credit Points (L/T/P) */}
         <div className="bg-gray-50 p-6 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">Credit Points</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {Object.keys(formData.creditPoints).map((key) => (
-              <div key={key}>
-                <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">{key}</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={formData.creditPoints[key]}
-                  onChange={(e) => handleNestedInputChange('creditPoints', key, parseInt(e.target.value) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            ))}
+          <h2 className="text-xl font-semibold mb-4 text-gray-700">Credit Points (L/T/P)</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">L (Lecture)</label>
+              <input
+                type="number"
+                min="0"
+                value={formData.creditPoints.lecture}
+                onChange={(e) => handleNestedInputChange('creditPoints', 'lecture', parseInt(e.target.value) || 0)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">T (Tutorial)</label>
+              <input
+                type="number"
+                min="0"
+                value={formData.creditPoints.tutorial}
+                onChange={(e) => handleNestedInputChange('creditPoints', 'tutorial', parseInt(e.target.value) || 0)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">P (Practical)</label>
+              <input
+                type="number"
+                min="0"
+                value={formData.creditPoints.practical}
+                onChange={(e) => handleNestedInputChange('creditPoints', 'practical', parseInt(e.target.value) || 0)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">C (Total)</label>
+              <input
+                type="number"
+                value={totalCredits}
+                disabled
+                className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-gray-600 font-semibold"
+              />
+            </div>
           </div>
         </div>
 

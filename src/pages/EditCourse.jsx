@@ -10,11 +10,16 @@ const EditCourse = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const totalCredits = courseData ? (
+    (courseData.creditPoints?.lecture || 0) +
+    (courseData.creditPoints?.tutorial || 0) +
+    (courseData.creditPoints?.practical || 0)
+  ) : 0;
+
   useEffect(() => {
     const fetchCourseData = async () => {
       try {
         const response = await getCoursesById(codeid);
-        // Extract course data from response.course
         setCourseData(response.course);
       } catch (error) {
         console.error('Error fetching course data:', error);
@@ -30,7 +35,7 @@ const EditCourse = () => {
     setSaving(true);
     try {
       await updateCourse(codeid, courseData);
-      navigate('/course-management');
+      navigate('/courses/list');
     } catch (error) {
       console.error('Error updating course:', error);
       alert('Failed to update course');
@@ -57,10 +62,13 @@ const EditCourse = () => {
 
   return (
     <div className="p-6 space-y-6">
+      <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+        Legacy Edit Page. Prefer using the Course Details tabs from Course Management.
+      </div>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Link to="/course-management" className="text-blue-600 hover:text-blue-800">
+          <Link to="/courses/list" className="text-blue-600 hover:text-blue-800">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <h1 className="text-2xl font-bold">Edit Course - {codeid}</h1>
@@ -109,6 +117,21 @@ const EditCourse = () => {
             />
             <label>Active</label>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Course Type</label>
+            <select
+              value={courseData.courseType || ''}
+              onChange={(e) => setCourseData({...courseData, courseType: e.target.value})}
+              className="w-full p-2 border rounded"
+            >
+              <option value="">Select Type</option>
+              <option value="theory">Theory</option>
+              <option value="practical">Practical</option>
+              <option value="project">Project</option>
+            </select>
+          </div>
+
         </div>
       </div>
 
@@ -234,68 +257,53 @@ const EditCourse = () => {
         </div>
       </div>
 
-      {/* Credit Points */}
+      {/* Credit Points (L/T/P) */}
       <div className="bg-white p-4 rounded border">
-        <h2 className="text-lg font-semibold mb-4">Credit Points</h2>
-        <div className="grid grid-cols-4 gap-4">
+        <h2 className="text-lg font-semibold mb-4">Credit Points (L/T/P)</h2>
+        <div className="grid grid-cols-4 lg:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Lecture</label>
+            <label className="block text-sm font-medium mb-1">L (Lecture)</label>
             <input
               type="number"
               value={courseData.creditPoints?.lecture || 0}
               onChange={(e) => setCourseData({
-                ...courseData, 
-                creditPoints: {
-                  ...courseData.creditPoints,
-                  lecture: parseInt(e.target.value) || 0
-                }
+                ...courseData,
+                creditPoints: { ...courseData.creditPoints, lecture: parseInt(e.target.value) || 0 }
               })}
               className="w-full p-2 border rounded"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Tutorial</label>
+            <label className="block text-sm font-medium mb-1">T (Tutorial)</label>
             <input
               type="number"
               value={courseData.creditPoints?.tutorial || 0}
               onChange={(e) => setCourseData({
-                ...courseData, 
-                creditPoints: {
-                  ...courseData.creditPoints,
-                  tutorial: parseInt(e.target.value) || 0
-                }
+                ...courseData,
+                creditPoints: { ...courseData.creditPoints, tutorial: parseInt(e.target.value) || 0 }
               })}
               className="w-full p-2 border rounded"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Practical</label>
+            <label className="block text-sm font-medium mb-1">P (Practical)</label>
             <input
               type="number"
               value={courseData.creditPoints?.practical || 0}
               onChange={(e) => setCourseData({
-                ...courseData, 
-                creditPoints: {
-                  ...courseData.creditPoints,
-                  practical: parseInt(e.target.value) || 0
-                }
+                ...courseData,
+                creditPoints: { ...courseData.creditPoints, practical: parseInt(e.target.value) || 0 }
               })}
               className="w-full p-2 border rounded"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Project</label>
+            <label className="block text-sm font-medium mb-1">C (Total)</label>
             <input
               type="number"
-              value={courseData.creditPoints?.project || 0}
-              onChange={(e) => setCourseData({
-                ...courseData, 
-                creditPoints: {
-                  ...courseData.creditPoints,
-                  project: parseInt(e.target.value) || 0
-                }
-              })}
-              className="w-full p-2 border rounded"
+              value={totalCredits}
+              disabled
+              className="w-full p-2 border rounded bg-gray-100 text-gray-600 font-semibold"
             />
           </div>
         </div>

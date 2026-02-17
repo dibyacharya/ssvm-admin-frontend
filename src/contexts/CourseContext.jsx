@@ -4,8 +4,7 @@ import {
   getAllStudentCourses, 
   getCoursesById, 
   updateCourse, 
-  createCourse, 
-  uploadUsersCSV 
+  createCourse
 } from "../services/courses.service";
 
 // Create the context
@@ -20,9 +19,7 @@ export const CourseProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [updating, setUpdating] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
-  const [showUpload, setShowUpload] = useState(false);
 
   // Clear error function
   const clearError = () => {
@@ -36,7 +33,7 @@ export const CourseProvider = ({ children }) => {
       clearError();
       
       const response = await getAllCourses();
-      setCourses(response?.courseCodes || []);
+      setCourses(response?.courses || []);
       return response;
     } catch (error) {
       console.error('Error fetching courses:', error);
@@ -133,32 +130,6 @@ export const CourseProvider = ({ children }) => {
     }
   };
 
-  // Upload CSV
-  const handleUploadCSV = async (file) => {
-    try {
-      setUploading(true);
-      clearError();
-      
-      const response = await uploadUsersCSV(file);
-      
-      // Refresh courses after upload
-      await fetchCourses();
-      
-      return response;
-    } catch (error) {
-      console.error('Error uploading CSV:', error);
-      setError(error.message || 'Failed to upload CSV');
-      throw error;
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  // Toggle upload modal
-  const toggleUpload = () => {
-    setShowUpload(!showUpload);
-  };
-
   // Reset selected course
   const resetSelectedCourse = () => {
     setSelectedCourse(null);
@@ -166,9 +137,7 @@ export const CourseProvider = ({ children }) => {
 
   // Check if there are active courses
   const hasActiveCourses = () => {
-    return courses.some(courseCode => 
-      courseCode.courses && courseCode.courses.length > 0
-    );
+    return courses.some((course) => course?.isActive !== false);
   };
 
   // Get course by course code
@@ -179,9 +148,9 @@ export const CourseProvider = ({ children }) => {
   // Get all teachers from courses
   const getAllTeachers = () => {
     const teachers = [];
-    courses.forEach(courseCode => {
-      if (courseCode.teachers && courseCode.teachers.length > 0) {
-        teachers.push(...courseCode.teachers);
+    courses.forEach((course) => {
+      if (Array.isArray(course?.assignedTeachers)) {
+        teachers.push(...course.assignedTeachers);
       }
     });
     return teachers;
@@ -189,12 +158,19 @@ export const CourseProvider = ({ children }) => {
 
   // Get total student count
   const getTotalStudentCount = () => {
-    return courses.reduce((total, courseCode) => total + (courseCode.studentCount || 0), 0);
+    return courses.reduce(
+      (total, course) =>
+        total + (course?.stats?.enrolledStudentsCount ?? course?.studentCount ?? 0),
+      0
+    );
   };
 
   // Get total teacher count
   const getTotalTeacherCount = () => {
-    return courses.reduce((total, courseCode) => total + (courseCode.teacherCount || 0), 0);
+    return courses.reduce(
+      (total, course) => total + (Array.isArray(course?.assignedTeachers) ? course.assignedTeachers.length : 0),
+      0
+    );
   };
 
   const value = {
@@ -205,9 +181,7 @@ export const CourseProvider = ({ children }) => {
     loading,
     creating,
     updating,
-    uploading,
     error,
-    showUpload,
 
     // Actions
     fetchCourses,
@@ -215,9 +189,7 @@ export const CourseProvider = ({ children }) => {
     fetchCourseById,
     handleCreateCourse,
     handleUpdateCourse,
-    handleUploadCSV,
     clearError,
-    toggleUpload,
     resetSelectedCourse,
 
     // Utility functions
@@ -231,7 +203,6 @@ export const CourseProvider = ({ children }) => {
     setCourses,
     setStudentCourses,
     setSelectedCourse,
-    setShowUpload,
   };
 
   return (

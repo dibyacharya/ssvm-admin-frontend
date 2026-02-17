@@ -26,6 +26,18 @@ const roles = [
   { id: 6, name: 'Student', level: 1, color: 'bg-purple-500', description: 'Student access' }
 ];
 
+// Display-only hierarchy for the legend/chips in Role Hierarchy section.
+const roleHierarchyDisplay = [
+  { name: 'Super Admin', color: 'bg-red-500' },
+  { name: 'Dean', color: 'bg-orange-500' },
+  { name: 'Associate Dean', color: 'bg-yellow-500' },
+  { name: 'Program Coordinator', color: 'bg-emerald-500' },
+  { name: 'Course Coordinator', color: 'bg-green-500' },
+  { name: 'Teacher', color: 'bg-cyan-500' },
+  { name: 'TA', color: 'bg-blue-500' },
+  { name: 'Student', color: 'bg-purple-500' }
+];
+
 const features = [
   { id: 1, name: 'Program/Course Design', category: 'Academic', description: 'Create and modify academic programs' },
   { id: 2, name: 'Allotments', category: 'Management', description: 'Manage teacher-course assignments' },
@@ -233,11 +245,11 @@ const RBACManager = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Role Hierarchy</h2>
         <div className="flex flex-wrap gap-4">
-          {roles.map((role, index) => (
-            <div key={role.id} className="flex items-center">
+          {roleHierarchyDisplay.map((role, index) => (
+            <div key={role.name} className="flex items-center">
               <div className={`w-3 h-3 ${role.color} rounded-full mr-2`}></div>
               <span className="text-sm font-medium text-gray-700">{role.name}</span>
-              {index < roles.length - 1 && (
+              {index < roleHierarchyDisplay.length - 1 && (
                 <span className="mx-3 text-gray-400">→</span>
               )}
             </div>

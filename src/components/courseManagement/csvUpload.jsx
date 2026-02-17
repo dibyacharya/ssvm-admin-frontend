@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { Upload, FileText, AlertCircle, CheckCircle, X, File, FileSpreadsheet } from 'lucide-react';
-import { uploadUsersCSV } from '../../services/courses.service';
+import { uploadBatchStudentsCSV } from '../../services/batch.service';
 
 // Import or define your API function here
 
-const CSVUpload = ({ onClose, onSuccess, acceptedFormats = ['csv', 'xlsx', 'xls', 'json', 'txt'] }) => {
+const CSVUpload = ({ batchId, onClose, onSuccess, acceptedFormats = ['csv', 'xlsx', 'xls'] }) => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [previewData, setPreviewData] = useState(null);
+  const [allowOverride, setAllowOverride] = useState(false);
 
   const fileTypeConfig = {
     csv: { 
@@ -148,20 +149,34 @@ const CSVUpload = ({ onClose, onSuccess, acceptedFormats = ['csv', 'xlsx', 'xls'
   };
 
   const processFile = async (file) => {
-    // Use the real API call instead of dummy data
+    if (!batchId) {
+      throw new Error('Batch ID is required to upload students.');
+    }
+
     try {
-      const result = await uploadUsersCSV(file);
+      const result = await uploadBatchStudentsCSV(batchId, file, {
+        overrideAssignment: allowOverride,
+      });
       return {
-        message: result.message || 'Users uploaded successfully',
+        message: result.message || 'Students uploaded successfully',
         data: result,
         type: 'csv'
       };
     } catch (error) {
-      // Re-throw with more specific error handling
+      const mainMessage =
+        error.response?.data?.error ||
+        error.message ||
+        'Failed to upload students. Please check your file format and try again.';
+      const details = Array.isArray(error.response?.data?.errors)
+        ? error.response.data.errors
+        : [];
+      const detailPreview = details.slice(0, 5).join('\n');
+      const suffix =
+        details.length > 5 ? `\n...and ${details.length - 5} more error(s).` : '';
       throw new Error(
-        error.response?.data?.message || 
-        error.message || 
-        'Failed to upload users. Please check your file format and try again.'
+        details.length
+          ? `${mainMessage}\n${detailPreview}${suffix}`
+          : mainMessage
       );
     }
   };
@@ -216,7 +231,7 @@ const CSVUpload = ({ onClose, onSuccess, acceptedFormats = ['csv', 'xlsx', 'xls'
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Upload Users File</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Upload Students File</h2>
           {onClose && (
             <button
               onClick={onClose}
@@ -308,7 +323,7 @@ const CSVUpload = ({ onClose, onSuccess, acceptedFormats = ['csv', 'xlsx', 'xls'
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start">
             <AlertCircle className="w-5 h-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
-            <p className="text-red-700 text-sm">{error}</p>
+            <p className="text-red-700 text-sm whitespace-pre-line">{error}</p>
           </div>
         )}
 
@@ -326,7 +341,7 @@ const CSVUpload = ({ onClose, onSuccess, acceptedFormats = ['csv', 'xlsx', 'xls'
           <div className="text-sm text-blue-800 space-y-2">
             {acceptedFormats.includes('csv') && (
               <div>
-                <strong>CSV:</strong> Include headers (name, email, role, mobileNo), one record per row
+                <strong>CSV:</strong> Include headers (name, email, password, mobileNo, rollNumber, role)
               </div>
             )}
             {(acceptedFormats.includes('xlsx') || acceptedFormats.includes('xls')) && (
@@ -347,6 +362,24 @@ const CSVUpload = ({ onClose, onSuccess, acceptedFormats = ['csv', 'xlsx', 'xls'
           </div>
         </div>
 
+        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-3">
+          <label className="flex cursor-pointer items-start gap-2 text-sm text-amber-900">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={allowOverride}
+              onChange={(e) => setAllowOverride(e.target.checked)}
+              disabled={uploading}
+            />
+            <span>
+              Allow Reassign/Override existing mapping
+              <span className="block text-xs text-amber-700">
+                When enabled, existing students can be reassigned to this batch.
+              </span>
+            </span>
+          </label>
+        </div>
+
         {/* Action Buttons */}
         <div className="flex space-x-3">
           <button
@@ -361,10 +394,10 @@ const CSVUpload = ({ onClose, onSuccess, acceptedFormats = ['csv', 'xlsx', 'xls'
             {uploading ? (
               <div className="flex items-center justify-center">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                Uploading Users...
+                Uploading Students...
               </div>
             ) : (
-              'Upload Users'
+              'Upload Students'
             )}
           </button>
           

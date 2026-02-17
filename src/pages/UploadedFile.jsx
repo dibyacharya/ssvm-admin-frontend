@@ -197,6 +197,11 @@ const UploadedFile = () => {
     <div className="flex h-screen bg-gray-50 ">
       {/* Left Sidebar - Module Accordion */}
       <div className="w-80 bg-white shadow-lg border-r ">
+        <div className="px-4 pt-3">
+          <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            Legacy Material Page. Prefer Course Details tabs from Course Management.
+          </div>
+        </div>
         <div className="p-6 border-b  max-h-[120px] min-h-[120px]">
           <h2 className="text-xl font-semibold text-gray-800">Course Modules</h2>
           <p className="text-sm text-gray-600 mt-1">{courseData?.courseInfo?.title}</p>

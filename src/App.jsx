@@ -4,21 +4,25 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/auth/Login';
 import AdminLayout from './components/layout/AdminLayout';
 import Dashboard from './pages/Dashboard';
-import RBACManager from './pages/RBACManager';
 import UserManagement from './pages/UserManagement';
-import { 
- 
-  Analytics, 
-  Settings, 
-  Certificates, 
-  Forums 
-} from './pages/PlaceholderComponents';
+import ComingSoon from './components/common/ComingSoon';
 import { CourseManagement } from './pages/CourseManagement';
-import CreateCourse from './pages/CreateCourse';
-import { Scheduling } from './pages/Scheduling';
-import EditCourse from './pages/EditCourse';
-import UploadedFile from './pages/UploadedFile';
-import CourseContext, { CourseProvider } from './contexts/CourseContext';
+import ProgramManagement from './pages/ProgramManagement';
+import ProgramReview from './pages/ProgramReview';
+import BatchManagement from './pages/BatchManagement';
+import MigrationDashboard from './pages/MigrationDashboard';
+import { CourseProvider } from './contexts/CourseContext';
+import AcademicPlan from './pages/AcademicPlan';
+import GanttChart from './pages/GanttChart';
+import BatchDetail from './pages/BatchDetail';
+import ProgramOnboarding from './pages/ProgramOnboarding';
+import CohortList from './pages/CohortList';
+import CourseManagementDetails from './pages/CourseManagementDetails';
+import CourseManagementEntry from './pages/CourseManagementEntry';
+import UserProfile from './pages/UserProfile';
+import TeacherProfile from './pages/TeacherProfile';
+import RBACManager from './pages/RBACManager';
+import { Analytics, Certificates, Forums, Settings } from './pages/PlaceholderComponents';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -71,15 +75,33 @@ function App() {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="rbac" element={<RBACManager />} />
               <Route path="users" element={<UserManagement />} />
-              <Route path="courses" element={<CourseManagement />} />
-              <Route path="schedule" element={<Scheduling />} />
+              <Route path="users/:userId/profile" element={<UserProfile />} />
+              <Route path="teachers/:id/profile" element={<TeacherProfile />} />
+              <Route path="users/:userId" element={<UserManagement />} />
+              <Route path="courses" element={<CourseManagementEntry />} />
+              <Route path="courses/list" element={<CourseManagement />} />
+              <Route path="courses/:courseId" element={<CourseManagementDetails />} />
+              {/* Backward-compatible aliases */}
+              <Route path="course-management" element={<Navigate to="/courses" replace />} />
+              <Route path="course-management/:courseId" element={<CourseManagementDetails />} />
+              <Route path="programs" element={<ProgramManagement />} />
+              <Route path="programs/:programId/review" element={<ProgramReview />} />
+              <Route path="batches" element={<BatchManagement />} />
+              <Route path="schedule" element={<Navigate to="/batches" replace />} />
+              <Route path="onboarding" element={<ProgramOnboarding />} />
+              <Route path="academic-plan" element={<AcademicPlan />} />
+              <Route path="gantt" element={<GanttChart />} />
+              <Route path="batch-detail/:batchId" element={<BatchDetail />} />
+              <Route path="migration" element={<MigrationDashboard />} />
+              <Route path="enrollment" element={<Navigate to="/cohorts" replace />} />
+              <Route path="cohorts" element={<CohortList />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="certificates" element={<Certificates />} />
               <Route path="forums" element={<Forums />} />
               <Route path="settings" element={<Settings />} />
-               <Route path="create-course/:codeid" element={<CreateCourse />} />
-               <Route path="edit-course/:codeid" element={<EditCourse />} />
-                <Route path="upload-files/:courseid" element={<UploadedFile />} />
+               <Route path="create-course/:codeid" element={<Navigate to="/courses" replace />} />
+               <Route path="edit-course/:codeid" element={<Navigate to="/courses" replace />} />
+                <Route path="upload-files/:courseid" element={<Navigate to="/courses" replace />} />
             </Route>
             
             {/* Catch all route */}

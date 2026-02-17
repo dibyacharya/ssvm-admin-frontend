@@ -57,8 +57,8 @@ export const AuthProvider = ({ children }) => {
       console.error('Login error:', error);
       
       // Handle different error scenarios
-      if (error.response?.data?.message) {
-        return { success: false, error: error.response.data.message };
+      if (error.response?.data?.message || error.response?.data?.error) {
+        return { success: false, error: error.response.data.message || error.response.data.error };
       } else if (error.response?.status === 401) {
         return { success: false, error: 'Invalid credentials' };
       } else if (error.response?.status >= 500) {
@@ -93,8 +93,8 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Registration error:', error);
       
-      if (error.response?.data?.message) {
-        return { success: false, error: error.response.data.message };
+      if (error.response?.data?.message || error.response?.data?.error) {
+        return { success: false, error: error.response.data.message || error.response.data.error };
       } else if (error.response?.status >= 500) {
         return { success: false, error: 'Server error. Please try again later.' };
       } else {

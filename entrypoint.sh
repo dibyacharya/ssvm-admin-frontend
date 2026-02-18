@@ -12,7 +12,7 @@ echo "🟢 Writing runtime config to $CONFIG_PATH"
 cat <<EOF > $CONFIG_PATH
 window.RUNTIME_CONFIG = {
   BACKEND_URL: "${REACT_APP_BACKEND_URL}",
-  DEBUG_AUTH: false
+  DEBUG_AUTH: true
 };
 
 console.info("[config.js] Injected RUNTIME_CONFIG", window.RUNTIME_CONFIG);

@@ -10,7 +10,10 @@ const ensureApiBase = (value) => {
   return parts[parts.length - 1] === "api" ? normalized : `${normalized}/api`;
 };
 
-const rawEnvApiBase = import.meta.env.REACT_APP_BACKEND_URL;
+const runtimeConfig = typeof window !== "undefined" && window.RUNTIME_CONFIG;
+const rawEnvApiBase =
+  (runtimeConfig && runtimeConfig.REACT_APP_BACKEND_URL) ||
+  import.meta.env.REACT_APP_BACKEND_URL;
 const isDev = import.meta.env.DEV === true;
 const devFallbackBase = "http://localhost:5000/api";
 const selectedBase = normalizeBase(rawEnvApiBase) || (isDev ? devFallbackBase : "");

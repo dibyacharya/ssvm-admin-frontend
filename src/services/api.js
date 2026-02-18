@@ -10,7 +10,7 @@ const ensureApiBase = (value) => {
   return parts[parts.length - 1] === "api" ? normalized : `${normalized}/api`;
 };
 
-const rawEnvApiBase = import.meta.env.VITE_API_BASE_URL;
+const rawEnvApiBase = import.meta.env.REACT_APP_BACKEND_URL;
 const isDev = import.meta.env.DEV === true;
 const devFallbackBase = "http://localhost:5000/api";
 const selectedBase = normalizeBase(rawEnvApiBase) || (isDev ? devFallbackBase : "");
@@ -19,7 +19,7 @@ export const API_URL = ensureApiBase(selectedBase);
 
 if (!API_URL) {
   throw new Error(
-    "API URL is undefined. Set VITE_API_BASE_URL (e.g. http://localhost:5000/api)."
+    "API URL is undefined. Set REACT_APP_BACKEND_URL (e.g. http://localhost:5000/api)."
   );
 }
 
@@ -29,7 +29,7 @@ if (typeof window !== "undefined") {
     window.__API_URL_LOGGED__ = true;
     console.log(`[api] API_URL=${API_URL}`);
     if (isDev) {
-      console.info(`[api] raw VITE_API_BASE_URL=${rawEnvApiBase || "(empty)"}`);
+      console.info(`[api] raw REACT_APP_BACKEND_URL=${rawEnvApiBase || "(empty)"}`);
     }
   }
 }

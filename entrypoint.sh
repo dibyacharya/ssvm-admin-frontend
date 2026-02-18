@@ -3,7 +3,10 @@ set -e
 
 echo "🟢 Container entrypoint started (Node + serve)"
 
-: "${REACT_APP_BACKEND_URL:?Missing REACT_APP_BACKEND_URL}"
+: "${BACKEND_URL:?Missing BACKEND_URL environment variable}"
+
+# Default DEBUG_AUTH to false if not set
+DEBUG_AUTH="${DEBUG_AUTH:-false}"
 
 CONFIG_PATH="/app/dist/config.js"
 
@@ -11,8 +14,8 @@ echo "🟢 Writing runtime config to $CONFIG_PATH"
 
 cat <<EOF > $CONFIG_PATH
 window.RUNTIME_CONFIG = {
-  BACKEND_URL: "${REACT_APP_BACKEND_URL}",
-  DEBUG_AUTH: true
+  BACKEND_URL: "${BACKEND_URL}",
+  DEBUG_AUTH: ${DEBUG_AUTH}
 };
 
 console.info("[config.js] Injected RUNTIME_CONFIG", window.RUNTIME_CONFIG);

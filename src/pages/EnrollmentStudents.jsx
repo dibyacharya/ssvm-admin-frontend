@@ -5,9 +5,8 @@ import { getAllBatches } from '../services/batch.service';
 
 const sourceOptions = [
   { value: '', label: 'All Sources' },
-  { value: 'SMTM', label: 'SMTM' },
-  { value: 'Stream', label: 'Stream' },
-  { value: 'Bulk Upload', label: 'Bulk Upload' },
+  { value: 'BULK', label: 'Bulk Upload' },
+  { value: 'SINGLE', label: 'Manual' },
   { value: 'CRM', label: 'CRM' }
 ];
 

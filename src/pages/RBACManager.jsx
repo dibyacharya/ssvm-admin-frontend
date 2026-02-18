@@ -1,41 +1,54 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Shield,
   Save,
   RotateCcw,
-  Edit,
-  Eye,
   Plus,
-  Trash2,
   CheckCircle,
   X,
   AlertTriangle,
   Search,
-  Filter,
-  Download
+  Eye,
+  Trash2
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import {
+  listRoles,
+  createRole,
+  deleteRole as deleteRoleApi,
+  actAsRolePreview,
+  clearActAsRolePreview
+} from '../services/role.service';
 
-// RBAC Data Constants
-const roles = [
-  { id: 1, name: 'Super Admin', level: 6, color: 'bg-red-500', description: 'Full system access' },
-  { id: 2, name: 'Org Admin', level: 5, color: 'bg-orange-500', description: 'Organization level access' },
-  { id: 3, name: 'Associate Dean', level: 4, color: 'bg-yellow-500', description: 'School level access' },
-  { id: 4, name: 'Course Coordinator', level: 3, color: 'bg-green-500', description: 'Program level access' },
-  { id: 5, name: 'TA', level: 2, color: 'bg-blue-500', description: 'Teaching assistance' },
-  { id: 6, name: 'Student', level: 1, color: 'bg-purple-500', description: 'Student access' }
-];
+const SYSTEM_ROLE_COLOR_MAP = {
+  super_admin: 'bg-red-500',
+  dean: 'bg-orange-500',
+  associate_dean: 'bg-yellow-500',
+  program_coordinator: 'bg-emerald-500',
+  course_coordinator: 'bg-green-500',
+  teacher: 'bg-cyan-500',
+  ta: 'bg-blue-500',
+  student: 'bg-purple-500'
+};
 
-// Display-only hierarchy for the legend/chips in Role Hierarchy section.
-const roleHierarchyDisplay = [
-  { name: 'Super Admin', color: 'bg-red-500' },
-  { name: 'Dean', color: 'bg-orange-500' },
-  { name: 'Associate Dean', color: 'bg-yellow-500' },
-  { name: 'Program Coordinator', color: 'bg-emerald-500' },
-  { name: 'Course Coordinator', color: 'bg-green-500' },
-  { name: 'Teacher', color: 'bg-cyan-500' },
-  { name: 'TA', color: 'bg-blue-500' },
-  { name: 'Student', color: 'bg-purple-500' }
+const SYSTEM_ROLE_LEVEL_MAP = {
+  super_admin: 6,
+  dean: 5,
+  associate_dean: 4,
+  program_coordinator: 3,
+  course_coordinator: 3,
+  teacher: 2,
+  ta: 2,
+  student: 1
+};
+
+const CUSTOM_ROLE_COLORS = [
+  'bg-indigo-500',
+  'bg-pink-500',
+  'bg-teal-500',
+  'bg-lime-500',
+  'bg-fuchsia-500',
+  'bg-sky-500'
 ];
 
 const features = [
@@ -68,75 +81,204 @@ const scopes = [
   { id: 'batch', name: 'Batch', level: 1 }
 ];
 
-// Default permissions based on your specifications
-const getDefaultPermissions = () => {
-  const defaultPerms = {};
-  
-  roles.forEach(role => {
-    features.forEach(feature => {
-      actions.forEach(action => {
-        scopes.forEach(scope => {
-          const key = `${role.id}-${feature.id}-${action.id}-${scope.id}`;
-          
-          // Default logic based on your specifications
-          if (role.level >= 5) { // Super Admin, Org Admin
-            defaultPerms[key] = true;
-          } else if (role.level === 4) { // Associate Dean
-            defaultPerms[key] = action.id === 'view';
-          } else if (role.level === 3) { // Course Coordinator
-            if (feature.name === 'Course Content' && scope.level <= 2) {
-              defaultPerms[key] = true;
-            } else {
-              defaultPerms[key] = action.id === 'view';
-            }
-          } else if (role.level === 2) { // TA
-            if (feature.name === 'Course Content' && (action.id === 'view' || action.id === 'create')) {
-              defaultPerms[key] = true;
-            } else {
-              defaultPerms[key] = action.id === 'view';
-            }
-          } else { // Student
-            defaultPerms[key] = action.id === 'view' && feature.category !== 'Management';
-          }
+const toRoleKey = (value) =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+const getPermissionKey = (roleId, featureId, actionId, scopeId) =>
+  `${roleId}-${featureId}-${actionId}-${scopeId}`;
+
+const getDefaultPermissionForRole = (role, feature, action, scope) => {
+  if (role.isCustom) {
+    return action.id === 'view';
+  }
+
+  if (role.level >= 5) {
+    return true;
+  }
+
+  if (role.key === 'associate_dean') {
+    return action.id === 'view';
+  }
+
+  if (role.key === 'program_coordinator' || role.key === 'course_coordinator') {
+    if (feature.name === 'Course Content' && scope.level <= 2) {
+      return true;
+    }
+    return action.id === 'view';
+  }
+
+  if (role.key === 'teacher' || role.key === 'ta') {
+    if (feature.name === 'Course Content' && (action.id === 'view' || action.id === 'create')) {
+      return true;
+    }
+    return action.id === 'view';
+  }
+
+  return action.id === 'view' && feature.category !== 'Management';
+};
+
+const getDefaultPermissionsForRoles = (roles) => {
+  const defaults = {};
+  roles.forEach((role) => {
+    features.forEach((feature) => {
+      actions.forEach((action) => {
+        scopes.forEach((scope) => {
+          const key = getPermissionKey(role.id, feature.id, action.id, scope.id);
+          defaults[key] = getDefaultPermissionForRole(role, feature, action, scope);
         });
       });
     });
   });
-  
-  return defaultPerms;
+  return defaults;
+};
+
+const getRealRole = (user) => {
+  const actual = String(user?.actualRole || '').trim().toLowerCase();
+  if (actual) return actual;
+  const fromRole = String(user?.role || '').trim().toLowerCase();
+  if (fromRole === 'super admin') return 'admin';
+  return fromRole;
 };
 
 const RBACManager = () => {
+  const { user, updateUser } = useAuth();
+
   const [permissions, setPermissions] = useState({});
   const [originalPermissions, setOriginalPermissions] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
-  const [selectedRole, setSelectedRole] = useState(roles[0].id);
-  const [selectedFeature, setSelectedFeature] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Initialize permissions
-  useEffect(() => {
-    const defaultPerms = getDefaultPermissions();
-    setPermissions(defaultPerms);
-    setOriginalPermissions(defaultPerms);
-  }, []);
+  const [rolesLoading, setRolesLoading] = useState(false);
+  const [rolesError, setRolesError] = useState('');
+  const [apiRoles, setApiRoles] = useState([]);
 
-  // Check for changes
+  const [showAddRoleModal, setShowAddRoleModal] = useState(false);
+  const [addingRole, setAddingRole] = useState(false);
+  const [addRoleError, setAddRoleError] = useState('');
+  const [deleteRoleError, setDeleteRoleError] = useState('');
+  const [deletingRoleId, setDeletingRoleId] = useState('');
+  const [newRoleForm, setNewRoleForm] = useState({
+    label: '',
+    key: '',
+    description: '',
+    parentRoleId: '',
+    childRoleIds: []
+  });
+  const [keyTouched, setKeyTouched] = useState(false);
+
+  const [previewBusy, setPreviewBusy] = useState(false);
+  const [previewError, setPreviewError] = useState('');
+
+  const realRole = getRealRole(user);
+  const isAdminUser = realRole === 'admin';
+  const effectiveRole = String(user?.effectiveRole || '').trim().toLowerCase();
+  const isPreviewActive = Boolean(effectiveRole && effectiveRole !== realRole);
+
+  const roles = useMemo(() => {
+    const sorted = [...apiRoles].sort((a, b) => {
+      const aSystem = a?.isSystemRole === true ? 1 : 0;
+      const bSystem = b?.isSystemRole === true ? 1 : 0;
+      if (aSystem !== bSystem) return bSystem - aSystem;
+      const aOrder = Number.isFinite(Number(a?.order)) ? Number(a.order) : 9999;
+      const bOrder = Number.isFinite(Number(b?.order)) ? Number(b.order) : 9999;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      return String(a?.label || a?.key || '').localeCompare(String(b?.label || b?.key || ''));
+    });
+
+    let customColorIndex = 0;
+    return sorted.map((role) => {
+      const key = toRoleKey(role?.key);
+      const isSystemRole = role?.isSystemRole === true;
+      const color = SYSTEM_ROLE_COLOR_MAP[key]
+        ? SYSTEM_ROLE_COLOR_MAP[key]
+        : CUSTOM_ROLE_COLORS[customColorIndex++ % CUSTOM_ROLE_COLORS.length];
+
+      return {
+        id: role?._id || key,
+        key,
+        name: role?.label || role?.key || 'Role',
+        level: SYSTEM_ROLE_LEVEL_MAP[key] || 1,
+        color,
+        description: role?.description || (isSystemRole ? 'System role' : 'Custom role'),
+        isCustom: !isSystemRole,
+        raw: role
+      };
+    });
+  }, [apiRoles]);
+
+  const customRoles = useMemo(
+    () => apiRoles.filter((role) => role?.isSystemRole !== true),
+    [apiRoles]
+  );
+
+  const roleHierarchyDisplay = useMemo(
+    () => roles.map((role) => ({ name: role.name, color: role.color })),
+    [roles]
+  );
+
   useEffect(() => {
-    const hasChanged = JSON.stringify(permissions) !== JSON.stringify(originalPermissions);
-    setHasChanges(hasChanged);
+    const defaults = getDefaultPermissionsForRoles(roles);
+
+    setPermissions((prev) => {
+      if (!prev || Object.keys(prev).length === 0) return defaults;
+      const merged = { ...prev };
+      Object.keys(defaults).forEach((key) => {
+        if (merged[key] === undefined) merged[key] = defaults[key];
+      });
+      return merged;
+    });
+
+    setOriginalPermissions((prev) => {
+      if (!prev || Object.keys(prev).length === 0) return defaults;
+      const merged = { ...prev };
+      Object.keys(defaults).forEach((key) => {
+        if (merged[key] === undefined) merged[key] = defaults[key];
+      });
+      return merged;
+    });
+  }, [roles]);
+
+  useEffect(() => {
+    const changed = JSON.stringify(permissions) !== JSON.stringify(originalPermissions);
+    setHasChanges(changed);
   }, [permissions, originalPermissions]);
 
-  const getPermissionKey = (roleId, featureId, actionId, scopeId) => {
-    return `${roleId}-${featureId}-${actionId}-${scopeId}`;
+  const loadRoles = async () => {
+    setRolesLoading(true);
+    setRolesError('');
+    try {
+      const payload = await listRoles();
+      const rows = Array.isArray(payload?.roles) ? payload.roles : [];
+      setApiRoles(rows);
+      setDeleteRoleError('');
+    } catch (error) {
+      setRolesError(
+        error?.response?.data?.error ||
+          error?.response?.data?.message ||
+          error?.message ||
+          'Failed to load roles'
+      );
+      setApiRoles([]);
+    } finally {
+      setRolesLoading(false);
+    }
   };
+
+  useEffect(() => {
+    if (!isAdminUser) return;
+    loadRoles();
+  }, [isAdminUser]);
 
   const togglePermission = (roleId, featureId, actionId, scopeId) => {
     const key = getPermissionKey(roleId, featureId, actionId, scopeId);
-    setPermissions(prev => ({
+    setPermissions((prev) => ({
       ...prev,
       [key]: !prev[key]
     }));
@@ -145,65 +287,266 @@ const RBACManager = () => {
   const savePermissions = async () => {
     setSaving(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 800));
       setOriginalPermissions(permissions);
       setShowSaveModal(false);
-      
-      // Show success notification
-      console.log('Permissions saved successfully');
-    } catch (error) {
-      console.error('Error saving permissions:', error);
     } finally {
       setSaving(false);
     }
   };
 
-  const resetPermissions = () => {
-    setPermissions(originalPermissions);
+  const updateSessionAfterPreview = (payload) => {
+    if (!payload?.token) return;
+
+    localStorage.setItem('token', payload.token);
+
+    const stored = JSON.parse(localStorage.getItem('user') || '{}');
+    const nextUser = {
+      ...stored,
+      ...(user || {}),
+      ...(payload.user || {})
+    };
+
+    if (payload.effectiveRole) {
+      nextUser.effectiveRole = payload.effectiveRole;
+      nextUser.effectiveRoleLabel = payload.effectiveRoleLabel || payload.effectiveRole;
+    } else {
+      delete nextUser.effectiveRole;
+      delete nextUser.effectiveRoleLabel;
+    }
+
+    if (!nextUser.actualRole) {
+      const inferred = getRealRole(nextUser);
+      if (inferred) nextUser.actualRole = inferred;
+    }
+
+    localStorage.setItem('user', JSON.stringify(nextUser));
+    updateUser(nextUser);
   };
 
-  const filteredFeatures = features.filter(feature => {
+  const handleExitPreview = async () => {
+    setPreviewBusy(true);
+    setPreviewError('');
+    try {
+      const payload = await clearActAsRolePreview();
+      updateSessionAfterPreview(payload);
+    } catch (error) {
+      setPreviewError(
+        error?.response?.data?.error ||
+          error?.response?.data?.message ||
+          error?.message ||
+          'Failed to clear preview mode'
+      );
+    } finally {
+      setPreviewBusy(false);
+    }
+  };
+
+  const handlePreviewRoleChange = async (event) => {
+    const roleKey = event.target.value;
+    if (!roleKey) {
+      await handleExitPreview();
+      return;
+    }
+
+    setPreviewBusy(true);
+    setPreviewError('');
+    try {
+      const payload = await actAsRolePreview(roleKey);
+      updateSessionAfterPreview(payload);
+    } catch (error) {
+      setPreviewError(
+        error?.response?.data?.error ||
+          error?.response?.data?.message ||
+          error?.message ||
+          'Failed to switch preview role'
+      );
+    } finally {
+      setPreviewBusy(false);
+    }
+  };
+
+  const handleReset = async () => {
+    setPermissions(originalPermissions);
+    if (isPreviewActive) {
+      await handleExitPreview();
+    }
+  };
+
+  const handleRoleLabelChange = (value) => {
+    setNewRoleForm((prev) => ({
+      ...prev,
+      label: value,
+      key: keyTouched ? prev.key : toRoleKey(value)
+    }));
+  };
+
+  const submitCreateRole = async () => {
+    const label = String(newRoleForm.label || '').trim();
+    const key = toRoleKey(newRoleForm.key || label);
+    const description = String(newRoleForm.description || '').trim();
+    const parentRoleId = String(newRoleForm.parentRoleId || '').trim();
+    const childRoleIds = Array.isArray(newRoleForm.childRoleIds)
+      ? newRoleForm.childRoleIds.filter((id) => id && id !== parentRoleId)
+      : [];
+
+    if (!label) {
+      setAddRoleError('Role Name is required');
+      return;
+    }
+
+    setAddingRole(true);
+    setAddRoleError('');
+    try {
+      await createRole({
+        label,
+        key,
+        description,
+        parentRoleId: parentRoleId || undefined,
+        childRoleIds
+      });
+      setShowAddRoleModal(false);
+      setNewRoleForm({
+        label: '',
+        key: '',
+        description: '',
+        parentRoleId: '',
+        childRoleIds: []
+      });
+      setKeyTouched(false);
+      await loadRoles();
+    } catch (error) {
+      setAddRoleError(
+        error?.response?.data?.error ||
+          error?.response?.data?.message ||
+          error?.message ||
+          'Failed to create role'
+      );
+    } finally {
+      setAddingRole(false);
+    }
+  };
+
+  const toggleChildRoleSelection = (roleId) => {
+    setNewRoleForm((prev) => {
+      const current = Array.isArray(prev.childRoleIds) ? prev.childRoleIds : [];
+      const exists = current.includes(roleId);
+      const next = exists
+        ? current.filter((id) => id !== roleId)
+        : [...current, roleId];
+      return { ...prev, childRoleIds: next };
+    });
+  };
+
+  const handleDeleteRole = async (role) => {
+    if (!role?._id || role?.isSystemRole === true) return;
+
+    const roleName = role.label || role.key || 'this role';
+    const confirmed = window.confirm(
+      `Delete role "${roleName}"? This action deactivates the role from the active list.`
+    );
+    if (!confirmed) return;
+
+    setDeletingRoleId(role._id);
+    setDeleteRoleError('');
+    try {
+      await deleteRoleApi(role._id);
+      if (isPreviewActive && String(role.key || '').trim().toLowerCase() === effectiveRole) {
+        await handleExitPreview();
+      }
+      await loadRoles();
+    } catch (error) {
+      setDeleteRoleError(
+        error?.response?.data?.error ||
+          error?.response?.data?.message ||
+          error?.message ||
+          'Failed to delete role'
+      );
+    } finally {
+      setDeletingRoleId('');
+    }
+  };
+
+  const filteredFeatures = features.filter((feature) => {
     const matchesSearch = feature.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === 'all' || feature.category === filterCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const categories = [...new Set(features.map(f => f.category))];
+  const categories = [...new Set(features.map((feature) => feature.category))];
+
+  if (!isAdminUser) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h1 className="text-xl font-semibold text-gray-900">Roles & Permissions</h1>
+        <p className="text-sm text-red-600 mt-2">Access denied. Admin only feature.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center">
               <Shield className="w-8 h-8 text-blue-600 mr-3" />
               Roles & Permissions
             </h1>
             <p className="text-gray-600 mt-1">
-              Manage role-based access control and feature permissions
+              Manage role-based access control and preview access safely via act-as mode.
             </p>
+            {rolesError && <p className="text-sm text-red-600 mt-1">{rolesError}</p>}
+            {previewError && <p className="text-sm text-red-600 mt-1">{previewError}</p>}
+            {deleteRoleError && <p className="text-sm text-red-600 mt-1">{deleteRoleError}</p>}
           </div>
-          
-          <div className="flex items-center space-x-3">
-            {hasChanges && (
-              <div className="flex items-center text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
-                <AlertTriangle className="w-4 h-4 mr-2" />
-                Unsaved changes
-              </div>
-            )}
-            
+
+          <div className="flex items-center space-x-2 flex-wrap">
+            <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
+              <Eye className="w-4 h-4 text-gray-600" />
+              <select
+                value={isPreviewActive ? effectiveRole : ''}
+                onChange={handlePreviewRoleChange}
+                disabled={previewBusy || rolesLoading}
+                className="bg-transparent text-sm text-gray-800 focus:outline-none"
+              >
+                <option value="">Preview as role (Off)</option>
+                {apiRoles.map((role) => (
+                  <option key={role._id} value={role.key}>
+                    {role.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <button
-              onClick={resetPermissions}
-              disabled={!hasChanges}
+              onClick={() => {
+                setShowAddRoleModal(true);
+                setAddRoleError('');
+                setNewRoleForm({
+                  label: '',
+                  key: '',
+                  description: '',
+                  parentRoleId: '',
+                  childRoleIds: []
+                });
+                setKeyTouched(false);
+              }}
+              className="flex items-center px-4 py-2 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Role
+            </button>
+
+            <button
+              onClick={handleReset}
+              disabled={!hasChanges && !isPreviewActive}
               className="flex items-center px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               Reset
             </button>
-            
+
             <button
               onClick={() => setShowSaveModal(true)}
               disabled={!hasChanges}
@@ -215,33 +558,46 @@ const RBACManager = () => {
           </div>
         </div>
 
-        {/* Filters */}
+        {isPreviewActive && (
+          <div className="mb-4 flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+            <div className="text-sm text-amber-900">
+              Previewing as <span className="font-semibold">{user?.effectiveRoleLabel || effectiveRole}</span>. This does not change your real role in DB.
+            </div>
+            <button
+              onClick={handleExitPreview}
+              disabled={previewBusy}
+              className="px-3 py-1.5 text-sm rounded border border-amber-300 text-amber-900 hover:bg-amber-100 disabled:opacity-60"
+            >
+              Exit Preview
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Search features..."
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
-          
+
           <select
             value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
+            onChange={(event) => setFilterCategory(event.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="all">All Categories</option>
-            {categories.map(category => (
+            {categories.map((category) => (
               <option key={category} value={category}>{category}</option>
             ))}
           </select>
         </div>
       </div>
 
-      {/* Role Hierarchy Overview */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Role Hierarchy</h2>
         <div className="flex flex-wrap gap-4">
@@ -249,35 +605,70 @@ const RBACManager = () => {
             <div key={role.name} className="flex items-center">
               <div className={`w-3 h-3 ${role.color} rounded-full mr-2`}></div>
               <span className="text-sm font-medium text-gray-700">{role.name}</span>
-              {index < roleHierarchyDisplay.length - 1 && (
-                <span className="mx-3 text-gray-400">→</span>
-              )}
+              {index < roleHierarchyDisplay.length - 1 && <span className="mx-3 text-gray-400">→</span>}
             </div>
           ))}
         </div>
         <p className="text-sm text-gray-500 mt-2">
-          Higher roles inherit view permissions from lower roles. Edit permissions don't inherit upward.
+          Higher roles inherit view permissions from lower roles. Custom roles default to view-only until edited.
         </p>
       </div>
 
-      {/* Permission Matrix */}
+      {customRoles.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Custom Roles</h2>
+          <div className="space-y-2">
+            {customRoles.map((role) => {
+              const isDeleting = deletingRoleId === role._id;
+              return (
+                <div
+                  key={role._id}
+                  className="flex items-center justify-between rounded border border-gray-200 px-3 py-2"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{role.label || role.key}</p>
+                    <p className="text-xs text-gray-500">{role.key}</p>
+                    <p className="text-xs text-gray-500">
+                      Parent: {role?.parentRole?.label || 'None'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Children:{' '}
+                      {Array.isArray(role?.childRoles) && role.childRoles.length > 0
+                        ? role.childRoles.map((child) => child.label || child.key).join(', ')
+                        : 'None'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteRole(role)}
+                    disabled={isDeleting}
+                    className="inline-flex items-center rounded border border-red-300 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50 disabled:opacity-60"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1.5" />
+                    {isDeleting ? 'Deleting...' : 'Delete'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Permission Matrix</h2>
           <p className="text-sm text-gray-600 mt-1">
-            Configure permissions for each role, feature, action, and scope combination
+            Configure permissions for each role, feature, action, and scope combination.
           </p>
         </div>
 
         <div className="overflow-x-auto">
           <div className="min-w-max">
-            {/* Table Header */}
             <div className="bg-gray-50 border-b border-gray-200">
               <div className="flex">
                 <div className="w-64 p-4 font-medium text-gray-900 border-r border-gray-200">
                   Feature / Role
                 </div>
-                {roles.map(role => (
+                {roles.map((role) => (
                   <div key={role.id} className="w-48 p-4 text-center border-r border-gray-200">
                     <div className="flex items-center justify-center">
                       <div className={`w-3 h-3 ${role.color} rounded-full mr-2`}></div>
@@ -288,47 +679,42 @@ const RBACManager = () => {
               </div>
             </div>
 
-            {/* Permission Rows */}
-            {filteredFeatures.map(feature => (
+            {filteredFeatures.map((feature) => (
               <div key={feature.id} className="border-b border-gray-200">
-                {/* Feature Header Row */}
                 <div className="bg-gray-25 border-b border-gray-100">
                   <div className="flex">
                     <div className="w-64 p-4 border-r border-gray-200">
                       <div className="font-medium text-gray-900">{feature.name}</div>
                       <div className="text-sm text-gray-500">{feature.category}</div>
                     </div>
-                    {roles.map(role => (
+                    {roles.map((role) => (
                       <div key={role.id} className="w-48 p-4 border-r border-gray-200"></div>
                     ))}
                   </div>
                 </div>
 
-                {/* Action/Scope Grid */}
-                {actions.map(action => (
+                {actions.map((action) => (
                   <div key={action.id} className="border-b border-gray-50 last:border-b-0">
                     <div className="flex">
                       <div className="w-64 p-3 border-r border-gray-200 bg-gray-25">
-                        <div className="text-sm font-medium text-gray-700 ml-4">
-                          {action.name}
-                        </div>
+                        <div className="text-sm font-medium text-gray-700 ml-4">{action.name}</div>
                       </div>
-                      {roles.map(role => (
+                      {roles.map((role) => (
                         <div key={role.id} className="w-48 p-3 border-r border-gray-200">
                           <div className="grid grid-cols-3 gap-1">
-                            {scopes.slice(0, 6).map(scope => {
+                            {scopes.map((scope) => {
                               const permKey = getPermissionKey(role.id, feature.id, action.id, scope.id);
                               const isGranted = permissions[permKey];
-                              
                               return (
                                 <button
                                   key={scope.id}
                                   onClick={() => togglePermission(role.id, feature.id, action.id, scope.id)}
                                   className={`
                                     w-8 h-8 rounded text-xs font-medium transition-all
-                                    ${isGranted
-                                      ? 'bg-green-500 text-white shadow-sm'
-                                      : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
+                                    ${
+                                      isGranted
+                                        ? 'bg-green-500 text-white shadow-sm'
+                                        : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
                                     }
                                   `}
                                   title={`${action.name} ${feature.name} at ${scope.name} level`}
@@ -348,7 +734,6 @@ const RBACManager = () => {
           </div>
         </div>
 
-        {/* Legend */}
         <div className="p-4 bg-gray-50 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-6">
@@ -360,6 +745,7 @@ const RBACManager = () => {
                 <div className="w-4 h-4 bg-gray-200 rounded mr-2"></div>
                 <span className="text-sm text-gray-600">Denied</span>
               </div>
+              {rolesLoading && <span className="text-sm text-gray-500">Loading roles...</span>}
             </div>
             <div className="text-sm text-gray-500">
               Scope levels: U=University, S=School, D=Department, P=Program, C=Course, B=Batch
@@ -368,7 +754,130 @@ const RBACManager = () => {
         </div>
       </div>
 
-      {/* Save Modal */}
+      {showAddRoleModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Add Role</h3>
+              <button onClick={() => setShowAddRoleModal(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {addRoleError && (
+              <div className="mb-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {addRoleError}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role Name</label>
+                <input
+                  type="text"
+                  value={newRoleForm.label}
+                  onChange={(event) => handleRoleLabelChange(event.target.value)}
+                  placeholder="e.g. Content Reviewer"
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role Key</label>
+                <input
+                  type="text"
+                  value={newRoleForm.key}
+                  onChange={(event) => {
+                    setKeyTouched(true);
+                    setNewRoleForm((prev) => ({ ...prev, key: event.target.value }));
+                  }}
+                  placeholder="content_reviewer"
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
+                <textarea
+                  value={newRoleForm.description}
+                  onChange={(event) =>
+                    setNewRoleForm((prev) => ({ ...prev, description: event.target.value }))
+                  }
+                  rows={3}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Parent Role (optional)</label>
+                <select
+                  value={newRoleForm.parentRoleId}
+                  onChange={(event) =>
+                    setNewRoleForm((prev) => ({
+                      ...prev,
+                      parentRoleId: event.target.value,
+                      childRoleIds: (prev.childRoleIds || []).filter((id) => id !== event.target.value)
+                    }))
+                  }
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">No parent role</option>
+                  {apiRoles.map((role) => (
+                    <option key={role._id} value={role._id}>
+                      {role.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Child Roles (optional)</label>
+                <div className="max-h-36 overflow-auto rounded border border-gray-200 p-2 space-y-1">
+                  {apiRoles.length === 0 && (
+                    <p className="text-xs text-gray-500">No roles available</p>
+                  )}
+                  {apiRoles.map((role) => {
+                    const disabled = role._id === newRoleForm.parentRoleId;
+                    const checked = (newRoleForm.childRoleIds || []).includes(role._id);
+                    return (
+                      <label
+                        key={`child-${role._id}`}
+                        className={`flex items-center gap-2 text-sm ${disabled ? 'text-gray-400' : 'text-gray-700'}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={disabled}
+                          onChange={() => toggleChildRoleSelection(role._id)}
+                        />
+                        <span>{role.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-5">
+              <button
+                onClick={() => setShowAddRoleModal(false)}
+                disabled={addingRole}
+                className="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitCreateRole}
+                disabled={addingRole}
+                className="px-4 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
+              >
+                {addingRole ? 'Creating...' : 'Create Role'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showSaveModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
@@ -376,11 +885,11 @@ const RBACManager = () => {
               <Save className="w-6 h-6 text-blue-600 mr-3" />
               <h3 className="text-lg font-semibold text-gray-900">Save Permission Changes</h3>
             </div>
-            
+
             <p className="text-gray-600 mb-6">
               Are you sure you want to save these permission changes? This will immediately affect user access across the system.
             </p>
-            
+
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowSaveModal(false)}

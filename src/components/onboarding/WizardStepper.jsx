@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 
-const WizardStepper = ({ currentStep, completedSteps, periodLabel }) => {
+const WizardStepper = ({ currentStep, completedSteps, periodLabel, onStepClick }) => {
   const steps = [
     { number: 1, label: 'PROGRAM' },
     { number: 2, label: 'BATCH' },
@@ -22,7 +22,11 @@ const WizardStepper = ({ currentStep, completedSteps, periodLabel }) => {
             return (
               <React.Fragment key={step.number}>
                 {/* Step dot */}
-                <div className="flex flex-col items-center">
+                <button
+                  type="button"
+                  onClick={() => onStepClick?.(step.number)}
+                  className="flex flex-col items-center cursor-pointer focus:outline-none"
+                >
                   <motion.div
                     className={`
                       w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold
@@ -49,7 +53,7 @@ const WizardStepper = ({ currentStep, completedSteps, periodLabel }) => {
                   `}>
                     {step.label}
                   </span>
-                </div>
+                </button>
 
                 {/* Connecting line */}
                 {index < steps.length - 1 && (

@@ -20,6 +20,12 @@ import {
 } from '../services/program.service';
 import { getTeachers } from '../services/user.service';
 import { getPeriodLabel } from '../utils/periodLabel';
+import {
+  MODE_OF_DELIVERY,
+  MODE_OF_DELIVERY_OPTIONS,
+  getModeOfDeliveryLabel,
+  normalizeModeOfDeliveryValue,
+} from '../constants/modeOfDelivery';
 
 const ProgramManagement = () => {
   const navigate = useNavigate();
@@ -48,7 +54,7 @@ const ProgramManagement = () => {
     school: '',
     stream: '',
     totalCredits: '',
-    modeOfDelivery: 'regular',
+    modeOfDelivery: MODE_OF_DELIVERY.REGULAR,
     programCoordinator: ''
   });
 
@@ -116,7 +122,7 @@ const ProgramManagement = () => {
       school: '',
       stream: '',
       totalCredits: '',
-      modeOfDelivery: 'regular',
+      modeOfDelivery: MODE_OF_DELIVERY.REGULAR,
       programCoordinator: ''
     });
   };
@@ -129,6 +135,8 @@ const ProgramManagement = () => {
       const payload = {
         ...formData,
         stream: normalizeOptionalText(formData.stream),
+        modeOfDelivery:
+          normalizeModeOfDeliveryValue(formData.modeOfDelivery) || MODE_OF_DELIVERY.REGULAR,
         totalSemesters: Number(formData.totalSemesters),
         totalCredits: formData.totalCredits ? Number(formData.totalCredits) : undefined
       };
@@ -158,7 +166,8 @@ const ProgramManagement = () => {
       school: program.school || '',
       stream: normalizeOptionalText(program.stream),
       totalCredits: program.totalCredits?.toString() || '',
-      modeOfDelivery: program.modeOfDelivery || 'regular',
+      modeOfDelivery:
+        normalizeModeOfDeliveryValue(program.modeOfDelivery) || MODE_OF_DELIVERY.REGULAR,
       programCoordinator: program.programCoordinator?._id || program.programCoordinator || ''
     });
     setShowEditModal(true);
@@ -179,7 +188,8 @@ const ProgramManagement = () => {
         school: formData.school,
         stream: normalizeOptionalText(formData.stream),
         totalCredits: formData.totalCredits ? Number(formData.totalCredits) : undefined,
-        modeOfDelivery: formData.modeOfDelivery,
+        modeOfDelivery:
+          normalizeModeOfDeliveryValue(formData.modeOfDelivery) || MODE_OF_DELIVERY.REGULAR,
         programCoordinator: formData.programCoordinator || undefined
       };
       if (!payload.stream) delete payload.stream;
@@ -218,7 +228,13 @@ const ProgramManagement = () => {
 
   const departments = [...new Set(programs.map(p => p.department).filter(Boolean))];
   const schools = [...new Set(programs.map(p => p.school).filter(Boolean))];
-  const modes = [...new Set(programs.map(p => p.modeOfDelivery).filter(Boolean))];
+  const modes = [
+    ...new Set(
+      programs
+        .map((program) => normalizeModeOfDeliveryValue(program.modeOfDelivery))
+        .filter(Boolean)
+    )
+  ];
 
   const totalPages = pagination?.pages || 1;
 
@@ -314,7 +330,7 @@ const ProgramManagement = () => {
           >
             <option value="all">All Modes</option>
             {modes.map(m => (
-              <option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>
+              <option key={m} value={m}>{getModeOfDeliveryLabel(m, m)}</option>
             ))}
           </select>
         </div>
@@ -359,7 +375,7 @@ const ProgramManagement = () => {
               </div>
               <div className="text-sm text-gray-600">{program.department || '-'}</div>
               <div className="text-sm text-gray-600">
-                {program.modeOfDelivery ? program.modeOfDelivery.charAt(0).toUpperCase() + program.modeOfDelivery.slice(1) : '-'}
+                {getModeOfDeliveryLabel(program.modeOfDelivery)}
               </div>
               <div>
                 <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
@@ -521,9 +537,11 @@ const ProgramManagement = () => {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="regular">Regular</option>
-                    <option value="online">Online</option>
-                    <option value="wilp">WILP</option>
+                    {MODE_OF_DELIVERY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -696,9 +714,11 @@ const ProgramManagement = () => {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="regular">Regular</option>
-                    <option value="online">Online</option>
-                    <option value="wilp">WILP</option>
+                    {MODE_OF_DELIVERY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

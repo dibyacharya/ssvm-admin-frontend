@@ -1,37 +1,53 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, Users, Pencil } from 'lucide-react';
+import { RefreshCw, Users, Eye } from 'lucide-react';
 import { getCohortList } from '../services/cohort.service';
-import { getProgramsDropdown } from '../services/program.service';
+import { getProgramStreams, getProgramsDropdown } from '../services/program.service';
 import { getBatchesDropdown } from '../services/batch.service';
+import {
+  getModeOfDeliveryLabel,
+  MODE_OF_DELIVERY_OPTIONS,
+} from '../constants/modeOfDelivery';
 
-const statusOptions = [
-  { value: '', label: 'All Status' },
-  { value: 'assigned', label: 'Assigned' },
-  { value: 'not_assigned', label: 'Not Assigned' },
-];
+const BLOCK_TITLES_ALL_PROGRAMS = {
+  REGULAR: 'Regular Students',
+  WILP: 'WILP Students',
+  ONLINE: 'Online Students',
+  CERTIFICATE: 'Certificate Students',
+};
 
 const CohortList = () => {
   const navigate = useNavigate();
   const [blocks, setBlocks] = useState([]);
   const [programs, setPrograms] = useState([]);
+  const [streamOptions, setStreamOptions] = useState([]);
   const [batches, setBatches] = useState([]);
   const [filters, setFilters] = useState({
     programId: '',
     stream: '',
     batchId: '',
-    status: '',
+    modeOfDelivery: '',
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const streamOptions = useMemo(() => {
-    const values = new Set();
-    programs.forEach((program) => {
-      if (program.stream) values.add(program.stream);
-    });
-    return Array.from(values);
-  }, [programs]);
+  const selectedProgram = useMemo(
+    () => programs.find((program) => program._id === filters.programId) || null,
+    [programs, filters.programId]
+  );
+
+  const visibleBlocks = useMemo(() => {
+    if (filters.programId) return blocks;
+    return blocks.filter((block) => (block.students || []).length > 0);
+  }, [blocks, filters.programId]);
+
+  useEffect(() => {
+    if (!filters.stream) return;
+    const exists = streamOptions.some((stream) => stream === filters.stream);
+    if (!exists) {
+      setFilters((prev) => ({ ...prev, stream: '' }));
+    }
+  }, [streamOptions, filters.stream]);
 
   const fetchPrograms = async () => {
     try {
@@ -53,6 +69,18 @@ const CohortList = () => {
     }
   };
 
+  const fetchStreams = async (programId) => {
+    try {
+      const data = await getProgramStreams(
+        programId ? { programId } : {}
+      );
+      setStreamOptions(Array.isArray(data?.streams) ? data.streams : []);
+    } catch (err) {
+      console.error('Failed to load streams', err);
+      setStreamOptions([]);
+    }
+  };
+
   const fetchCohortList = async () => {
     try {
       setLoading(true);
@@ -61,7 +89,7 @@ const CohortList = () => {
       if (filters.programId) params.programId = filters.programId;
       if (filters.stream) params.stream = filters.stream;
       if (filters.batchId) params.batchId = filters.batchId;
-      if (filters.status) params.status = filters.status;
+      if (filters.modeOfDelivery) params.modeOfDelivery = filters.modeOfDelivery;
 
       const data = await getCohortList(params);
       const resultBlocks = data?.blocks || [];
@@ -76,12 +104,14 @@ const CohortList = () => {
 
   useEffect(() => {
     fetchPrograms();
+    fetchStreams();
     fetchBatches();
     fetchCohortList();
   }, []);
 
   useEffect(() => {
     fetchBatches(filters.programId);
+    fetchStreams(filters.programId);
   }, [filters.programId]);
 
   const applyFilters = (e) => {
@@ -90,21 +120,43 @@ const CohortList = () => {
   };
 
   const clearFilters = () => {
-    setFilters({ programId: '', stream: '', batchId: '', status: '' });
+    setFilters({ programId: '', stream: '', batchId: '', modeOfDelivery: '' });
     fetchCohortList();
   };
 
-  const handleEditStudent = (student) => {
-    const targetUserId = student?.userId || '';
-    if (!targetUserId) {
-      setError('Unable to open user profile for this student because userId is missing.');
+  const handleViewStudent = (student) => {
+    const targetStudentId = student?._id || '';
+    if (!targetStudentId) {
+      setError('Unable to open student details because studentId is missing.');
       return;
     }
-    navigate(`/users/${targetUserId}`);
+    navigate(`/cohorts/students/${targetStudentId}`);
+  };
+
+  const getSourceBadge = (sourceType) => {
+    const normalized = String(sourceType || "").trim().toUpperCase();
+    if (normalized === "CRM") {
+      return {
+        label: "CRM",
+        className: "bg-indigo-100 text-indigo-800",
+      };
+    }
+    if (normalized === "BULK_UPLOAD" || normalized === "BULK") {
+      return {
+        label: "Bulk Upload",
+        className: "bg-amber-100 text-amber-800",
+      };
+    }
+    return {
+      label: "Manual",
+      className: "bg-slate-100 text-slate-700",
+    };
   };
 
   const renderTable = (block) => {
-    const title = block.title || block.type;
+    const title = filters.programId
+      ? block.title || block.type
+      : BLOCK_TITLES_ALL_PROGRAMS[block.type] || 'Students';
     const students = block.students || [];
 
     return (
@@ -120,6 +172,12 @@ const CohortList = () => {
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                 <tr>
+                  {block.type === 'REGULAR' && (
+                    <>
+                      <th className="px-3 py-2 text-left">Registration Number</th>
+                      <th className="px-3 py-2 text-left">Roll Number</th>
+                    </>
+                  )}
                   {block.type === 'WILP' && (
                     <>
                       <th className="px-3 py-2 text-left">Registration Number</th>
@@ -143,6 +201,7 @@ const CohortList = () => {
                   <th className="px-3 py-2 text-left">Batch</th>
                   <th className="px-3 py-2 text-left">Stage</th>
                   <th className="px-3 py-2 text-left">Mode</th>
+                  <th className="px-3 py-2 text-left">Source</th>
                   <th className="px-3 py-2 text-left">Company Associated</th>
                   <th className="px-3 py-2 text-left">Actions</th>
                 </tr>
@@ -150,6 +209,12 @@ const CohortList = () => {
               <tbody className="divide-y divide-gray-200">
                 {students.map((student) => (
                   <tr key={student._id}>
+                    {block.type === 'REGULAR' && (
+                      <>
+                        <td className="px-3 py-2">{student.registrationNumber || '-'}</td>
+                        <td className="px-3 py-2">{student.rollNumber || '-'}</td>
+                      </>
+                    )}
                     {block.type === 'WILP' && (
                       <>
                         <td className="px-3 py-2">{student.registrationNumber || '-'}</td>
@@ -176,16 +241,25 @@ const CohortList = () => {
                         {student.stage || '-'}
                       </span>
                     </td>
-                    <td className="px-3 py-2">{student.modeOfDelivery || '-'}</td>
+                    <td className="px-3 py-2">{getModeOfDeliveryLabel(student.modeOfDelivery)}</td>
+                    <td className="px-3 py-2">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                          getSourceBadge(student.sourceType).className
+                        }`}
+                      >
+                        {getSourceBadge(student.sourceType).label}
+                      </span>
+                    </td>
                     <td className="px-3 py-2">{student.companyAssociated || '-'}</td>
                     <td className="px-3 py-2">
                       <button
                         type="button"
-                        onClick={() => handleEditStudent(student)}
+                        onClick={() => handleViewStudent(student)}
                         className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
                       >
-                        <Pencil className="h-3.5 w-3.5" />
-                        Edit
+                        <Eye className="h-3.5 w-3.5" />
+                        View
                       </button>
                     </td>
                   </tr>
@@ -242,9 +316,13 @@ const CohortList = () => {
               className="mt-1 w-full rounded-md border-gray-200 text-sm"
             >
               <option value="">All Streams</option>
-              {streamOptions.map((stream) => (
-                <option key={stream} value={stream}>{stream}</option>
-              ))}
+              {streamOptions.length === 0 ? (
+                <option value="" disabled>No streams available</option>
+              ) : (
+                streamOptions.map((stream) => (
+                  <option key={stream} value={stream}>{stream}</option>
+                ))
+              )}
             </select>
           </div>
           <div>
@@ -263,14 +341,17 @@ const CohortList = () => {
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-500">Status</label>
+            <label className="text-xs font-medium text-gray-500">Mode of Delivery</label>
             <select
-              value={filters.status}
-              onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
+              value={filters.modeOfDelivery}
+              onChange={(e) => setFilters((prev) => ({ ...prev, modeOfDelivery: e.target.value }))}
               className="mt-1 w-full rounded-md border-gray-200 text-sm"
             >
-              {statusOptions.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
+              <option value="">All Modes</option>
+              {MODE_OF_DELIVERY_OPTIONS.map((mode) => (
+                <option key={mode.value} value={mode.value}>
+                  {mode.label}
+                </option>
               ))}
             </select>
           </div>
@@ -303,9 +384,29 @@ const CohortList = () => {
           Loading cohort list...
         </div>
       ) : (
-        <div className="space-y-6">
-          {blocks.map(renderTable)}
-        </div>
+        <>
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <h2 className="text-sm font-semibold text-gray-900">
+              {filters.programId
+                ? selectedProgram?.name || 'Selected Program'
+                : 'All Programs'}
+            </h2>
+            <p className="text-xs text-gray-500 mt-1">
+              {filters.programId
+                ? 'Program-specific enrollment view.'
+                : 'Student Enrollment summary across all programs.'}
+            </p>
+          </div>
+          {visibleBlocks.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-lg p-6 text-center text-gray-600">
+              No students found.
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {visibleBlocks.map(renderTable)}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

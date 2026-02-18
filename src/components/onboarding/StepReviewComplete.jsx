@@ -10,6 +10,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { getPeriodLabel } from "../../utils/periodLabel";
+import { getModeOfDeliveryLabel } from "../../constants/modeOfDelivery";
 import { safeCredits } from "../../utils/nullSafety";
 import { updateProgram } from "../../services/program.service";
 
@@ -233,7 +234,8 @@ const StepReviewComplete = ({ state, dispatch, goBack }) => {
             <div><span className="text-gray-500">School:</span> {programData?.school || "-"}</div>
             <div><span className="text-gray-500">Stream:</span> {programData?.stream || "-"}</div>
             <div>
-              <span className="text-gray-500">Mode:</span> {programData?.modeOfDelivery || "-"}
+              <span className="text-gray-500">Mode:</span>{" "}
+              {getModeOfDeliveryLabel(programData?.modeOfDelivery)}
             </div>
             <div>
               <span className="text-gray-500">Period Type:</span> {periodLabel}

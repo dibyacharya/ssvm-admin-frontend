@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, FileText, Printer, Layers } from 'lucide-react';
 import { getProgramSheet } from '../services/program.service';
+import { getModeOfDeliveryLabel } from '../constants/modeOfDelivery';
 
 const formatDate = (dateString) => {
   if (!dateString) return '-';
@@ -129,7 +130,7 @@ const ProgramReview = () => {
             <div><span className="font-medium text-gray-900">School:</span> {program.school || '-'}</div>
             <div><span className="font-medium text-gray-900">Department:</span> {program.department || '-'}</div>
             <div><span className="font-medium text-gray-900">Stream:</span> {program.stream || '-'}</div>
-            <div><span className="font-medium text-gray-900">Mode:</span> {program.modeOfDelivery || '-'}</div>
+            <div><span className="font-medium text-gray-900">Mode:</span> {getModeOfDeliveryLabel(program.modeOfDelivery)}</div>
           </div>
           <div className="space-y-2 text-sm text-gray-700">
             <div><span className="font-medium text-gray-900">Total Periods:</span> {program.totalPeriods || '-'}</div>

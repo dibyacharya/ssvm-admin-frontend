@@ -8,9 +8,16 @@ export const downloadStudentProfileTemplate = async (format = "csv") => {
   return response;
 };
 
-export const importStudentsFromTemplate = async ({ file, mode = "dry_run" }) => {
+export const importStudentsFromTemplate = async ({
+  file,
+  mode = "dry_run",
+  programId,
+  batchId,
+}) => {
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("programId", programId);
+  formData.append("batchId", batchId);
 
   const response = await api.post("/admin/students/import", formData, {
     params: { mode },
@@ -31,3 +38,24 @@ export const getStudentImportRun = async (importRunId) => {
   return response.data;
 };
 
+export const pullFromExtraaedgeCrm = async (date) => {
+  const response = await api.get("/integrations/extraaedge/pull", {
+    params: { date },
+  });
+  return response.data;
+};
+
+export const importFromExtraaedgeCrm = async ({
+  requestedDate,
+  items,
+  programId,
+  batchId,
+}) => {
+  const response = await api.post("/integrations/extraaedge/import", {
+    requestedDate,
+    items,
+    programId,
+    batchId,
+  });
+  return response.data;
+};

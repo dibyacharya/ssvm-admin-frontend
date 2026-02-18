@@ -17,6 +17,7 @@ import GanttChart from './pages/GanttChart';
 import BatchDetail from './pages/BatchDetail';
 import ProgramOnboarding from './pages/ProgramOnboarding';
 import CohortList from './pages/CohortList';
+import EnrollmentStudentDetail from './pages/EnrollmentStudentDetail';
 import CourseManagementDetails from './pages/CourseManagementDetails';
 import CourseManagementEntry from './pages/CourseManagementEntry';
 import UserProfile from './pages/UserProfile';
@@ -95,6 +96,7 @@ function App() {
               <Route path="migration" element={<MigrationDashboard />} />
               <Route path="enrollment" element={<Navigate to="/cohorts" replace />} />
               <Route path="cohorts" element={<CohortList />} />
+              <Route path="cohorts/students/:studentId" element={<EnrollmentStudentDetail />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="certificates" element={<Certificates />} />
               <Route path="forums" element={<Forums />} />

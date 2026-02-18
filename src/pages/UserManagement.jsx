@@ -7,7 +7,6 @@ import {
   Mail,
   Phone,
   Calendar,
-  RefreshCw,
   UserPlus,
   X,
   Copy,
@@ -30,9 +29,9 @@ import {
   resetUserPassword,
   sendUserInvite
 } from '../services/user.service';
-import { downloadStudentProfileTemplate } from '../services/studentImport.service';
 import { getProgramsDropdown } from '../services/program.service';
 import { getBatchesDropdown } from '../services/batch.service';
+import { listRoles } from '../services/role.service';
 import StudentImportModal from '../components/userManagement/StudentImportModal';
 
 const DEFAULT_PERSONAL_PROFILE = {
@@ -99,6 +98,8 @@ const createDetailForm = (payload = {}) => {
       email: user.email || '',
       username: user.username || '',
       role: user.role || 'student',
+      roleKey: user.roleKey || user.role || 'student',
+      roleLabel: user.roleLabel || '',
       isActive: user.isActive !== false,
       mobileNo: user.mobileNo || '',
       inviteStatus: user.inviteStatus || null,
@@ -163,6 +164,7 @@ const normalizePayloadForSave = (form) => {
       email: form.user.email?.trim() || '',
       username: form.user.username?.trim() || '',
       role: form.user.role,
+      roleKey: form.user.roleKey || form.user.role,
       isActive: Boolean(form.user.isActive),
       mobileNo: form.user.mobileNo?.trim() || ''
     },
@@ -255,13 +257,16 @@ const UserManagement = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role: 'student',
+    roleKey: 'student',
     mobileNo: '',
     employeeId: '',
     studentType: 'regular',
     rollNumber: '',
     enrollmentNumber: ''
   });
+  const [roleOptions, setRoleOptions] = useState([]);
+  const [roleOptionsError, setRoleOptionsError] = useState('');
+  const [rolesLoading, setRolesLoading] = useState(false);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [inviteBanner, setInviteBanner] = useState(null);
@@ -300,8 +305,59 @@ const UserManagement = () => {
   const [resetError, setResetError] = useState('');
   const [resetResult, setResetResult] = useState(null);
   const [showStudentImportModal, setShowStudentImportModal] = useState(false);
-  const [templateDownloading, setTemplateDownloading] = useState(false);
-  const [templateDownloadError, setTemplateDownloadError] = useState('');
+
+  const roleOptionsByKey = useMemo(
+    () =>
+      new Map(
+        (roleOptions || []).map((role) => [
+          String(role?.key || '')
+            .trim()
+            .toLowerCase(),
+          role
+        ])
+      ),
+    [roleOptions]
+  );
+
+  const getRoleAccessRole = useCallback(
+    (roleKey) => {
+      const normalized = String(roleKey || '')
+        .trim()
+        .toLowerCase();
+      if (!normalized) return '';
+      const role = roleOptionsByKey.get(normalized);
+      return String(role?.accessRole || normalized)
+        .trim()
+        .toLowerCase();
+    },
+    [roleOptionsByKey]
+  );
+
+  const resolveDefaultRoleKey = useCallback(
+    (preferredAccessRole = 'student') => {
+      const preferred = String(preferredAccessRole || 'student')
+        .trim()
+        .toLowerCase();
+      const exact = roleOptions.find((role) => String(role?.key || '').toLowerCase() === preferred);
+      if (exact?.key) return String(exact.key).toLowerCase();
+      const byAccess = roleOptions.find(
+        (role) => String(role?.accessRole || '').toLowerCase() === preferred
+      );
+      if (byAccess?.key) return String(byAccess.key).toLowerCase();
+      return String(roleOptions[0]?.key || preferred).toLowerCase();
+    },
+    [roleOptions]
+  );
+
+  const selectedCreateAccessRole = useMemo(
+    () => getRoleAccessRole(formData.roleKey),
+    [formData.roleKey, getRoleAccessRole]
+  );
+
+  const selectedFilterAccessRole = useMemo(
+    () => getRoleAccessRole(filterRole),
+    [filterRole, getRoleAccessRole]
+  );
 
   const isDetailDirty = useMemo(() => {
     if (!detailForm || !detailBaseline) return false;
@@ -316,47 +372,41 @@ const UserManagement = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const handleDownloadStudentTemplate = useCallback(async (format) => {
-    setTemplateDownloadError('');
-    setTemplateDownloading(true);
+  const fetchRoleOptions = useCallback(async () => {
+    setRolesLoading(true);
+    setRoleOptionsError('');
     try {
-      const response = await downloadStudentProfileTemplate(format);
-      const contentType =
-        response?.headers?.['content-type'] ||
-        (format === 'xlsx'
-          ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-          : 'text/csv; charset=utf-8');
-      const blob =
-        response?.data instanceof Blob
-          ? response.data
-          : new Blob([response?.data], { type: contentType });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `student_profile_template.${format === 'xlsx' ? 'xlsx' : 'csv'}`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      const payload = await listRoles();
+      const rows = Array.isArray(payload?.roles) ? payload.roles : [];
+      setRoleOptions(rows);
     } catch (err) {
-      const message =
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        err?.message ||
-        'Failed to download template.';
-      setTemplateDownloadError(message);
+      setRoleOptions([]);
+      setRoleOptionsError(err?.response?.data?.error || err?.message || 'Failed to load roles');
     } finally {
-      setTemplateDownloading(false);
+      setRolesLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    fetchRoleOptions();
+  }, [fetchRoleOptions]);
+
+  useEffect(() => {
+    if (!showUserModal || isEditMode) return;
+    if ((formData.roleKey || '').trim()) return;
+    const nextRoleKey = resolveDefaultRoleKey('student');
+    setFormData((prev) => ({ ...prev, roleKey: nextRoleKey }));
+  }, [showUserModal, isEditMode, formData.roleKey, resolveDefaultRoleKey]);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const params = { page: currentPage, limit };
-      if (filterRole) params.role = filterRole;
+      if (filterRole) params.roleKey = filterRole;
       if (debouncedSearch) params.search = debouncedSearch;
-      if (filterRole === 'student' && filterProgramId) params.program = filterProgramId;
-      if (filterRole === 'student' && filterBatchId) params.batch = filterBatchId;
+      if (selectedFilterAccessRole === 'student' && filterProgramId) params.program = filterProgramId;
+      if (selectedFilterAccessRole === 'student' && filterBatchId) params.batch = filterBatchId;
       const data = await getUsers(params);
       setUsers(data.users || []);
       setPagination(
@@ -373,7 +423,7 @@ const UserManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, filterRole, debouncedSearch, filterProgramId, filterBatchId]);
+  }, [currentPage, filterRole, debouncedSearch, filterProgramId, filterBatchId, selectedFilterAccessRole]);
 
   useEffect(() => {
     fetchUsers();
@@ -381,19 +431,19 @@ const UserManagement = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-    if (filterRole !== 'student') {
+    if (selectedFilterAccessRole !== 'student') {
       setFilterProgramId('');
       setFilterBatchId('');
     }
-  }, [filterRole]);
+  }, [filterRole, selectedFilterAccessRole]);
 
   useEffect(() => {
-    if (filterRole === 'student') {
+    if (selectedFilterAccessRole === 'student') {
       getProgramsDropdown()
         .then((data) => setProgramsList(data || []))
         .catch(() => {});
     }
-  }, [filterRole]);
+  }, [selectedFilterAccessRole]);
 
   useEffect(() => {
     if (filterProgramId) {
@@ -425,10 +475,11 @@ const UserManagement = () => {
   }, [showDetailDrawer, detailForm?.academicProfile?.programId]);
 
   const resetUserForm = () => {
+    const defaultRoleKey = resolveDefaultRoleKey('student');
     setFormData({
       name: '',
       email: '',
-      role: 'student',
+      roleKey: defaultRoleKey,
       mobileNo: '',
       employeeId: '',
       studentType: 'regular',
@@ -448,10 +499,11 @@ const UserManagement = () => {
   const openEditUserModal = (user) => {
     setIsEditMode(true);
     setEditingUserId(user._id);
+    const currentRoleKey = String(user.roleKey || user.role || '').trim().toLowerCase() || resolveDefaultRoleKey('student');
     setFormData({
       name: user.name || '',
       email: user.email || '',
-      role: user.role || 'student',
+      roleKey: currentRoleKey,
       mobileNo: user.mobileNo || '',
       employeeId: user.teacherInfo?.employeeId || '',
       studentType:
@@ -488,11 +540,17 @@ const UserManagement = () => {
         throw new Error('Name and email are required');
       }
 
+      const selectedRoleKey = String(formData.roleKey || '').trim().toLowerCase();
+      if (!isEditMode && !selectedRoleKey) {
+        throw new Error('Role is required');
+      }
+      const mappedAccessRole = getRoleAccessRole(selectedRoleKey);
+
       if (!isEditMode) {
-        if (formData.role === 'teacher' && !formData.employeeId.trim()) {
-          throw new Error('Employee ID is required for teacher accounts');
+        if (mappedAccessRole === 'teacher' && !formData.employeeId.trim()) {
+          throw new Error('Employee ID is required for teacher/TA accounts');
         }
-        if (formData.role === 'student') {
+        if (mappedAccessRole === 'student') {
           if (formData.studentType === 'online' && !formData.enrollmentNumber.trim()) {
             throw new Error('Enrollment Number is required for online student accounts');
           }
@@ -511,13 +569,13 @@ const UserManagement = () => {
         const payload = {
           name: formData.name.trim(),
           email: formData.email.trim(),
-          role: formData.role,
+          roleKey: selectedRoleKey,
           mobileNo: formData.mobileNo.trim() || undefined,
           employeeId: formData.employeeId.trim() || undefined,
-          studentType: formData.role === 'student' ? formData.studentType : undefined,
-          rollNumber: formData.role === 'student' ? formData.rollNumber.trim() || undefined : undefined,
+          studentType: mappedAccessRole === 'student' ? formData.studentType : undefined,
+          rollNumber: mappedAccessRole === 'student' ? formData.rollNumber.trim() || undefined : undefined,
           enrollmentNumber:
-            formData.role === 'student' ? formData.enrollmentNumber.trim() || undefined : undefined
+            mappedAccessRole === 'student' ? formData.enrollmentNumber.trim() || undefined : undefined
         };
         const response = await createUser(payload);
         const inviteSent = response?.emailStatus === 'SENT';
@@ -682,7 +740,11 @@ const UserManagement = () => {
         next.personalProfile = { ...next.personalProfile, phone: value };
       }
 
-      if (section === 'user' && field === 'role' && value !== 'student') {
+      if (
+        section === 'user' &&
+        (field === 'role' || field === 'roleKey') &&
+        getRoleAccessRole(value) !== 'student'
+      ) {
         next.academicProfile = {
           ...next.academicProfile,
           programId: '',
@@ -699,6 +761,38 @@ const UserManagement = () => {
         };
       }
 
+      return next;
+    });
+  };
+
+  const handleDetailRoleChange = (roleKeyValue) => {
+    const normalizedRoleKey = String(roleKeyValue || '')
+      .trim()
+      .toLowerCase();
+    const accessRole = getRoleAccessRole(normalizedRoleKey);
+    const selectedRole = roleOptionsByKey.get(normalizedRoleKey);
+
+    setDetailSaveError('');
+    setDetailSaveSuccess('');
+    setDetailForm((prev) => {
+      if (!prev) return prev;
+      const next = {
+        ...prev,
+        user: {
+          ...prev.user,
+          roleKey: normalizedRoleKey,
+          role: accessRole,
+          roleLabel: selectedRole?.label || prev.user.roleLabel || normalizedRoleKey
+        }
+      };
+      if (accessRole !== 'student') {
+        next.academicProfile = {
+          ...next.academicProfile,
+          programId: '',
+          batchId: '',
+          rollNumber: ''
+        };
+      }
       return next;
     });
   };
@@ -833,6 +927,31 @@ const UserManagement = () => {
     };
   };
 
+  const getSourceBadge = (targetUser) => {
+    const raw =
+      targetUser?.studentInfo?.sourceType ||
+      targetUser?.sourceType ||
+      '';
+    const normalized = String(raw).trim().toUpperCase();
+
+    if (normalized === 'CRM') {
+      return {
+        label: 'CRM',
+        className: 'bg-indigo-100 text-indigo-800'
+      };
+    }
+    if (normalized === 'BULK_UPLOAD' || normalized === 'BULK') {
+      return {
+        label: 'Bulk Upload',
+        className: 'bg-amber-100 text-amber-800'
+      };
+    }
+    return {
+      label: 'Manual',
+      className: 'bg-slate-100 text-slate-700'
+    };
+  };
+
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
     return new Date(dateStr).toLocaleDateString('en-IN', {
@@ -853,7 +972,10 @@ const UserManagement = () => {
   };
 
   const getProfilePath = (targetUser) => {
-    if (targetUser?.role === 'teacher') {
+    const accessRole = String(targetUser?.roleAccessRole || targetUser?.role || '')
+      .trim()
+      .toLowerCase();
+    if (accessRole === 'teacher') {
       return `/teachers/${targetUser._id}/profile`;
     }
     return `/users/${targetUser?._id}/profile`;
@@ -861,7 +983,11 @@ const UserManagement = () => {
 
   const getUserIdDisplayInfo = (targetUser) => {
     if (!targetUser) return { label: 'User ID', value: '—' };
-    if (targetUser.role === 'teacher') {
+    const accessRole = String(targetUser.roleAccessRole || targetUser.role || '')
+      .trim()
+      .toLowerCase();
+
+    if (accessRole === 'teacher') {
       const value =
         targetUser.userId ||
         targetUser.teacherInfo?.employeeId ||
@@ -870,7 +996,7 @@ const UserManagement = () => {
       return { label: 'Employee ID / User ID', value: value || '—' };
     }
 
-    if (targetUser.role === 'student') {
+    if (accessRole === 'student') {
       const mode = String(
         targetUser.studentInfo?.program?.modeOfDelivery || targetUser.studentInfo?.mode || ''
       )
@@ -970,9 +1096,6 @@ const UserManagement = () => {
               User Management
             </h1>
             <p className="text-gray-600 mt-1">{pagination.totalUsers} total users</p>
-            {templateDownloadError && (
-              <p className="text-sm text-red-600 mt-1">{templateDownloadError}</p>
-            )}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -983,36 +1106,11 @@ const UserManagement = () => {
               Import Students
             </button>
             <button
-              onClick={() => handleDownloadStudentTemplate('csv')}
-              disabled={templateDownloading}
-              className={`flex items-center px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors ${
-                templateDownloading ? 'opacity-60 cursor-not-allowed' : ''
-              }`}
-            >
-              Template CSV
-            </button>
-            <button
-              onClick={() => handleDownloadStudentTemplate('xlsx')}
-              disabled={templateDownloading}
-              className={`flex items-center px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors ${
-                templateDownloading ? 'opacity-60 cursor-not-allowed' : ''
-              }`}
-            >
-              Template XLSX
-            </button>
-            <button
               onClick={openCreateUserModal}
               className="flex items-center px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
             >
               <UserPlus className="w-4 h-4 mr-2" />
               Add User
-            </button>
-            <button
-              onClick={fetchUsers}
-              className="flex items-center px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
             </button>
           </div>
         </div>
@@ -1035,12 +1133,14 @@ const UserManagement = () => {
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">All Roles</option>
-            <option value="admin">Admin</option>
-            <option value="teacher">Teacher</option>
-            <option value="student">Student</option>
+            {roleOptions.map((role) => (
+              <option key={role._id || role.key} value={String(role.key || '').toLowerCase()}>
+                {role.label}
+              </option>
+            ))}
           </select>
 
-          {filterRole === 'student' && (
+          {selectedFilterAccessRole === 'student' && (
             <>
               <select
                 value={filterProgramId}
@@ -1076,6 +1176,9 @@ const UserManagement = () => {
             </>
           )}
         </div>
+        {roleOptionsError && (
+          <p className="mt-2 text-sm text-red-600">{roleOptionsError}</p>
+        )}
       </div>
 
       {error && (
@@ -1194,10 +1297,18 @@ const UserManagement = () => {
                     <div className="flex items-center space-x-6">
                       <span
                         className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getRoleBadge(
-                          user.role
+                          user.roleAccessRole || user.role
                         )}`}
                       >
-                        {user.role}
+                        {user.roleLabel || user.roleKey || user.role}
+                      </span>
+
+                      <span
+                        className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                          getSourceBadge(user).className
+                        }`}
+                      >
+                        Source: {getSourceBadge(user).label}
                       </span>
 
                       <span
@@ -1369,18 +1480,24 @@ const UserManagement = () => {
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">Role *</label>
                 <select
-                  value={formData.role}
-                  onChange={(e) => handleFormChange('role', e.target.value)}
+                  value={formData.roleKey}
+                  onChange={(e) => handleFormChange('roleKey', e.target.value)}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
-                  disabled={formSubmitting || isEditMode}
+                  disabled={formSubmitting || isEditMode || rolesLoading}
                 >
-                  <option value="admin">admin</option>
-                  <option value="teacher">teacher</option>
-                  <option value="student">student</option>
+                  {roleOptions.length === 0 ? (
+                    <option value="">No roles available</option>
+                  ) : (
+                    roleOptions.map((role) => (
+                      <option key={role._id || role.key} value={String(role.key || '').toLowerCase()}>
+                        {role.label}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 
-              {!isEditMode && formData.role === 'teacher' && (
+              {!isEditMode && selectedCreateAccessRole === 'teacher' && (
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">Employee ID *</label>
                   <input
@@ -1394,7 +1511,7 @@ const UserManagement = () => {
                 </div>
               )}
 
-              {!isEditMode && formData.role === 'student' && (
+              {!isEditMode && selectedCreateAccessRole === 'student' && (
                 <>
                   <div>
                     <label className="mb-1 block text-sm font-medium text-gray-700">Student Type *</label>
@@ -1460,7 +1577,7 @@ const UserManagement = () => {
                 <button
                   type="submit"
                   className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
-                  disabled={formSubmitting}
+                  disabled={formSubmitting || (!isEditMode && !formData.roleKey)}
                 >
                   {formSubmitting ? 'Saving...' : isEditMode ? 'Update User' : 'Create User'}
                 </button>
@@ -2029,13 +2146,21 @@ const UserManagement = () => {
                         <div>
                           <label className="mb-1 block text-sm font-medium text-gray-700">Role</label>
                           <select
-                            value={detailForm.user.role}
-                            onChange={(e) => handleDetailFieldChange('user', 'role', e.target.value)}
+                            value={detailForm.user.roleKey || detailForm.user.role}
+                            onChange={(e) => handleDetailRoleChange(e.target.value)}
                             className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
                           >
-                            <option value="admin">admin</option>
-                            <option value="teacher">teacher</option>
-                            <option value="student">student</option>
+                            {roleOptions.length === 0 ? (
+                              <option value={detailForm.user.roleKey || detailForm.user.role}>
+                                {detailForm.user.roleLabel || detailForm.user.roleKey || detailForm.user.role}
+                              </option>
+                            ) : (
+                              roleOptions.map((role) => (
+                                <option key={role._id || role.key} value={String(role.key || '').toLowerCase()}>
+                                  {role.label}
+                                </option>
+                              ))
+                            )}
                           </select>
                         </div>
                         <div>

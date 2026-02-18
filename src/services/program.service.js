@@ -30,6 +30,13 @@ export const getProgramsDropdown = async () => {
   return response.data;
 };
 
+export const getProgramStreams = async (params = {}) => {
+  const query = {};
+  if (params.programId) query.programId = params.programId;
+  const response = await api.get("/programs/streams", { params: query });
+  return response.data;
+};
+
 export const getAcademicPlan = async (programId) => {
   const response = await api.get(`/programs/${programId}/academic-plan`);
   return response.data;

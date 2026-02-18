@@ -9,6 +9,11 @@ import {
 } from "../../services/program.service";
 import { getTeachers } from "../../services/user.service";
 import { getPeriodLabel } from "../../utils/periodLabel";
+import {
+  MODE_OF_DELIVERY,
+  MODE_OF_DELIVERY_OPTIONS,
+  normalizeModeOfDeliveryValue,
+} from "../../constants/modeOfDelivery";
 
 const stagger = {
   hidden: { opacity: 0 },
@@ -24,7 +29,7 @@ const emptyForm = {
   code: "",
   school: "",
   stream: "",
-  modeOfDelivery: "regular",
+  modeOfDelivery: MODE_OF_DELIVERY.REGULAR,
   description: "",
   periodType: "semester",
   totalSemesters: "",
@@ -39,7 +44,8 @@ const toProgramForm = (program) => {
     code: program.code || "",
     school: program.school || "",
     stream: program.stream || "",
-    modeOfDelivery: program.modeOfDelivery || "regular",
+    modeOfDelivery:
+      normalizeModeOfDeliveryValue(program.modeOfDelivery) || MODE_OF_DELIVERY.REGULAR,
     description: program.description || "",
     periodType: program.periodType || "semester",
     totalSemesters:
@@ -104,6 +110,12 @@ const StepProgramSetup = ({ state, dispatch, goNext }) => {
     [programs, selectedProgramId]
   );
 
+  const handleModeChange = (nextMode) => {
+    setMode(nextMode);
+    dispatch({ type: "SET_PROGRAM_MODE", mode: nextMode });
+    setError(null);
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -122,6 +134,8 @@ const StepProgramSetup = ({ state, dispatch, goNext }) => {
       if (payload.totalSemesters)
         payload.totalSemesters = Number(payload.totalSemesters);
       if (payload.totalCredits) payload.totalCredits = Number(payload.totalCredits);
+      payload.modeOfDelivery =
+        normalizeModeOfDeliveryValue(payload.modeOfDelivery) || MODE_OF_DELIVERY.REGULAR;
       if (!payload.programCoordinator) delete payload.programCoordinator;
       if (typeof payload.stream === "string") payload.stream = payload.stream.trim();
       if (!payload.stream) delete payload.stream;
@@ -198,10 +212,7 @@ const StepProgramSetup = ({ state, dispatch, goNext }) => {
 
       <div className="grid grid-cols-2 gap-4 mb-8">
         <button
-          onClick={() => {
-            setMode("create");
-            setError(null);
-          }}
+          onClick={() => handleModeChange("create")}
           className={`
             relative p-5 rounded-xl border-2 text-left transition-all
             ${
@@ -226,10 +237,7 @@ const StepProgramSetup = ({ state, dispatch, goNext }) => {
           <div className="text-xs text-gray-500 mt-0.5">Start from scratch</div>
         </button>
         <button
-          onClick={() => {
-            setMode("existing");
-            setError(null);
-          }}
+          onClick={() => handleModeChange("existing")}
           className={`
             relative p-5 rounded-xl border-2 text-left transition-all
             ${
@@ -320,9 +328,11 @@ const StepProgramSetup = ({ state, dispatch, goNext }) => {
                 onChange={handleInputChange}
                 className={inputClass}
               >
-                <option value="regular">Regular</option>
-                <option value="online">Online</option>
-                <option value="wilp">WILP</option>
+                {MODE_OF_DELIVERY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
             <div>

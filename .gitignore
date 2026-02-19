@@ -1,0 +1,9 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# mac junk
+.DS_Store
+**/.DS_Store

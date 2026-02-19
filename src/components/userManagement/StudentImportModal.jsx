@@ -8,6 +8,11 @@ import {
 } from "../../services/studentImport.service";
 import { getProgramsDropdown } from "../../services/program.service";
 import { getBatchesByProgram } from "../../services/batch.service";
+import {
+  MODE_OF_DELIVERY,
+  MODE_OF_DELIVERY_OPTIONS,
+  normalizeModeOfDeliveryValue,
+} from "../../constants/modeOfDelivery";
 
 const csvEscape = (value) => {
   const str = value === undefined || value === null ? "" : String(value);
@@ -52,11 +57,113 @@ const formatCrmDate = (value) => {
   return normalized;
 };
 
-const StudentImportModal = ({ open, onClose, onImported }) => {
+const normalizeCrmKey = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+const toCrmMap = (record = {}) => {
+  const map = new Map();
+  if (!record || typeof record !== "object" || Array.isArray(record)) return map;
+  Object.keys(record).forEach((key) => {
+    const normalized = normalizeCrmKey(key);
+    if (!normalized || map.has(normalized)) return;
+    map.set(normalized, record[key]);
+  });
+  return map;
+};
+
+const pickCrmValue = (recordMap, keys = []) => {
+  for (const key of keys) {
+    const value = String(recordMap.get(key) ?? "").trim();
+    if (value) return value;
+  }
+  return "";
+};
+
+const extractCrmPreviewRow = (record = {}) => {
+  const map = toCrmMap(record);
+  return {
+    externalId: pickCrmValue(map, [
+      "applicationformnumber",
+      "applicationformno",
+      "applicationnumber",
+      "formnumber",
+      "applicantid",
+      "leadid",
+      "rollno",
+      "rollnumber",
+    ]),
+    candidateName: pickCrmValue(map, [
+      "nameofthecandidateasinthe10thcertificate",
+      "applicantfullnameasmentionedonaadharcard",
+      "applicantfullname",
+      "fullname",
+      "name",
+    ]),
+    email: pickCrmValue(map, ["emailid", "email", "emailaddress", "kiitmailid", "personalemailid"]),
+    rollNumber: pickCrmValue(map, ["rollno", "rollnumber", "studentrollnumber"]),
+    enrollmentNumber: pickCrmValue(map, [
+      "enrollmentnumber",
+      "enrolmentnumber",
+      "enrollmentno",
+      "enrolmentno",
+    ]),
+  };
+};
+
+const verifyCrmRow = (record = {}, rowNumber = 0) => {
+  const extracted = extractCrmPreviewRow(record);
+  const errors = [];
+  if (!extracted.externalId) {
+    errors.push({
+      rowNumber,
+      field: "externalId",
+      message: "Application Form Number (externalId) is required",
+    });
+  }
+  if (!extracted.email) {
+    errors.push({
+      rowNumber,
+      field: "email",
+      message:
+        "Email is missing. Approval may fail if no existing student/user is found for this row.",
+    });
+  }
+  return { extracted, errors };
+};
+
+const StudentImportModal = ({
+  open,
+  onClose,
+  onImported,
+  variant = "regular_bulk",
+  studentMode = "regular",
+}) => {
+  const normalizedVariant = variant === "online_crm" ? "online_crm" : "regular_bulk";
+  const supportsBulkImport = normalizedVariant === "regular_bulk";
+  const supportsCrmImport = normalizedVariant === "online_crm";
+  const initialStudentModeFromProp =
+    normalizeModeOfDeliveryValue(studentMode) || MODE_OF_DELIVERY.REGULAR;
+  const initialBulkMode =
+    initialStudentModeFromProp === MODE_OF_DELIVERY.ONLINE
+      ? MODE_OF_DELIVERY.REGULAR
+      : initialStudentModeFromProp;
+  const bulkModeOptions = useMemo(
+    () =>
+      MODE_OF_DELIVERY_OPTIONS.filter(
+        (option) => option.value !== MODE_OF_DELIVERY.ONLINE
+      ),
+    []
+  );
+
   const [file, setFile] = useState(null);
+  const [bulkStudentMode, setBulkStudentMode] = useState(initialBulkMode);
   const [mode, setMode] = useState("dry_run");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [unknownColumns, setUnknownColumns] = useState([]);
   const [result, setResult] = useState(null);
   const [programs, setPrograms] = useState([]);
   const [batches, setBatches] = useState([]);
@@ -72,8 +179,13 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
   const [crmImportError, setCrmImportError] = useState("");
   const [crmImportResult, setCrmImportResult] = useState(null);
   const [selectedCrmRows, setSelectedCrmRows] = useState([]);
+  const [crmSessionCode, setCrmSessionCode] = useState("SP");
+  const [crmAdmissionYear, setCrmAdmissionYear] = useState("");
   const [templateDownloading, setTemplateDownloading] = useState(false);
   const [templateDownloadError, setTemplateDownloadError] = useState("");
+  const normalizedStudentMode = supportsCrmImport
+    ? MODE_OF_DELIVERY.ONLINE
+    : normalizeModeOfDeliveryValue(bulkStudentMode) || initialBulkMode;
 
   useEffect(() => {
     if (!open) return;
@@ -100,7 +212,7 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
     return () => {
       cancelled = true;
     };
-  }, [open]);
+  }, [open, initialStudentModeFromProp]);
 
   useEffect(() => {
     if (!open) return;
@@ -108,14 +220,30 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
     const y = now.getFullYear();
     const m = `${now.getMonth() + 1}`.padStart(2, "0");
     const d = `${now.getDate()}`.padStart(2, "0");
+    const inferredSessionCode = now.getMonth() + 1 <= 6 ? "SP" : "AU";
+    setFile(null);
+    setMode("dry_run");
+    setError("");
+    setResult(null);
+    setSelectedProgramId("");
+    setSelectedBatchId("");
     setCrmDate(`${y}-${m}-${d} 00:00:00`);
+    setCrmSessionCode(inferredSessionCode);
+    setCrmAdmissionYear(String(y));
     setCrmPullError("");
     setCrmPullResult(null);
     setCrmImportError("");
     setCrmImportResult(null);
     setSelectedCrmRows([]);
     setTemplateDownloadError("");
+    setUnknownColumns([]);
+    setBulkStudentMode(initialBulkMode);
   }, [open]);
+
+  useEffect(() => {
+    if (!open || supportsCrmImport) return;
+    setBulkStudentMode(initialBulkMode);
+  }, [open, supportsCrmImport, initialBulkMode]);
 
   useEffect(() => {
     if (!selectedProgramId) {
@@ -182,6 +310,26 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
     return Array.from(keys);
   }, [crmItems]);
 
+  const filteredPrograms = useMemo(() => {
+    return programs.filter((program) => {
+      const modeValue =
+        normalizeModeOfDeliveryValue(program?.modeOfDelivery) ||
+        MODE_OF_DELIVERY.REGULAR;
+      return modeValue === normalizedStudentMode;
+    });
+  }, [programs, normalizedStudentMode]);
+
+  useEffect(() => {
+    if (!selectedProgramId) return;
+    const isStillVisible = filteredPrograms.some(
+      (program) => String(program?._id) === String(selectedProgramId)
+    );
+    if (!isStillVisible) {
+      setSelectedProgramId("");
+      setSelectedBatchId("");
+    }
+  }, [filteredPrograms, selectedProgramId]);
+
   useEffect(() => {
     setSelectedCrmRows((prev) =>
       prev.filter((rowIndex) => Number.isInteger(rowIndex) && rowIndex >= 0 && rowIndex < crmItems.length)
@@ -195,6 +343,29 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
         .filter(Boolean),
     [crmItems, selectedCrmRows]
   );
+
+  const crmVerification = useMemo(() => {
+    const verifiedRows = selectedCrmRows
+      .map((rowIndex) => {
+        const rowNumber = rowIndex + 1;
+        const item = crmItems[rowIndex];
+        if (!item) return null;
+        const verified = verifyCrmRow(item, rowNumber);
+        return {
+          rowNumber,
+          rowIndex,
+          ...verified,
+        };
+      })
+      .filter(Boolean);
+    const errors = verifiedRows.flatMap((row) => row.errors || []);
+    return { rows: verifiedRows, errors };
+  }, [crmItems, selectedCrmRows]);
+
+  const crmImportErrors = useMemo(() => {
+    const rows = crmImportResult?.errors;
+    return Array.isArray(rows) ? rows : [];
+  }, [crmImportResult]);
 
   const allCrmRowsSelected =
     crmItems.length > 0 && selectedCrmRows.length === crmItems.length;
@@ -217,6 +388,7 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
 
   const handleFileChange = (nextFile) => {
     setError("");
+    setUnknownColumns([]);
     setResult(null);
     if (!nextFile) {
       setFile(null);
@@ -237,6 +409,9 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
   };
 
   const handleRun = async () => {
+    if (!supportsBulkImport) {
+      return;
+    }
     if (!file) {
       setError("Please choose a file first.");
       return;
@@ -251,6 +426,7 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
     }
     setSubmitting(true);
     setError("");
+    setUnknownColumns([]);
     setResult(null);
     try {
       const payload = await importStudentsFromTemplate({
@@ -258,17 +434,26 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
         mode,
         programId: selectedProgramId,
         batchId: selectedBatchId,
+        studentType: "regular",
+        studentMode: normalizedStudentMode,
       });
       setResult(payload);
       if (mode === "import" && onImported) {
         onImported(payload);
       }
     } catch (err) {
+      const unknownCols = Array.isArray(err?.response?.data?.unknownColumns)
+        ? err.response.data.unknownColumns
+        : [];
       const message =
         err?.response?.data?.error ||
         err?.response?.data?.message ||
+        (unknownCols.length > 0
+          ? "Unknown column(s) found in template upload."
+          : "") ||
         err?.message ||
         "Import failed. Please check the template and try again.";
+      setUnknownColumns(unknownCols);
       setError(message);
     } finally {
       setSubmitting(false);
@@ -310,6 +495,9 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
   };
 
   const handlePullFromCrm = async () => {
+    if (!supportsCrmImport) {
+      return;
+    }
     if (!selectedProgramId) {
       setCrmPullError("Please select a program before pulling CRM data.");
       return;
@@ -333,6 +521,8 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
     try {
       const payload = await pullFromExtraaedgeCrm(normalizedDate);
       setCrmPullResult(payload);
+      const pulledItems = Array.isArray(payload?.items) ? payload.items : [];
+      setSelectedCrmRows(pulledItems.map((_, index) => index));
     } catch (err) {
       const message =
         err?.response?.data?.error ||
@@ -345,7 +535,10 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
     }
   };
 
-  const handleImportCrm = async ({ importAll }) => {
+  const handleImportCrm = async () => {
+    if (!supportsCrmImport) {
+      return;
+    }
     if (!selectedProgramId) {
       setCrmImportError("Please select a program before importing CRM data.");
       return;
@@ -359,14 +552,26 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
       setCrmImportError("Please provide a valid CRM date.");
       return;
     }
+    const normalizedSessionCode = String(crmSessionCode || "")
+      .trim()
+      .toUpperCase();
+    if (!["AU", "SP"].includes(normalizedSessionCode)) {
+      setCrmImportError("Session code is required (AU or SP).");
+      return;
+    }
+    const admissionYearNumber = Number.parseInt(String(crmAdmissionYear || ""), 10);
+    if (!Number.isInteger(admissionYearNumber) || admissionYearNumber < 1900 || admissionYearNumber > 2100) {
+      setCrmImportError("Admission year is required and must be a valid 4-digit year.");
+      return;
+    }
 
-    const itemsToImport = importAll ? crmItems : selectedCrmItems;
+    const itemsToImport = selectedCrmItems;
     if (!Array.isArray(itemsToImport) || itemsToImport.length === 0) {
-      setCrmImportError(
-        importAll
-          ? "No CRM rows available to import."
-          : "Select at least one CRM row to import."
-      );
+      setCrmImportError("Select at least one CRM row to approve.");
+      return;
+    }
+    if (crmVerification.errors.length > 0) {
+      setCrmImportError("Fix verification errors before approving CRM rows.");
       return;
     }
 
@@ -380,6 +585,8 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
         items: itemsToImport,
         programId: selectedProgramId,
         batchId: selectedBatchId,
+        admissionYear: admissionYearNumber,
+        sessionCode: normalizedSessionCode,
       });
       setCrmImportResult(payload);
       if (onImported) {
@@ -390,7 +597,7 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
         err?.response?.data?.error ||
         err?.response?.data?.message ||
         err?.message ||
-        "Failed to import CRM data.";
+        "Failed to approve CRM data.";
       setCrmImportError(message);
     } finally {
       setCrmImporting(false);
@@ -400,18 +607,20 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-black/40"
         onClick={onClose}
         aria-hidden="true"
       />
-      <div className="relative w-full max-w-3xl bg-white rounded-lg shadow-xl border border-gray-200">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <div className="relative w-full max-w-2xl bg-white rounded-lg shadow-xl border border-gray-200 max-h-[85vh] flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
           <div className="flex items-center gap-2">
             <Upload className="w-5 h-5 text-blue-600" />
             <h2 className="text-lg font-semibold text-gray-900">
-              Import Students (Template)
+              {supportsBulkImport
+                ? `Bulk Import Students (${normalizedStudentMode})`
+                : "Online Students: CRM Pull"}
             </h2>
           </div>
           <button
@@ -423,188 +632,320 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
           </button>
         </div>
 
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-5 overflow-y-auto min-h-0">
           {error && (
             <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg p-3 text-red-800">
               <AlertCircle className="w-5 h-5 mt-0.5" />
-              <div className="text-sm">{error}</div>
+              <div className="text-sm">
+                <div>{error}</div>
+                {unknownColumns.length > 0 && (
+                  <div className="mt-2">
+                    <div className="font-semibold">Unknown columns:</div>
+                    <ul className="list-disc pl-5 mt-1 space-y-0.5">
+                      {unknownColumns.map((column) => (
+                        <li key={column}>
+                          <code>{column}</code>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
-          <div className="rounded-lg border border-gray-200 p-4 space-y-2">
-            <div className="text-sm font-medium text-gray-800">Download Template</div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleDownloadTemplate("csv")}
-                disabled={templateDownloading}
-                className={`inline-flex items-center rounded-lg px-3 py-2 text-sm text-gray-700 border border-gray-300 ${
-                  templateDownloading ? "opacity-60 cursor-not-allowed" : "hover:bg-gray-50"
-                }`}
-              >
-                Download CSV Template
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDownloadTemplate("xlsx")}
-                disabled={templateDownloading}
-                className={`inline-flex items-center rounded-lg px-3 py-2 text-sm text-gray-700 border border-gray-300 ${
-                  templateDownloading ? "opacity-60 cursor-not-allowed" : "hover:bg-gray-50"
-                }`}
-              >
-                Download XLSX Template
-              </button>
-            </div>
-            {templateDownloadError && (
-              <div className="text-xs text-red-600">{templateDownloadError}</div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upload CSV/XLSX file
-              </label>
-              <input
-                type="file"
-                accept=".csv,.xlsx,.xls"
-                onChange={(e) => handleFileChange(e.target.files?.[0])}
-                className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-              />
-              {file && (
-                <div className="mt-2 text-xs text-gray-600 flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  <span>{file.name}</span>
+          {supportsBulkImport && (
+            <>
+              <div className="rounded-lg border border-gray-200 p-4 space-y-2">
+                <div className="text-sm font-medium text-gray-800">
+                  Download Template
                 </div>
-              )}
-            </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadTemplate("csv")}
+                    disabled={templateDownloading}
+                    className={`inline-flex items-center rounded-lg px-3 py-2 text-sm text-gray-700 border border-gray-300 ${
+                      templateDownloading ? "opacity-60 cursor-not-allowed" : "hover:bg-gray-50"
+                    }`}
+                  >
+                    Download CSV Template
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadTemplate("xlsx")}
+                    disabled={templateDownloading}
+                    className={`inline-flex items-center rounded-lg px-3 py-2 text-sm text-gray-700 border border-gray-300 ${
+                      templateDownloading ? "opacity-60 cursor-not-allowed" : "hover:bg-gray-50"
+                    }`}
+                  >
+                    Download XLSX Template
+                  </button>
+                </div>
+                {templateDownloadError && (
+                  <div className="text-xs text-red-600">{templateDownloadError}</div>
+                )}
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Program <span className="text-red-600">*</span>
-              </label>
-              <select
-                value={selectedProgramId}
-                onChange={(e) => {
-                  setSelectedProgramId(e.target.value);
-                  setSelectedBatchId("");
-                  setError("");
-                  setResult(null);
-                }}
-                disabled={loadingPrograms || submitting}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-              >
-                <option value="">Select Program</option>
-                {programs.map((program) => (
-                  <option key={program._id} value={program._id}>
-                    {program.code ? `${program.code} - ${program.name}` : program.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Batch <span className="text-red-600">*</span>
-              </label>
-              <select
-                value={selectedBatchId}
-                onChange={(e) => {
-                  setSelectedBatchId(e.target.value);
-                  setError("");
-                  setResult(null);
-                }}
-                disabled={!selectedProgramId || loadingBatches || submitting}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-              >
-                <option value="">
-                  {!selectedProgramId
-                    ? "Select Program first"
-                    : loadingBatches
-                    ? "Loading batches..."
-                    : "Select Batch"}
-                </option>
-                {batches.map((batch) => (
-                  <option key={batch._id} value={batch._id}>
-                    {batch.name || `Batch ${batch.year || ""}`.trim()}
-                  </option>
-                ))}
-              </select>
-              {selectedProgramId && !loadingBatches && batches.length === 0 && (
-                <p className="mt-1 text-xs text-amber-700">
-                  No active batches found for the selected program.
-                </p>
-              )}
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mode
-              </label>
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm text-gray-700">
-                  <input
-                    type="radio"
-                    name="importMode"
-                    value="dry_run"
-                    checked={mode === "dry_run"}
-                    onChange={() => setMode("dry_run")}
-                  />
-                  Dry Run
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Student Mode
                 </label>
-                <label className="flex items-center gap-2 text-sm text-gray-700">
+                <select
+                  value={bulkStudentMode}
+                  onChange={(e) => {
+                    setBulkStudentMode(e.target.value);
+                    setSelectedProgramId("");
+                    setSelectedBatchId("");
+                    setError("");
+                    setResult(null);
+                  }}
+                  disabled={submitting}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                >
+                  {bulkModeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Upload CSV/XLSX file
+                  </label>
                   <input
-                    type="radio"
-                    name="importMode"
-                    value="import"
-                    checked={mode === "import"}
-                    onChange={() => setMode("import")}
+                    type="file"
+                    accept=".csv,.xlsx,.xls"
+                    onChange={(e) => handleFileChange(e.target.files?.[0])}
+                    className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                   />
-                  Import
-                </label>
+                  {file && (
+                    <div className="mt-2 text-xs text-gray-600 flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      <span>{file.name}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Program <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    value={selectedProgramId}
+                    onChange={(e) => {
+                      setSelectedProgramId(e.target.value);
+                      setSelectedBatchId("");
+                      setError("");
+                      setResult(null);
+                    }}
+                    disabled={loadingPrograms || submitting}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  >
+                    <option value="">Select Program ({normalizedStudentMode})</option>
+                    {filteredPrograms.map((program) => (
+                      <option key={program._id} value={program._id}>
+                        {program.code ? `${program.code} - ${program.name}` : program.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Batch <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    value={selectedBatchId}
+                    onChange={(e) => {
+                      setSelectedBatchId(e.target.value);
+                      setError("");
+                      setResult(null);
+                    }}
+                    disabled={!selectedProgramId || loadingBatches || submitting}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  >
+                    <option value="">
+                      {!selectedProgramId
+                        ? "Select Program first"
+                        : loadingBatches
+                        ? "Loading batches..."
+                        : "Select Batch"}
+                    </option>
+                    {batches.map((batch) => (
+                      <option key={batch._id} value={batch._id}>
+                        {batch.name || `Batch ${batch.year || ""}`.trim()}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedProgramId && !loadingBatches && batches.length === 0 && (
+                    <p className="mt-1 text-xs text-amber-700">
+                      No active batches found for the selected program.
+                    </p>
+                  )}
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Run Mode
+                  </label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="radio"
+                        name="importMode"
+                        value="dry_run"
+                        checked={mode === "dry_run"}
+                        onChange={() => setMode("dry_run")}
+                      />
+                      Dry Run
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="radio"
+                        name="importMode"
+                        value="import"
+                        checked={mode === "import"}
+                        onChange={() => setMode("import")}
+                      />
+                      Import
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleRun}
+                  disabled={
+                    submitting ||
+                    !file ||
+                    !selectedProgramId ||
+                    !selectedBatchId ||
+                    loadingPrograms ||
+                    loadingBatches
+                  }
+                  className={`inline-flex items-center px-4 py-2 rounded-lg text-white transition-colors ${
+                    submitting ||
+                    !file ||
+                    !selectedProgramId ||
+                    !selectedBatchId ||
+                    loadingPrograms ||
+                    loadingBatches
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-700"
+                  }`}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {submitting ? "Running..." : mode === "import" ? "Import" : "Dry Run"}
+                </button>
+
+                {errors.length > 0 && (
+                  <button
+                    onClick={handleDownloadErrors}
+                    className="inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    Download Error Report (CSV)
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+
+          {supportsCrmImport && (
+            <div className="rounded-lg border border-gray-200 p-4 space-y-4">
+              <div className="text-sm font-medium text-gray-800">
+                Online Intake Parameters
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Program <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    value={selectedProgramId}
+                    onChange={(e) => {
+                      setSelectedProgramId(e.target.value);
+                      setSelectedBatchId("");
+                      setCrmPullError("");
+                      setCrmImportError("");
+                    }}
+                    disabled={loadingPrograms || pullingCrm || crmImporting}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  >
+                    <option value="">Select Program (ONLINE)</option>
+                    {filteredPrograms.map((program) => (
+                      <option key={program._id} value={program._id}>
+                        {program.code ? `${program.code} - ${program.name}` : program.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Batch <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    value={selectedBatchId}
+                    onChange={(e) => {
+                      setSelectedBatchId(e.target.value);
+                      setCrmPullError("");
+                      setCrmImportError("");
+                    }}
+                    disabled={!selectedProgramId || loadingBatches || pullingCrm || crmImporting}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  >
+                    <option value="">
+                      {!selectedProgramId
+                        ? "Select Program first"
+                        : loadingBatches
+                        ? "Loading batches..."
+                        : "Select Batch"}
+                    </option>
+                    {batches.map((batch) => (
+                      <option key={batch._id} value={batch._id}>
+                        {batch.name || `Batch ${batch.year || ""}`.trim()}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Session Code <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    value={crmSessionCode}
+                    onChange={(e) => setCrmSessionCode(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="SP">SP (Spring)</option>
+                    <option value="AU">AU (Autumn)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Admission Year <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1900"
+                    max="2100"
+                    value={crmAdmissionYear}
+                    onChange={(e) => setCrmAdmissionYear(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleRun}
-              disabled={
-                submitting ||
-                !file ||
-                !selectedProgramId ||
-                !selectedBatchId ||
-                loadingPrograms ||
-                loadingBatches
-              }
-              className={`inline-flex items-center px-4 py-2 rounded-lg text-white transition-colors ${
-                submitting ||
-                !file ||
-                !selectedProgramId ||
-                !selectedBatchId ||
-                loadingPrograms ||
-                loadingBatches
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
-              }`}
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              {submitting ? "Running..." : mode === "import" ? "Import" : "Dry Run"}
-            </button>
-
-            {errors.length > 0 && (
-              <button
-                onClick={handleDownloadErrors}
-                className="inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-              >
-                Download Error Report (CSV)
-              </button>
-            )}
-          </div>
-
-          <div className="rounded-lg border border-gray-200 p-4 space-y-3">
+          {supportsCrmImport && (
+            <div className="rounded-lg border border-gray-200 p-4 space-y-3">
             <div className="flex flex-wrap items-end gap-3">
               <div className="min-w-[220px]">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -654,7 +995,7 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
             {crmItems.length > 0 && crmColumns.length > 0 && (
               <div className="border border-gray-200 rounded-lg overflow-hidden">
                 <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-800">
-                  CRM Parsed Preview ({Math.min(crmItems.length, 25)} of {crmItems.length})
+                  Verification Preview ({Math.min(crmItems.length, 25)} of {crmItems.length})
                 </div>
                 <div className="px-3 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 bg-white">
                   <label className="inline-flex items-center gap-2 text-xs text-gray-700">
@@ -668,27 +1009,34 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => handleImportCrm({ importAll: false })}
-                      disabled={crmImporting || selectedCrmItems.length === 0}
+                      onClick={handleImportCrm}
+                      disabled={
+                        crmImporting ||
+                        selectedCrmItems.length === 0 ||
+                        crmVerification.errors.length > 0
+                      }
                       className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium text-white ${
-                        crmImporting || selectedCrmItems.length === 0
+                        crmImporting ||
+                        selectedCrmItems.length === 0 ||
+                        crmVerification.errors.length > 0
                           ? "bg-gray-400 cursor-not-allowed"
                           : "bg-blue-600 hover:bg-blue-700"
                       }`}
                     >
-                      {crmImporting ? "Importing..." : "Import Selected"}
+                      {crmImporting ? "Approving..." : "Approve & Create Users"}
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleImportCrm({ importAll: true })}
-                      disabled={crmImporting || crmItems.length === 0}
-                      className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium text-white ${
-                        crmImporting || crmItems.length === 0
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-emerald-600 hover:bg-emerald-700"
-                      }`}
+                      onClick={() => {
+                        setCrmPullResult(null);
+                        setSelectedCrmRows([]);
+                        setCrmImportError("");
+                        setCrmImportResult(null);
+                      }}
+                      disabled={crmImporting}
+                      className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
                     >
-                      {crmImporting ? "Importing..." : "Import All"}
+                      Cancel
                     </button>
                   </div>
                 </div>
@@ -727,6 +1075,44 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
               </div>
             )}
 
+            {selectedCrmRows.length > 0 && (
+              <div className="rounded-lg border border-gray-200 p-3">
+                <div className="text-sm font-semibold text-gray-800 mb-2">Verification Result</div>
+                <div className="text-xs text-gray-600">
+                  Selected rows: {selectedCrmRows.length} | Validation errors:{" "}
+                  {crmVerification.errors.length}
+                </div>
+              </div>
+            )}
+
+            {crmVerification.errors.length > 0 && (
+              <div className="border border-red-200 rounded-lg overflow-hidden">
+                <div className="px-3 py-2 bg-red-50 border-b border-red-200 text-sm font-semibold text-red-800">
+                  Verification Errors
+                </div>
+                <div className="max-h-48 overflow-auto">
+                  <table className="min-w-full text-xs">
+                    <thead className="bg-white sticky top-0">
+                      <tr className="text-left text-gray-600">
+                        <th className="px-3 py-2">Row</th>
+                        <th className="px-3 py-2">Field</th>
+                        <th className="px-3 py-2">Message</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {crmVerification.errors.map((item, index) => (
+                        <tr key={`crm-verify-error-${index}`}>
+                          <td className="px-3 py-2">{item.rowNumber}</td>
+                          <td className="px-3 py-2">{item.field}</td>
+                          <td className="px-3 py-2">{item.message}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             {crmImportError && (
               <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-2">
                 {crmImportError}
@@ -735,13 +1121,41 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
 
             {crmImportResult?.counts && (
               <div className="text-sm text-gray-700 bg-emerald-50 border border-emerald-200 rounded p-2">
-                <span className="font-semibold">CRM Import:</span>{" "}
+                <span className="font-semibold">CRM Approve:</span>{" "}
                 created {crmImportResult.counts.created ?? 0}, updated{" "}
                 {crmImportResult.counts.updated ?? 0}, failed{" "}
                 {crmImportResult.counts.failed ?? 0}
               </div>
             )}
-          </div>
+            {crmImportErrors.length > 0 && (
+              <div className="border border-red-200 rounded-lg overflow-hidden">
+                <div className="px-3 py-2 bg-red-50 border-b border-red-200 text-sm font-semibold text-red-800">
+                  Approval Errors
+                </div>
+                <div className="max-h-48 overflow-auto">
+                  <table className="min-w-full text-xs">
+                    <thead className="bg-white sticky top-0">
+                      <tr className="text-left text-gray-600">
+                        <th className="px-3 py-2">Row</th>
+                        <th className="px-3 py-2">Field</th>
+                        <th className="px-3 py-2">Message</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {crmImportErrors.map((item, index) => (
+                        <tr key={`crm-import-error-${index}`}>
+                          <td className="px-3 py-2">{item.rowNumber ?? "-"}</td>
+                          <td className="px-3 py-2">{item.field || "-"}</td>
+                          <td className="px-3 py-2">{item.message || "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            </div>
+          )}
 
           {result?.summary && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -792,37 +1206,51 @@ const StudentImportModal = ({ open, onClose, onImported }) => {
             </div>
           )}
 
-          {errors.length > 0 && (
+          {result?.summary && (
             <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-              <div className="px-4 py-2 bg-gray-50 border-b border-gray-200 font-semibold text-gray-800">
-                Errors ({errors.length})
+              <div className="px-4 py-2 bg-gray-50 border-b border-gray-200 font-semibold text-gray-800 flex items-center justify-between gap-2">
+                <span>Errors ({errors.length})</span>
+                {errors.length > 0 && (
+                  <button
+                    onClick={handleDownloadErrors}
+                    className="inline-flex items-center px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Download Errors CSV
+                  </button>
+                )}
               </div>
-              <div className="max-h-64 overflow-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-white sticky top-0">
-                    <tr className="text-left text-gray-600">
-                      <th className="px-4 py-2">Row</th>
-                      <th className="px-4 py-2">Field</th>
-                      <th className="px-4 py-2">Message</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {errors.slice(0, 250).map((err, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50">
-                        <td className="px-4 py-2 font-mono text-gray-800">
-                          {err?.rowNumber ?? "-"}
-                        </td>
-                        <td className="px-4 py-2 font-mono text-gray-700">
-                          {err?.field ?? "-"}
-                        </td>
-                        <td className="px-4 py-2 text-gray-700">
-                          {err?.message ?? "-"}
-                        </td>
+              {errors.length === 0 ? (
+                <div className="px-4 py-3 text-sm text-green-700">
+                  No row-wise errors found in this run.
+                </div>
+              ) : (
+                <div className="max-h-64 overflow-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-white sticky top-0">
+                      <tr className="text-left text-gray-600">
+                        <th className="px-4 py-2">Row</th>
+                        <th className="px-4 py-2">Field</th>
+                        <th className="px-4 py-2">Message</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {errors.slice(0, 250).map((err, idx) => (
+                        <tr key={idx} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 font-mono text-gray-800">
+                            {err?.rowNumber ?? "-"}
+                          </td>
+                          <td className="px-4 py-2 font-mono text-gray-700">
+                            {err?.field ?? "-"}
+                          </td>
+                          <td className="px-4 py-2 text-gray-700">
+                            {err?.message ?? "-"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
               {errors.length > 250 && (
                 <div className="px-4 py-2 text-xs text-gray-500">
                   Showing first 250 errors of {errors.length}.

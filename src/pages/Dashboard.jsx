@@ -25,6 +25,10 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [roleCourses, setRoleCourses] = useState([]);
+  const displayName =
+    typeof user?.name === 'string'
+      ? user.name.replace(/KIT ADMIN/gi, 'KIIT ADMIN')
+      : user?.name;
 
   useEffect(() => {
     if (user?.role === 'teacher') {
@@ -125,7 +129,7 @@ const Dashboard = () => {
       <div className="space-y-6">
         <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg shadow-lg text-white p-6">
           <h1 className="text-2xl font-bold mb-2">
-            Welcome back, {user?.name}!
+            Welcome back, {displayName}!
           </h1>
           <p className="text-emerald-100">
             {user?.role === 'teacher' ? 'Here are your assigned courses.' : 'Here are your enrolled courses.'}
@@ -213,7 +217,7 @@ const Dashboard = () => {
       {/* Welcome Header */}
       <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg shadow-lg text-white p-6">
         <h1 className="text-2xl font-bold mb-2">
-          Welcome back, {user?.name}!
+          Welcome back, {displayName}!
         </h1>
         <p className="text-emerald-100">
           Here's what's happening in your OneCampus system today.

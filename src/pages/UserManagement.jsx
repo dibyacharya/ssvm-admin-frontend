@@ -33,11 +33,16 @@ import { getProgramsDropdown } from '../services/program.service';
 import { getBatchesDropdown } from '../services/batch.service';
 import { listRoles } from '../services/role.service';
 import StudentImportModal from '../components/userManagement/StudentImportModal';
+import {
+  MODE_OF_DELIVERY,
+  normalizeModeOfDeliveryValue
+} from '../constants/modeOfDelivery';
 
 const DEFAULT_PERSONAL_PROFILE = {
   fullName: '',
   email: '',
   phone: '',
+  designation: '',
   dob: '',
   gender: '',
   bloodGroup: '',
@@ -97,6 +102,7 @@ const createDetailForm = (payload = {}) => {
       name: user.name || '',
       email: user.email || '',
       username: user.username || '',
+      designation: user.designation || personalProfile.designation || '',
       role: user.role || 'student',
       roleKey: user.roleKey || user.role || 'student',
       roleLabel: user.roleLabel || '',
@@ -109,6 +115,7 @@ const createDetailForm = (payload = {}) => {
     personalProfile: {
       ...DEFAULT_PERSONAL_PROFILE,
       ...personalProfile,
+      designation: personalProfile.designation || user.designation || '',
       dob: personalProfile?.dob ? String(personalProfile.dob).slice(0, 10) : ''
     },
     academicProfile: {
@@ -239,6 +246,20 @@ const normalizePayloadForSave = (form) => {
   return normalized;
 };
 
+const USER_MANAGEMENT_SECTIONS = [
+  { id: 'student', label: 'Student' },
+  { id: 'teacher', label: 'Teacher' },
+  { id: 'executive', label: 'Executive Staff' }
+];
+
+const STUDENT_MODE_OPTIONS = [
+  { id: MODE_OF_DELIVERY.REGULAR, label: 'Regular' },
+  { id: MODE_OF_DELIVERY.ONLINE, label: 'Online' },
+  { id: MODE_OF_DELIVERY.WILP, label: 'WILP' }
+];
+
+const currentYearString = () => String(new Date().getFullYear());
+
 const UserManagement = () => {
   const navigate = useNavigate();
   const { userId: routeUserId = '' } = useParams();
@@ -260,9 +281,26 @@ const UserManagement = () => {
     roleKey: 'student',
     mobileNo: '',
     employeeId: '',
+    designation: '',
     studentType: 'regular',
+    studentMode: MODE_OF_DELIVERY.REGULAR,
     rollNumber: '',
-    enrollmentNumber: ''
+    enrollmentNumber: '',
+    programId: '',
+    admissionYear: currentYearString(),
+    sessionCode: 'SP'
+  });
+  const [activeUserSection, setActiveUserSection] = useState('student');
+  const [studentModeSelection, setStudentModeSelection] = useState(MODE_OF_DELIVERY.REGULAR);
+  const [studentModeFilter, setStudentModeFilter] = useState('');
+  const [createContext, setCreateContext] = useState({
+    flow: 'generic',
+    roleLocked: false,
+  });
+  const [studentImportModalConfig, setStudentImportModalConfig] = useState({
+    open: false,
+    variant: 'regular_bulk',
+    studentMode: MODE_OF_DELIVERY.REGULAR
   });
   const [roleOptions, setRoleOptions] = useState([]);
   const [roleOptionsError, setRoleOptionsError] = useState('');
@@ -304,7 +342,6 @@ const UserManagement = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState('');
   const [resetResult, setResetResult] = useState(null);
-  const [showStudentImportModal, setShowStudentImportModal] = useState(false);
 
   const roleOptionsByKey = useMemo(
     () =>
@@ -354,9 +391,25 @@ const UserManagement = () => {
     [formData.roleKey, getRoleAccessRole]
   );
 
+  const selectedCreateRoleOption = useMemo(() => {
+    const key = String(formData.roleKey || '').trim().toLowerCase();
+    return roleOptionsByKey.get(key) || null;
+  }, [formData.roleKey, roleOptionsByKey]);
+
   const selectedFilterAccessRole = useMemo(
     () => getRoleAccessRole(filterRole),
     [filterRole, getRoleAccessRole]
+  );
+  const isStudentSectionActive =
+    activeUserSection === 'student' || selectedFilterAccessRole === 'student';
+
+  const onlinePrograms = useMemo(
+    () =>
+      profilePrograms.filter(
+        (program) =>
+          normalizeModeOfDeliveryValue(program?.modeOfDelivery) === MODE_OF_DELIVERY.ONLINE
+      ),
+    [profilePrograms]
   );
 
   const isDetailDirty = useMemo(() => {
@@ -398,15 +451,35 @@ const UserManagement = () => {
     setFormData((prev) => ({ ...prev, roleKey: nextRoleKey }));
   }, [showUserModal, isEditMode, formData.roleKey, resolveDefaultRoleKey]);
 
+  useEffect(() => {
+    if (!showUserModal || isEditMode || createContext.flow !== 'executive_add') return;
+    if (!roleOptions.length) return;
+    const executiveRoleKey = resolveDefaultRoleKey('admin');
+    setFormData((prev) =>
+      prev.roleKey === executiveRoleKey ? prev : { ...prev, roleKey: executiveRoleKey }
+    );
+  }, [showUserModal, isEditMode, createContext.flow, roleOptions, resolveDefaultRoleKey]);
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const params = { page: currentPage, limit };
-      if (filterRole) params.roleKey = filterRole;
+      if (filterRole) {
+        params.roleKey = filterRole;
+      } else if (activeUserSection === 'student') {
+        params.role = 'student';
+      } else if (activeUserSection === 'teacher') {
+        params.role = 'teacher';
+      } else if (activeUserSection === 'executive') {
+        params.role = 'admin';
+      }
       if (debouncedSearch) params.search = debouncedSearch;
-      if (selectedFilterAccessRole === 'student' && filterProgramId) params.program = filterProgramId;
-      if (selectedFilterAccessRole === 'student' && filterBatchId) params.batch = filterBatchId;
+      if (isStudentSectionActive && filterProgramId) params.program = filterProgramId;
+      if (isStudentSectionActive && filterBatchId) params.batch = filterBatchId;
+      if (isStudentSectionActive && studentModeFilter) {
+        params.mode = studentModeFilter;
+      }
       const data = await getUsers(params);
       setUsers(data.users || []);
       setPagination(
@@ -423,7 +496,16 @@ const UserManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, filterRole, debouncedSearch, filterProgramId, filterBatchId, selectedFilterAccessRole]);
+  }, [
+    currentPage,
+    filterRole,
+    activeUserSection,
+    debouncedSearch,
+    filterProgramId,
+    filterBatchId,
+    isStudentSectionActive,
+    studentModeFilter
+  ]);
 
   useEffect(() => {
     fetchUsers();
@@ -431,19 +513,36 @@ const UserManagement = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-    if (selectedFilterAccessRole !== 'student') {
+    if (!isStudentSectionActive) {
       setFilterProgramId('');
       setFilterBatchId('');
     }
-  }, [filterRole, selectedFilterAccessRole]);
+  }, [filterRole, isStudentSectionActive]);
 
   useEffect(() => {
-    if (selectedFilterAccessRole === 'student') {
+    if (!roleOptions.length) return;
+    const sectionRole =
+      activeUserSection === 'teacher'
+        ? 'teacher'
+        : activeUserSection === 'executive'
+        ? 'admin'
+        : 'student';
+    const defaultRoleKey = resolveDefaultRoleKey(sectionRole);
+    setFilterRole((prev) => (prev === defaultRoleKey ? prev : defaultRoleKey));
+    setCurrentPage(1);
+    setSelectedUsers([]);
+    if (activeUserSection !== 'student') {
+      setStudentModeFilter('');
+    }
+  }, [activeUserSection, roleOptions, resolveDefaultRoleKey]);
+
+  useEffect(() => {
+    if (isStudentSectionActive) {
       getProgramsDropdown()
         .then((data) => setProgramsList(data || []))
         .catch(() => {});
     }
-  }, [selectedFilterAccessRole]);
+  }, [isStudentSectionActive]);
 
   useEffect(() => {
     if (filterProgramId) {
@@ -455,6 +554,10 @@ const UserManagement = () => {
       setFilterBatchId('');
     }
   }, [filterProgramId]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [studentModeFilter]);
 
   useEffect(() => {
     getProgramsDropdown()
@@ -474,45 +577,133 @@ const UserManagement = () => {
       .catch(() => setProfileBatches([]));
   }, [showDetailDrawer, detailForm?.academicProfile?.programId]);
 
-  const resetUserForm = () => {
-    const defaultRoleKey = resolveDefaultRoleKey('student');
+  const resetUserForm = ({
+    preferredAccessRole = 'student',
+    roleKey = '',
+    roleLocked = false,
+    flow = 'generic',
+    studentType = 'regular',
+    studentMode = MODE_OF_DELIVERY.REGULAR
+  } = {}) => {
+    const defaultRoleKey = String(
+      roleKey || resolveDefaultRoleKey(preferredAccessRole)
+    ).toLowerCase();
+    setCreateContext({
+      flow,
+      roleLocked
+    });
     setFormData({
       name: '',
       email: '',
       roleKey: defaultRoleKey,
       mobileNo: '',
       employeeId: '',
-      studentType: 'regular',
+      designation: '',
+      studentType,
+      studentMode,
       rollNumber: '',
-      enrollmentNumber: ''
+      enrollmentNumber: '',
+      programId: '',
+      admissionYear: currentYearString(),
+      sessionCode: 'SP'
     });
     setFormError('');
     setEditingUserId(null);
     setIsEditMode(false);
   };
 
-  const openCreateUserModal = () => {
-    resetUserForm();
+  const openCreateUserModal = (config = {}) => {
+    resetUserForm(config);
     setShowUserModal(true);
+  };
+
+  const openStudentSingleImport = () => {
+    const normalizedSelectedMode =
+      normalizeModeOfDeliveryValue(studentModeSelection) || MODE_OF_DELIVERY.REGULAR;
+    if (normalizedSelectedMode === MODE_OF_DELIVERY.ONLINE) {
+      return;
+    }
+    openCreateUserModal({
+      preferredAccessRole: 'student',
+      roleLocked: true,
+      flow:
+        normalizedSelectedMode === MODE_OF_DELIVERY.WILP
+        ? 'student_wilp_single'
+        : 'student_regular_single',
+      studentType: 'regular',
+      studentMode: normalizedSelectedMode
+    });
+  };
+
+  const openTeacherAdd = () => {
+    openCreateUserModal({
+      preferredAccessRole: 'teacher',
+      roleLocked: true,
+      flow: 'teacher_add'
+    });
+  };
+
+  const openExecutiveAdd = () => {
+    openCreateUserModal({
+      preferredAccessRole: 'admin',
+      roleKey: resolveDefaultRoleKey('admin'),
+      roleLocked: true,
+      flow: 'executive_add'
+    });
+  };
+
+  const openRegularBulkImport = () => {
+    const normalizedSelectedMode =
+      normalizeModeOfDeliveryValue(studentModeSelection) || MODE_OF_DELIVERY.REGULAR;
+    if (normalizedSelectedMode === MODE_OF_DELIVERY.ONLINE) {
+      return;
+    }
+    setStudentImportModalConfig({
+      open: true,
+      variant: 'regular_bulk',
+      studentMode: normalizedSelectedMode
+    });
+  };
+
+  const openOnlineCrmImport = () => {
+    const normalizedSelectedMode =
+      normalizeModeOfDeliveryValue(studentModeSelection) || MODE_OF_DELIVERY.REGULAR;
+    if (normalizedSelectedMode !== MODE_OF_DELIVERY.ONLINE) {
+      return;
+    }
+    setStudentImportModalConfig({
+      open: true,
+      variant: 'online_crm',
+      studentMode: MODE_OF_DELIVERY.ONLINE
+    });
   };
 
   const openEditUserModal = (user) => {
     setIsEditMode(true);
+    setCreateContext({
+      flow: 'edit',
+      roleLocked: true
+    });
     setEditingUserId(user._id);
     const currentRoleKey = String(user.roleKey || user.role || '').trim().toLowerCase() || resolveDefaultRoleKey('student');
+    const detectedMode =
+      normalizeModeOfDeliveryValue(
+        user.studentInfo?.program?.modeOfDelivery || user.studentInfo?.mode
+      ) || MODE_OF_DELIVERY.REGULAR;
     setFormData({
       name: user.name || '',
       email: user.email || '',
       roleKey: currentRoleKey,
       mobileNo: user.mobileNo || '',
       employeeId: user.teacherInfo?.employeeId || '',
-      studentType:
-        user.studentInfo?.mode?.toLowerCase?.() === 'online' ||
-        user.studentInfo?.program?.modeOfDelivery?.toLowerCase?.() === 'online'
-          ? 'online'
-          : 'regular',
+      designation: user.designation || '',
+      studentType: detectedMode === MODE_OF_DELIVERY.ONLINE ? 'online' : 'regular',
+      studentMode: detectedMode,
       rollNumber: user.studentInfo?.rollNumber || '',
-      enrollmentNumber: user.studentInfo?.enrollmentNumber || ''
+      enrollmentNumber: user.studentInfo?.enrollmentNumber || '',
+      programId: user.studentInfo?.program?._id || '',
+      admissionYear: currentYearString(),
+      sessionCode: 'SP'
     });
     setFormError('');
     setShowUserModal(true);
@@ -525,7 +716,23 @@ const UserManagement = () => {
   };
 
   const handleFormChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === 'studentType') {
+        if (value === 'online') {
+          next.studentMode = MODE_OF_DELIVERY.ONLINE;
+          next.rollNumber = '';
+        } else if (prev.studentMode === MODE_OF_DELIVERY.ONLINE) {
+          next.studentMode = MODE_OF_DELIVERY.REGULAR;
+          next.programId = '';
+          next.enrollmentNumber = '';
+        }
+      }
+      if (field === 'studentMode') {
+        next.studentType = value === MODE_OF_DELIVERY.ONLINE ? 'online' : 'regular';
+      }
+      return next;
+    });
     setFormError('');
   };
 
@@ -548,11 +755,24 @@ const UserManagement = () => {
 
       if (!isEditMode) {
         if (mappedAccessRole === 'teacher' && !formData.employeeId.trim()) {
-          throw new Error('Employee ID is required for teacher/TA accounts');
+          throw new Error('Employee ID is required for teacher accounts');
+        }
+        if (createContext.flow === 'executive_add' && !formData.employeeId.trim()) {
+          throw new Error('Employee ID is required for executive staff accounts');
         }
         if (mappedAccessRole === 'student') {
-          if (formData.studentType === 'online' && !formData.enrollmentNumber.trim()) {
-            throw new Error('Enrollment Number is required for online student accounts');
+          if (formData.studentType === 'online') {
+            if (!formData.programId) {
+              throw new Error('Program is required for online student enrollment');
+            }
+            const parsedAdmissionYear = Number.parseInt(String(formData.admissionYear || ''), 10);
+            if (!Number.isInteger(parsedAdmissionYear) || parsedAdmissionYear < 1900 || parsedAdmissionYear > 2100) {
+              throw new Error('Admission Year is required for online student enrollment');
+            }
+            const normalizedSession = String(formData.sessionCode || '').trim().toUpperCase();
+            if (!['AU', 'SP'].includes(normalizedSession)) {
+              throw new Error('Session Code must be AU or SP for online student enrollment');
+            }
           }
           if (formData.studentType !== 'online' && !formData.rollNumber.trim()) {
             throw new Error('Roll Number is required for student accounts');
@@ -566,26 +786,63 @@ const UserManagement = () => {
           mobileNo: formData.mobileNo.trim() || undefined
         });
       } else {
+        const normalizedStudentMode =
+          formData.studentType === 'online'
+            ? MODE_OF_DELIVERY.ONLINE
+            : formData.studentMode || MODE_OF_DELIVERY.REGULAR;
+        const normalizedSessionCode = String(formData.sessionCode || '').trim().toUpperCase();
+        const parsedAdmissionYear = Number.parseInt(String(formData.admissionYear || ''), 10);
         const payload = {
           name: formData.name.trim(),
           email: formData.email.trim(),
           roleKey: selectedRoleKey,
           mobileNo: formData.mobileNo.trim() || undefined,
           employeeId: formData.employeeId.trim() || undefined,
+          designation:
+            createContext.flow === 'executive_add'
+              ? formData.designation.trim() || undefined
+              : undefined,
           studentType: mappedAccessRole === 'student' ? formData.studentType : undefined,
+          modeOfDelivery: mappedAccessRole === 'student' ? normalizedStudentMode : undefined,
+          mode: mappedAccessRole === 'student' ? normalizedStudentMode : undefined,
+          programId:
+            mappedAccessRole === 'student' && formData.studentType === 'online'
+              ? formData.programId || undefined
+              : undefined,
+          admissionYear:
+            mappedAccessRole === 'student' &&
+            formData.studentType === 'online' &&
+            Number.isInteger(parsedAdmissionYear)
+              ? parsedAdmissionYear
+              : undefined,
+          sessionCode:
+            mappedAccessRole === 'student' && formData.studentType === 'online'
+              ? normalizedSessionCode || undefined
+              : undefined,
           rollNumber: mappedAccessRole === 'student' ? formData.rollNumber.trim() || undefined : undefined,
           enrollmentNumber:
             mappedAccessRole === 'student' ? formData.enrollmentNumber.trim() || undefined : undefined
         };
         const response = await createUser(payload);
         const inviteSent = response?.emailStatus === 'SENT';
+        const generatedEnrollmentNo =
+          response?.generatedEnrollmentNumber ||
+          (response?.userIdMapping?.source === 'Enrollment Number'
+            ? response?.userIdMapping?.userId
+            : '');
         setInviteBanner({
           type: inviteSent ? 'success' : response?.emailStatus === 'FAILED' ? 'error' : 'success',
           text: inviteSent
-            ? 'User created and credentials email sent.'
+            ? `User created and credentials email sent.${
+                generatedEnrollmentNo ? ` Enrollment No: ${generatedEnrollmentNo}.` : ''
+              }`
             : response?.emailStatus === 'FAILED'
-            ? `User created but credentials email failed. ${response?.emailMessage || 'Use Reset Password to resend credentials.'}`
-            : `User created. ${response?.emailMessage || 'Credentials email skipped.'}`
+            ? `User created but credentials email failed. ${
+                response?.emailMessage || 'Use Reset Password to resend credentials.'
+              }${generatedEnrollmentNo ? ` Enrollment No: ${generatedEnrollmentNo}.` : ''}`
+            : `User created. ${response?.emailMessage || 'Credentials email skipped.'}${
+                generatedEnrollmentNo ? ` Enrollment No: ${generatedEnrollmentNo}.` : ''
+              }`
         });
       }
 
@@ -971,16 +1228,6 @@ const UserManagement = () => {
       .slice(0, 2);
   };
 
-  const getProfilePath = (targetUser) => {
-    const accessRole = String(targetUser?.roleAccessRole || targetUser?.role || '')
-      .trim()
-      .toLowerCase();
-    if (accessRole === 'teacher') {
-      return `/teachers/${targetUser._id}/profile`;
-    }
-    return `/users/${targetUser?._id}/profile`;
-  };
-
   const getUserIdDisplayInfo = (targetUser) => {
     if (!targetUser) return { label: 'User ID', value: '—' };
     const accessRole = String(targetUser.roleAccessRole || targetUser.role || '')
@@ -1085,11 +1332,27 @@ const UserManagement = () => {
     { id: 'academic', label: 'Academic Details' },
     { id: 'security', label: 'Account & Security' }
   ];
+  const listEntityLabel =
+    activeUserSection === 'student'
+      ? 'students'
+      : activeUserSection === 'teacher'
+      ? 'teachers'
+      : activeUserSection === 'executive'
+      ? 'executive users'
+      : 'users';
+  const normalizedSelectedStudentMode =
+    normalizeModeOfDeliveryValue(studentModeSelection) || MODE_OF_DELIVERY.REGULAR;
+  const isOnlineModeSelected = normalizedSelectedStudentMode === MODE_OF_DELIVERY.ONLINE;
+  const bulkSingleAllowedForMode = !isOnlineModeSelected;
+  const crmAllowedForMode = isOnlineModeSelected;
+  const isSingleImportRegularWilpFlow =
+    createContext.flow === 'student_regular_single' ||
+    createContext.flow === 'student_wilp_single';
 
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 space-y-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center">
               <Users className="w-8 h-8 text-blue-600 mr-3" />
@@ -1097,23 +1360,142 @@ const UserManagement = () => {
             </h1>
             <p className="text-gray-600 mt-1">{pagination.totalUsers} total users</p>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowStudentImportModal(true)}
-              className="flex items-center px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Import Students
-            </button>
-            <button
-              onClick={openCreateUserModal}
-              className="flex items-center px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <UserPlus className="w-4 h-4 mr-2" />
-              Add User
-            </button>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {USER_MANAGEMENT_SECTIONS.map((section) => (
+              <button
+                key={section.id}
+                type="button"
+                onClick={() => setActiveUserSection(section.id)}
+                className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+                  activeUserSection === section.id
+                    ? 'border-blue-600 bg-blue-600 text-white'
+                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {section.label}
+              </button>
+            ))}
           </div>
+
+          {activeUserSection === 'student' && (
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-4">
+              <div>
+                <div className="text-sm font-semibold text-gray-800">Import Student</div>
+                <div className="text-sm text-gray-600">
+                  Choose mode first. Regular/WILP support Bulk + Single. Online supports CRM Pull only.
+                </div>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-gray-700 mb-2">Mode</div>
+                <div className="flex flex-wrap gap-2">
+                  {STUDENT_MODE_OPTIONS.map((modeOption) => (
+                    <button
+                      key={modeOption.id}
+                      type="button"
+                      onClick={() => setStudentModeSelection(modeOption.id)}
+                      className={`rounded-lg border px-3 py-1.5 text-sm ${
+                        studentModeSelection === modeOption.id
+                          ? 'border-blue-600 bg-blue-600 text-white'
+                          : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {modeOption.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {isOnlineModeSelected && (
+                <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">
+                  Online students are onboarded only via CRM Pull. Bulk/Single import is not available.
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={openRegularBulkImport}
+                  disabled={!bulkSingleAllowedForMode}
+                  className={`inline-flex items-center rounded-lg border px-3 py-2 text-sm ${
+                    bulkSingleAllowedForMode
+                      ? 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      : 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-100'
+                  }`}
+                >
+                  <Upload className="w-4 h-4 mr-1.5" />
+                  Open Bulk Import
+                </button>
+                <button
+                  type="button"
+                  onClick={openStudentSingleImport}
+                  disabled={!bulkSingleAllowedForMode}
+                  className={`inline-flex items-center rounded-lg px-3 py-2 text-sm ${
+                    bulkSingleAllowedForMode
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-gray-300 text-white cursor-not-allowed'
+                  }`}
+                >
+                  <UserPlus className="w-4 h-4 mr-1.5" />
+                  Open Single Import
+                </button>
+                <button
+                  type="button"
+                  onClick={openOnlineCrmImport}
+                  disabled={!crmAllowedForMode}
+                  className={`inline-flex items-center rounded-lg border px-3 py-2 text-sm ${
+                    crmAllowedForMode
+                      ? 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      : 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-100'
+                  }`}
+                >
+                  <Upload className="w-4 h-4 mr-1.5" />
+                  CRM Pull
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeUserSection === 'teacher' && (
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-gray-800">Teacher Add</div>
+                <div className="text-sm text-gray-600">
+                  Required fields: Employee ID, Name, Email.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={openTeacherAdd}
+                className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Add Teacher
+              </button>
+            </div>
+          )}
+
+          {activeUserSection === 'executive' && (
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-gray-800">Executive Staff Add</div>
+                <div className="text-sm text-gray-600">
+                  Adds executive staff with Employee ID, Name, Email, and Designation.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={openExecutiveAdd}
+                className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Add User
+              </button>
+            </div>
+          )}
         </div>
+
+        {activeUserSection === 'student' && (
+          <div className="text-sm font-semibold text-gray-800">Student List</div>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
@@ -1127,20 +1509,35 @@ const UserManagement = () => {
             />
           </div>
 
-          <select
-            value={filterRole}
-            onChange={(e) => setFilterRole(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="">All Roles</option>
-            {roleOptions.map((role) => (
-              <option key={role._id || role.key} value={String(role.key || '').toLowerCase()}>
-                {role.label}
-              </option>
-            ))}
-          </select>
+          {activeUserSection !== 'student' && (
+            <select
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">All Roles</option>
+              {roleOptions.map((role) => (
+                <option key={role._id || role.key} value={String(role.key || '').toLowerCase()}>
+                  {role.label}
+                </option>
+              ))}
+            </select>
+          )}
 
-          {selectedFilterAccessRole === 'student' && (
+          {activeUserSection === 'student' && (
+            <select
+              value={studentModeFilter}
+              onChange={(e) => setStudentModeFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">All Modes</option>
+              <option value={MODE_OF_DELIVERY.REGULAR}>Regular</option>
+              <option value={MODE_OF_DELIVERY.ONLINE}>Online</option>
+              <option value={MODE_OF_DELIVERY.WILP}>WILP</option>
+            </select>
+          )}
+
+          {isStudentSectionActive && (
             <>
               <select
                 value={filterProgramId}
@@ -1236,7 +1633,7 @@ const UserManagement = () => {
                 <span className="ml-3 text-sm font-medium text-gray-700">
                   {selectedUsers.length > 0
                     ? `${selectedUsers.length} selected`
-                    : `${users.length} users on this page`}
+                    : `${users.length} ${listEntityLabel} on this page`}
                 </span>
               </div>
 
@@ -1260,7 +1657,7 @@ const UserManagement = () => {
                 <div
                   key={user._id}
                   className="px-6 py-4 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => navigate(getProfilePath(user))}
+                  onClick={() => openUserDetail(user._id)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4 min-w-0">
@@ -1285,6 +1682,11 @@ const UserManagement = () => {
                         <div className="text-xs text-gray-500 mt-0.5">
                           {getUserIdDisplayInfo(user).label}: {getUserIdDisplayInfo(user).value}
                         </div>
+                        {user.designation && (
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            Designation: {user.designation}
+                          </div>
+                        )}
                         {user.mobileNo && (
                           <div className="flex items-center text-sm text-gray-500 mt-0.5">
                             <Phone className="w-3 h-3 mr-1 flex-shrink-0" />
@@ -1356,7 +1758,7 @@ const UserManagement = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(getProfilePath(user));
+                            openUserDetail(user._id);
                           }}
                           className="p-1 text-gray-400 hover:text-blue-600"
                           title="View Profile"
@@ -1477,27 +1879,41 @@ const UserManagement = () => {
                 />
               </div>
 
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Role *</label>
-                <select
-                  value={formData.roleKey}
-                  onChange={(e) => handleFormChange('roleKey', e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
-                  disabled={formSubmitting || isEditMode || rolesLoading}
-                >
-                  {roleOptions.length === 0 ? (
-                    <option value="">No roles available</option>
+              {!isEditMode && createContext.flow !== 'executive_add' && (
+                <>
+                  {createContext.roleLocked ? (
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700">Role</label>
+                      <div className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                        {selectedCreateRoleOption?.label || formData.roleKey || '—'}
+                      </div>
+                    </div>
                   ) : (
-                    roleOptions.map((role) => (
-                      <option key={role._id || role.key} value={String(role.key || '').toLowerCase()}>
-                        {role.label}
-                      </option>
-                    ))
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700">Role *</label>
+                      <select
+                        value={formData.roleKey}
+                        onChange={(e) => handleFormChange('roleKey', e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
+                        disabled={formSubmitting || isEditMode || rolesLoading}
+                      >
+                        {roleOptions.length === 0 ? (
+                          <option value="">No roles available</option>
+                        ) : (
+                          roleOptions.map((role) => (
+                            <option key={role._id || role.key} value={String(role.key || '').toLowerCase()}>
+                              {role.label}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    </div>
                   )}
-                </select>
-              </div>
+                </>
+              )}
 
-              {!isEditMode && selectedCreateAccessRole === 'teacher' && (
+              {!isEditMode &&
+                (selectedCreateAccessRole === 'teacher' || createContext.flow === 'executive_add') && (
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">Employee ID *</label>
                   <input
@@ -1511,6 +1927,19 @@ const UserManagement = () => {
                 </div>
               )}
 
+              {!isEditMode && createContext.flow === 'executive_add' && (
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Designation</label>
+                  <input
+                    value={formData.designation}
+                    onChange={(e) => handleFormChange('designation', e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                    placeholder="Enter designation"
+                    disabled={formSubmitting}
+                  />
+                </div>
+              )}
+
               {!isEditMode && selectedCreateAccessRole === 'student' && (
                 <>
                   <div>
@@ -1519,36 +1948,101 @@ const UserManagement = () => {
                       value={formData.studentType}
                       onChange={(e) => handleFormChange('studentType', e.target.value)}
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-                      disabled={formSubmitting}
+                      disabled={formSubmitting || isSingleImportRegularWilpFlow}
                     >
                       <option value="regular">Regular Student</option>
-                      <option value="online">Online Student</option>
+                      {!isSingleImportRegularWilpFlow && (
+                        <option value="online">Online Student</option>
+                      )}
                     </select>
                   </div>
+                  {isSingleImportRegularWilpFlow && (
+                    <p className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                      Online onboarding is available only via CRM Pull.
+                    </p>
+                  )}
 
                   {formData.studentType === 'online' ? (
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-700">Enrollment Number *</label>
-                      <input
-                        value={formData.enrollmentNumber}
-                        onChange={(e) => handleFormChange('enrollmentNumber', e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-                        placeholder="Enter enrollment number"
-                        disabled={formSubmitting}
-                        required
-                      />
-                    </div>
+                    <>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">Program *</label>
+                        <select
+                          value={formData.programId}
+                          onChange={(e) => handleFormChange('programId', e.target.value)}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                          disabled={formSubmitting}
+                        >
+                          <option value="">Select online program</option>
+                          {onlinePrograms.map((program) => (
+                            <option key={program._id} value={program._id}>
+                              {program.name} ({program.code})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-gray-700">
+                            Admission Year *
+                          </label>
+                          <input
+                            type="number"
+                            min="1900"
+                            max="2100"
+                            value={formData.admissionYear}
+                            onChange={(e) => handleFormChange('admissionYear', e.target.value)}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            placeholder="2025"
+                            disabled={formSubmitting}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-gray-700">
+                            Session Code *
+                          </label>
+                          <select
+                            value={formData.sessionCode}
+                            onChange={(e) => handleFormChange('sessionCode', e.target.value)}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            disabled={formSubmitting}
+                          >
+                            <option value="SP">SP (Spring)</option>
+                            <option value="AU">AU (Autumn)</option>
+                          </select>
+                        </div>
+                      </div>
+                      <p className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                        Enrollment Number and User ID will be auto-generated after create.
+                      </p>
+                    </>
                   ) : (
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-700">Roll Number *</label>
-                      <input
-                        value={formData.rollNumber}
-                        onChange={(e) => handleFormChange('rollNumber', e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-                        placeholder="Enter roll number"
-                        disabled={formSubmitting}
-                        required
-                      />
+                    <div className="space-y-3">
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">
+                          Student Mode *
+                        </label>
+                        <select
+                          value={formData.studentMode}
+                          onChange={(e) => handleFormChange('studentMode', e.target.value)}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                          disabled={formSubmitting || formData.studentType === 'online'}
+                        >
+                          <option value={MODE_OF_DELIVERY.REGULAR}>Regular</option>
+                          <option value={MODE_OF_DELIVERY.WILP}>WILP</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">Roll Number *</label>
+                        <input
+                          value={formData.rollNumber}
+                          onChange={(e) => handleFormChange('rollNumber', e.target.value)}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                          placeholder="Enter roll number"
+                          disabled={formSubmitting}
+                          required
+                        />
+                      </div>
                     </div>
                   )}
                 </>
@@ -1696,6 +2190,16 @@ const UserManagement = () => {
                             className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
                           />
                         </div>
+                        {detailForm.user.role === 'admin' && (
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Designation</label>
+                            <input
+                              value={detailForm.user.designation || detailForm.personalProfile.designation || ''}
+                              readOnly
+                              className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-gray-700"
+                            />
+                          </div>
+                        )}
                         <div>
                           <label className="mb-1 block text-sm font-medium text-gray-700">Date of Birth</label>
                           <input
@@ -2353,8 +2857,16 @@ const UserManagement = () => {
       )}
 
       <StudentImportModal
-        open={showStudentImportModal}
-        onClose={() => setShowStudentImportModal(false)}
+        open={studentImportModalConfig.open}
+        variant={studentImportModalConfig.variant}
+        studentMode={studentImportModalConfig.studentMode}
+        onClose={() =>
+          setStudentImportModalConfig({
+            open: false,
+            variant: 'regular_bulk',
+            studentMode: MODE_OF_DELIVERY.REGULAR
+          })
+        }
         onImported={() => fetchUsers()}
       />
 

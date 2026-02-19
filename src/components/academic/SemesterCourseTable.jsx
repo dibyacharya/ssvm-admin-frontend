@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, RefreshCw, Save, X } from "lucide-react";
+import { Edit3, Plus, RefreshCw, Save, X } from "lucide-react";
 import {
   createCourse,
   getCoursesForSemester,
   lookupCourseByCode,
   unlinkCourseFromSemester,
+  updateCourse,
   updateCourseTeachers,
 } from "../../services/courses.service";
 import { getTeachers } from "../../services/user.service";
@@ -935,6 +936,17 @@ const SemesterCourseTable = ({
   });
 
   const [teacherAssignments, setTeacherAssignments] = useState({});
+  const [editingCourse, setEditingCourse] = useState(null);
+  const [editingCourseSaving, setEditingCourseSaving] = useState(false);
+  const [editingCourseError, setEditingCourseError] = useState("");
+  const [editingCourseDraft, setEditingCourseDraft] = useState({
+    title: "",
+    courseType: "theory",
+    creditLecture: "0",
+    creditTutorial: "0",
+    creditPractical: "0",
+    teacherAssignments: [],
+  });
 
   const [assignmentLoading, setAssignmentLoading] = useState(false);
   const [assignmentSaving, setAssignmentSaving] = useState(false);
@@ -973,6 +985,25 @@ const SemesterCourseTable = ({
     setExistingCourse(null);
   };
 
+  const resetEditDraft = () => {
+    setEditingCourseDraft({
+      title: "",
+      courseType: "theory",
+      creditLecture: "0",
+      creditTutorial: "0",
+      creditPractical: "0",
+      teacherAssignments: [],
+    });
+  };
+
+  const parseCreditField = (value) => {
+    const trimmed = String(value ?? "").trim();
+    if (!trimmed) return 0;
+    const parsed = Number.parseInt(trimmed, 10);
+    if (!Number.isFinite(parsed) || parsed < 0) return null;
+    return parsed;
+  };
+
   const teacherName = (teacher) => {
     if (!teacher) return "";
     return (
@@ -984,6 +1015,27 @@ const SemesterCourseTable = ({
       "Unknown"
     );
   };
+
+  const teacherOptions = useMemo(() => {
+    const seen = new Set();
+    return (Array.isArray(teachers) ? teachers : [])
+      .map((teacher) => {
+        const id = toIdString(teacher?._id || teacher?.teacherId || teacher?.user?._id);
+        if (!id || seen.has(id)) return null;
+        seen.add(id);
+        const name = teacherName(teacher);
+        const email = (teacher?.email || teacher?.user?.email || "").toString().trim();
+        const label = email ? `${name} (${email})` : name;
+        return { id, label };
+      })
+      .filter(Boolean)
+      .sort((left, right) => left.label.localeCompare(right.label));
+  }, [teachers]);
+
+  const teacherLabelMap = useMemo(
+    () => new Map(teacherOptions.map((option) => [option.id, option.label])),
+    [teacherOptions]
+  );
 
   const fetchTeachers = async ({ silent = false } = {}) => {
     if (!silent) setTeachersLoading(true);
@@ -1605,13 +1657,6 @@ const SemesterCourseTable = ({
           return;
         }
 
-        const parseCreditField = (value) => {
-          const trimmed = String(value ?? "").trim();
-          if (!trimmed) return 0;
-          const parsed = Number.parseInt(trimmed, 10);
-          if (!Number.isFinite(parsed) || parsed < 0) return null;
-          return parsed;
-        };
         const lecture = parseCreditField(draft.creditLecture);
         const tutorial = parseCreditField(draft.creditTutorial);
         const practical = parseCreditField(draft.creditPractical);
@@ -1711,6 +1756,128 @@ const SemesterCourseTable = ({
         [courseId]: current.filter((_, i) => i !== index),
       };
     });
+  };
+
+  const openEditCourseModal = (course) => {
+    if (!course?._id) return;
+    const currentTeacherAssignments = Array.isArray(teacherAssignments[course._id])
+      ? teacherAssignments[course._id]
+      : [];
+
+    setEditingCourse(course);
+    setEditingCourseError("");
+    setEditingCourseDraft({
+      title: course?.title || "",
+      courseType: course?.courseType || "theory",
+      creditLecture: String(Number(course?.creditPoints?.lecture) || 0),
+      creditTutorial: String(Number(course?.creditPoints?.tutorial) || 0),
+      creditPractical: String(Number(course?.creditPoints?.practical) || 0),
+      teacherAssignments:
+        currentTeacherAssignments.length > 0
+          ? currentTeacherAssignments.map((entry) => ({
+              teacherId: toIdString(entry?.teacherId),
+              roleLabel: entry?.roleLabel || "Teacher",
+            }))
+          : [{ teacherId: "", roleLabel: "Teacher" }],
+    });
+  };
+
+  const closeEditCourseModal = (force = false) => {
+    if (editingCourseSaving && !force) return;
+    setEditingCourse(null);
+    setEditingCourseError("");
+    resetEditDraft();
+  };
+
+  const updateEditingCourseField = (field, value) => {
+    setEditingCourseDraft((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const addEditingTeacherRow = () => {
+    setEditingCourseDraft((prev) => ({
+      ...prev,
+      teacherAssignments: [
+        ...(prev.teacherAssignments || []),
+        { teacherId: "", roleLabel: "Teacher" },
+      ],
+    }));
+  };
+
+  const updateEditingTeacherRow = (index, field, value) => {
+    setEditingCourseDraft((prev) => ({
+      ...prev,
+      teacherAssignments: (prev.teacherAssignments || []).map((entry, entryIndex) =>
+        entryIndex === index ? { ...entry, [field]: value } : entry
+      ),
+    }));
+  };
+
+  const removeEditingTeacherRow = (index) => {
+    setEditingCourseDraft((prev) => ({
+      ...prev,
+      teacherAssignments: (prev.teacherAssignments || []).filter(
+        (_, entryIndex) => entryIndex !== index
+      ),
+    }));
+  };
+
+  const handleSaveEditedCourse = async () => {
+    if (!semesterId || !editingCourse?._id || !editingCourse?.courseCode) return;
+
+    const lecture = parseCreditField(editingCourseDraft.creditLecture);
+    const tutorial = parseCreditField(editingCourseDraft.creditTutorial);
+    const practical = parseCreditField(editingCourseDraft.creditPractical);
+
+    if (lecture === null || tutorial === null || practical === null) {
+      setEditingCourseError("Credits (L/T/P) must be integers >= 0.");
+      return;
+    }
+
+    if (lecture + tutorial + practical <= 0) {
+      setEditingCourseError("Enter course credits (L/T/P) greater than 0.");
+      return;
+    }
+
+    const teacherPayload = (editingCourseDraft.teacherAssignments || [])
+      .filter((entry) => entry?.teacherId)
+      .map((entry) => ({
+        teacherId: entry.teacherId,
+        roleLabel: entry.roleLabel || "Teacher",
+      }));
+
+    try {
+      setEditingCourseSaving(true);
+      setEditingCourseError("");
+      setCourseError("");
+
+      await updateCourse(editingCourse.courseCode, {
+        courseCode: editingCourse.courseCode,
+        title: String(editingCourseDraft.title || "").trim() || editingCourse.title,
+        courseType: editingCourseDraft.courseType || editingCourse.courseType,
+        creditPoints: {
+          lecture,
+          tutorial,
+          practical,
+        },
+      });
+
+      await updateCourseTeachers(semesterId, editingCourse._id, teacherPayload);
+
+      await fetchCourses();
+      if (onUpdate) onUpdate();
+      closeEditCourseModal(true);
+    } catch (error) {
+      setEditingCourseError(
+        error?.response?.data?.error ||
+          error?.response?.data?.message ||
+          "Failed to update course assignment"
+      );
+    } finally {
+      setEditingCourseSaving(false);
+    }
   };
 
   const saveTeacherAssignment = async (courseId) => {
@@ -2424,14 +2591,18 @@ const SemesterCourseTable = ({
         </div>
       )}
 
-      {addMode === "new" && (
+      {addMode && (
         <div className="fixed inset-0 z-50 bg-black/50 p-4 overflow-y-auto">
           <div className="mx-auto w-full max-w-2xl rounded-lg bg-white shadow-lg">
             <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 py-3">
               <div>
-                <div className="text-base font-semibold text-gray-900">New Course</div>
+                <div className="text-base font-semibold text-gray-900">
+                  {addMode === "existing" ? "Add Existing Course" : "New Course"}
+                </div>
                 <div className="mt-1 text-xs text-gray-500">
-                  Create a new course and link it to this {periodLabel.toLowerCase()}.
+                  {addMode === "existing"
+                    ? `Lookup an existing course and link it to this ${periodLabel.toLowerCase()}.`
+                    : `Create a new course and link it to this ${periodLabel.toLowerCase()}.`}
                 </div>
               </div>
               <button
@@ -2445,15 +2616,329 @@ const SemesterCourseTable = ({
             </div>
 
             <div className="space-y-4 px-4 py-4">
+              {addMode === "existing" ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <div className="md:col-span-2">
+                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-gray-500">
+                        Course Code *
+                      </label>
+                      <input
+                        value={draft.courseCode}
+                        onChange={(event) =>
+                          updateDraftField("courseCode", event.target.value)
+                        }
+                        placeholder="Enter course code to lookup"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <button
+                        type="button"
+                        onClick={handleLookupExisting}
+                        disabled={lookupLoading}
+                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        {lookupLoading ? "Looking up..." : "Lookup Course"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {existingCourse ? (
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+                      <div className="text-xs font-semibold uppercase tracking-widest text-emerald-700">
+                        Course Found
+                      </div>
+                      <div className="mt-1 text-sm font-medium text-gray-900">
+                        {safeDisplay(existingCourse?.title)}
+                      </div>
+                      <div className="mt-1 text-xs text-gray-700">
+                        {safeDisplay(existingCourse?.courseCode)} | {safeDisplay(existingCourse?.courseType)} |{" "}
+                        {sumCourseCredits(existingCourse)} credits
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-3 text-xs text-gray-500">
+                      Lookup a course by code to continue.
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-gray-500">
+                        Course Type
+                      </label>
+                      <select
+                        value={draft.courseType}
+                        onChange={(event) =>
+                          updateDraftField("courseType", event.target.value)
+                        }
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      >
+                        <option value="theory">Theory</option>
+                        <option value="practical">Practical</option>
+                        <option value="project">Project</option>
+                        <option value="hybrid">Hybrid</option>
+                      </select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-gray-500">
+                        Course Name *
+                      </label>
+                      <input
+                        value={draft.title}
+                        onChange={(event) => updateDraftField("title", event.target.value)}
+                        placeholder="Course name"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <div className="md:col-span-3">
+                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-gray-500">
+                        Course Code *
+                      </label>
+                      <input
+                        value={draft.courseCode}
+                        onChange={(event) =>
+                          updateDraftField("courseCode", event.target.value)
+                        }
+                        placeholder="Course code"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-500">
+                      L T P C
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                      <div>
+                        <label className="mb-1 block text-[11px] uppercase tracking-widest text-gray-500">
+                          L
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={draft.creditLecture}
+                          onChange={(event) =>
+                            updateDraftField("creditLecture", event.target.value)
+                          }
+                          className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[11px] uppercase tracking-widest text-gray-500">
+                          T
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={draft.creditTutorial}
+                          onChange={(event) =>
+                            updateDraftField("creditTutorial", event.target.value)
+                          }
+                          className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[11px] uppercase tracking-widest text-gray-500">
+                          P
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={draft.creditPractical}
+                          onChange={(event) =>
+                            updateDraftField("creditPractical", event.target.value)
+                          }
+                          className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[11px] uppercase tracking-widest text-gray-500">
+                          C
+                        </label>
+                        <input
+                          value={
+                            (toNonNegativeInt(draft.creditLecture, 0) || 0) +
+                            (toNonNegativeInt(draft.creditTutorial, 0) || 0) +
+                            (toNonNegativeInt(draft.creditPractical, 0) || 0)
+                          }
+                          readOnly
+                          className="w-full rounded border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-700"
+                        />
+                        <div className="mt-1 text-[11px] text-gray-500">C = L + T + P</div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                      Teacher Assignment
+                    </div>
+                    <div className="text-[11px] text-gray-500">
+                      Add one or more teachers for this course.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fetchTeachers({ silent: false })}
+                    disabled={teachersLoading}
+                    className="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    {teachersLoading ? "Refreshing..." : "Refresh Teachers"}
+                  </button>
+                </div>
+
+                {teacherLoadError ? (
+                  <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                    {teacherLoadError}
+                  </div>
+                ) : null}
+
+                {(draft.teacherAssignments || []).length > 0 ? (
+                  <div className="space-y-2">
+                    {(draft.teacherAssignments || []).map((entry, index) => (
+                      <div
+                        key={`draft-teacher-${index}`}
+                        className="grid grid-cols-1 gap-2 rounded border border-gray-200 bg-white p-2 md:grid-cols-[minmax(0,1fr)_180px_auto]"
+                      >
+                        <select
+                          value={entry.teacherId || ""}
+                          onChange={(event) =>
+                            updateDraftTeacherRow(index, "teacherId", event.target.value)
+                          }
+                          className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                        >
+                          <option value="">Select teacher</option>
+                          {teacherOptions.map((option) => (
+                            <option key={`draft-teacher-option-${option.id}`} value={option.id}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={entry.roleLabel || "Teacher"}
+                          onChange={(event) =>
+                            updateDraftTeacherRow(index, "roleLabel", event.target.value)
+                          }
+                          className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                        >
+                          {roleOptions.map((role) => (
+                            <option key={`draft-role-${role}`} value={role}>
+                              {role}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => removeDraftTeacherRow(index)}
+                          className="rounded border border-gray-200 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded border border-dashed border-gray-300 bg-white px-3 py-3 text-xs text-gray-500">
+                    No teachers selected.
+                  </div>
+                )}
+
+                <div>
+                  <button
+                    type="button"
+                    onClick={addDraftTeacherRow}
+                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    + Add Teacher
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={closeAddPanel}
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmitCourse}
+                  disabled={savingCourse || (addMode === "existing" && !existingCourse)}
+                  className="rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
+                >
+                  {savingCourse
+                    ? addMode === "existing"
+                      ? "Linking..."
+                      : "Creating..."
+                    : addMode === "existing"
+                    ? "Link Course"
+                    : "Create Course"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingCourse && (
+        <div className="fixed inset-0 z-50 bg-black/50 p-4 overflow-y-auto">
+          <div className="mx-auto w-full max-w-2xl rounded-lg bg-white shadow-lg">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 py-3">
+              <div>
+                <div className="text-base font-semibold text-gray-900">Edit Course Assignment</div>
+                <div className="mt-1 text-xs text-gray-500">
+                  {safeDisplay(editingCourse?.courseCode)} | {safeDisplay(editingCourse?.title)}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => closeEditCourseModal()}
+                className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                title="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-4 px-4 py-4">
+              {editingCourseError ? (
+                <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                  {editingCourseError}
+                </div>
+              ) : null}
+
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <div className="md:col-span-2">
+                  <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-gray-500">
+                    Course Name
+                  </label>
+                  <input
+                    value={editingCourseDraft.title}
+                    onChange={(event) =>
+                      updateEditingCourseField("title", event.target.value)
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-gray-500">
                     Course Type
                   </label>
                   <select
-                    value={draft.courseType}
+                    value={editingCourseDraft.courseType}
                     onChange={(event) =>
-                      updateDraftField("courseType", event.target.value)
+                      updateEditingCourseField("courseType", event.target.value)
                     }
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                   >
@@ -2462,30 +2947,6 @@ const SemesterCourseTable = ({
                     <option value="project">Project</option>
                     <option value="hybrid">Hybrid</option>
                   </select>
-                </div>
-                <div className="md:col-span-2">
-                  <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-gray-500">
-                    Course Name *
-                  </label>
-                  <input
-                    value={draft.title}
-                    onChange={(event) => updateDraftField("title", event.target.value)}
-                    placeholder="Course name"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  />
-                </div>
-                <div className="md:col-span-3">
-                  <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-gray-500">
-                    Course Code *
-                  </label>
-                  <input
-                    value={draft.courseCode}
-                    onChange={(event) =>
-                      updateDraftField("courseCode", event.target.value)
-                    }
-                    placeholder="Course code"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  />
                 </div>
               </div>
 
@@ -2501,9 +2962,9 @@ const SemesterCourseTable = ({
                     <input
                       type="number"
                       min="0"
-                      value={draft.creditLecture}
+                      value={editingCourseDraft.creditLecture}
                       onChange={(event) =>
-                        updateDraftField("creditLecture", event.target.value)
+                        updateEditingCourseField("creditLecture", event.target.value)
                       }
                       className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
                     />
@@ -2515,9 +2976,9 @@ const SemesterCourseTable = ({
                     <input
                       type="number"
                       min="0"
-                      value={draft.creditTutorial}
+                      value={editingCourseDraft.creditTutorial}
                       onChange={(event) =>
-                        updateDraftField("creditTutorial", event.target.value)
+                        updateEditingCourseField("creditTutorial", event.target.value)
                       }
                       className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
                     />
@@ -2529,9 +2990,9 @@ const SemesterCourseTable = ({
                     <input
                       type="number"
                       min="0"
-                      value={draft.creditPractical}
+                      value={editingCourseDraft.creditPractical}
                       onChange={(event) =>
-                        updateDraftField("creditPractical", event.target.value)
+                        updateEditingCourseField("creditPractical", event.target.value)
                       }
                       className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
                     />
@@ -2542,33 +3003,119 @@ const SemesterCourseTable = ({
                     </label>
                     <input
                       value={
-                        (toNonNegativeInt(draft.creditLecture, 0) || 0) +
-                        (toNonNegativeInt(draft.creditTutorial, 0) || 0) +
-                        (toNonNegativeInt(draft.creditPractical, 0) || 0)
+                        (toNonNegativeInt(editingCourseDraft.creditLecture, 0) || 0) +
+                        (toNonNegativeInt(editingCourseDraft.creditTutorial, 0) || 0) +
+                        (toNonNegativeInt(editingCourseDraft.creditPractical, 0) || 0)
                       }
                       readOnly
                       className="w-full rounded border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-700"
                     />
-                    <div className="mt-1 text-[11px] text-gray-500">C = L + T + P</div>
                   </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                      Teacher Assignment
+                    </div>
+                    <div className="text-[11px] text-gray-500">
+                      Update teachers for this course assignment.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fetchTeachers({ silent: false })}
+                    disabled={teachersLoading}
+                    className="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    {teachersLoading ? "Refreshing..." : "Refresh Teachers"}
+                  </button>
+                </div>
+
+                {teacherLoadError ? (
+                  <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                    {teacherLoadError}
+                  </div>
+                ) : null}
+
+                {(editingCourseDraft.teacherAssignments || []).length > 0 ? (
+                  <div className="space-y-2">
+                    {(editingCourseDraft.teacherAssignments || []).map((entry, index) => (
+                      <div
+                        key={`edit-course-teacher-${index}`}
+                        className="grid grid-cols-1 gap-2 rounded border border-gray-200 bg-white p-2 md:grid-cols-[minmax(0,1fr)_180px_auto]"
+                      >
+                        <select
+                          value={entry.teacherId || ""}
+                          onChange={(event) =>
+                            updateEditingTeacherRow(index, "teacherId", event.target.value)
+                          }
+                          className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                        >
+                          <option value="">Select teacher</option>
+                          {teacherOptions.map((option) => (
+                            <option key={`edit-teacher-option-${option.id}`} value={option.id}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={entry.roleLabel || "Teacher"}
+                          onChange={(event) =>
+                            updateEditingTeacherRow(index, "roleLabel", event.target.value)
+                          }
+                          className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                        >
+                          {roleOptions.map((role) => (
+                            <option key={`edit-role-${role}`} value={role}>
+                              {role}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => removeEditingTeacherRow(index)}
+                          className="rounded border border-gray-200 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded border border-dashed border-gray-300 bg-white px-3 py-3 text-xs text-gray-500">
+                    No teachers selected.
+                  </div>
+                )}
+
+                <div>
+                  <button
+                    type="button"
+                    onClick={addEditingTeacherRow}
+                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    + Add Teacher
+                  </button>
                 </div>
               </div>
 
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={closeAddPanel}
+                  onClick={() => closeEditCourseModal()}
                   className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  onClick={handleSubmitCourse}
-                  disabled={savingCourse}
+                  onClick={handleSaveEditedCourse}
+                  disabled={editingCourseSaving}
                   className="rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
                 >
-                  {savingCourse ? "Creating..." : "Create Course"}
+                  {editingCourseSaving ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </div>
@@ -2651,21 +3198,96 @@ const SemesterCourseTable = ({
                       {safeDisplay(course.courseCode)}
                     </td>
                     <td className="px-3 py-2 text-sm text-gray-700">
-                      <div className="flex flex-col gap-2">
-                        {(teacherAssignments[course._id] || []).length ? (
-                          (teacherAssignments[course._id] || []).map((assignment, index) => (
-                            <div
-                              key={`${course._id}-${index}`}
-                              className="text-[11px] text-gray-600"
-                            >
-                              {assignment?.teacherId
-                                ? safeDisplay(assignment.teacherId)
-                                : "Teacher"}
-                            </div>
-                          ))
-                        ) : (
+                      <div className="flex min-w-[280px] flex-col gap-2">
+                        {(teacherAssignments[course._id] || []).length === 0 ? (
                           <p className="text-[11px] text-gray-400">No teachers assigned</p>
+                        ) : (
+                          (teacherAssignments[course._id] || []).map((assignment, index) => {
+                            const assignmentTeacherId = toIdString(assignment?.teacherId);
+                            return (
+                              <div
+                                key={`${course._id}-teacher-${index}`}
+                                className="grid grid-cols-1 gap-2 rounded border border-gray-200 bg-gray-50 p-2 md:grid-cols-[minmax(0,1fr)_150px_auto]"
+                              >
+                                <select
+                                  value={assignmentTeacherId}
+                                  onChange={(event) =>
+                                    updateTeacherRow(
+                                      course._id,
+                                      index,
+                                      "teacherId",
+                                      event.target.value
+                                    )
+                                  }
+                                  className="w-full rounded border border-gray-300 bg-white px-2 py-1.5 text-xs"
+                                >
+                                  <option value="">Select teacher</option>
+                                  {teacherOptions.map((option) => (
+                                    <option
+                                      key={`${course._id}-teacher-option-${option.id}`}
+                                      value={option.id}
+                                    >
+                                      {option.label}
+                                    </option>
+                                  ))}
+                                </select>
+                                <select
+                                  value={assignment?.roleLabel || "Teacher"}
+                                  onChange={(event) =>
+                                    updateTeacherRow(
+                                      course._id,
+                                      index,
+                                      "roleLabel",
+                                      event.target.value
+                                    )
+                                  }
+                                  className="w-full rounded border border-gray-300 bg-white px-2 py-1.5 text-xs"
+                                >
+                                  {roleOptions.map((role) => (
+                                    <option key={`${course._id}-teacher-role-${role}`} value={role}>
+                                      {role}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  onClick={() => removeTeacherRow(course._id, index)}
+                                  className="rounded border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100"
+                                >
+                                  Remove
+                                </button>
+                                {assignmentTeacherId ? (
+                                  <div className="md:col-span-3 text-[11px] text-gray-500">
+                                    {teacherLabelMap.get(assignmentTeacherId) ||
+                                      safeDisplay(assignmentTeacherId)}
+                                  </div>
+                                ) : null}
+                              </div>
+                            );
+                          })
                         )}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => addTeacherRow(course._id)}
+                            className="rounded border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                          >
+                            {(teacherAssignments[course._id] || []).length > 0
+                              ? "Change Teacher"
+                              : "Assign Teacher"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => saveTeacherAssignment(course._id)}
+                            disabled={savingCourse}
+                            className="rounded bg-blue-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                          >
+                            Save
+                          </button>
+                        </div>
+                        {teacherLoadError ? (
+                          <p className="text-[11px] text-amber-700">{teacherLoadError}</p>
+                        ) : null}
                       </div>
                     </td>
                     <td className="px-1 py-2 text-center text-sm text-gray-500">
@@ -2681,6 +3303,15 @@ const SemesterCourseTable = ({
                       {sumCourseCredits(course)}
                     </td>
                     <td className="px-3 py-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => openEditCourseModal(course)}
+                        disabled={savingCourse}
+                        className="mr-2 p-1 text-gray-400 hover:text-blue-600"
+                        title="Edit assignment"
+                      >
+                        <Edit3 size={16} />
+                      </button>
                       <button
                         type="button"
                         onClick={() => handleRemoveCourse(course._id)}
@@ -2996,13 +3627,26 @@ const SemesterCourseTable = ({
                               Compulsory {slotIndex + 1}
                             </div>
                             {courseId ? (
-                              <button
-                                type="button"
-                                onClick={() => clearCompulsorySlotCourse(slotIndex)}
-                                className="text-[11px] text-gray-500 hover:text-red-600"
-                              >
-                                Clear
-                              </button>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => clearCompulsorySlotCourse(slotIndex)}
+                                  className="text-[11px] text-gray-500 hover:text-red-600"
+                                >
+                                  Clear
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (!course) return;
+                                    openEditCourseModal(course);
+                                  }}
+                                  disabled={!course}
+                                  className="text-[11px] text-gray-500 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  Edit
+                                </button>
+                              </div>
                             ) : null}
                           </div>
 

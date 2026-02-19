@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Layers,
-  Search,
-  Plus,
   Edit,
   Trash2,
   RefreshCw,
@@ -13,12 +11,10 @@ import {
 } from 'lucide-react';
 import {
   getAllBatches,
-  createBatch,
   updateBatch,
   deleteBatch
 } from '../services/batch.service';
-import { getProgramsDropdown, getProgramById } from '../services/program.service';
-import { calculateBatchEndDate, formatMonthYear } from '../utils/dateCalculator';
+import { getProgramsDropdown } from '../services/program.service';
 
 const statusColors = {
   upcoming: 'bg-blue-100 text-blue-800',
@@ -47,7 +43,6 @@ const BatchManagement = () => {
   const [filterMonth, setFilterMonth] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingBatch, setEditingBatch] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -98,32 +93,6 @@ const BatchManagement = () => {
     }
   };
 
-  // Auto-fill name and expectedEndDate from startDate + program
-  useEffect(() => {
-    if (formData.startDate && showCreateModal) {
-      // Auto-fill name from startDate month/year
-      const autoName = formatMonthYear(formData.startDate);
-      if (autoName && !formData.name) {
-        setFormData(prev => ({ ...prev, name: autoName }));
-      }
-
-      // Auto-compute end date from program data
-      if (formData.program) {
-        const selectedProg = programs.find(p => p._id === formData.program);
-        if (selectedProg) {
-          const endDate = calculateBatchEndDate(
-            formData.startDate,
-            selectedProg.periodType,
-            selectedProg.totalSemesters
-          );
-          if (endDate && !formData.expectedEndDate) {
-            setFormData(prev => ({ ...prev, expectedEndDate: endDate }));
-          }
-        }
-      }
-    }
-  }, [formData.startDate, formData.program, showCreateModal]);
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -139,31 +108,6 @@ const BatchManagement = () => {
       expectedEndDate: '',
       maxStrength: ''
     });
-  };
-
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    try {
-      setSubmitting(true);
-      setError(null);
-      await createBatch({
-        program: formData.program,
-        year: Number(formData.year),
-        name: formData.name,
-        cohort: formData.cohort,
-        startDate: formData.startDate,
-        expectedEndDate: formData.expectedEndDate,
-        maxStrength: formData.maxStrength ? Number(formData.maxStrength) : 0
-      });
-      resetForm();
-      setShowCreateModal(false);
-      await fetchBatches();
-    } catch (err) {
-      const msg = err.response?.data?.error || 'Failed to create batch';
-      setError(msg);
-    } finally {
-      setSubmitting(false);
-    }
   };
 
   const handleEdit = (batch) => {
@@ -257,7 +201,9 @@ const BatchManagement = () => {
               <Layers className="w-8 h-8 text-blue-600 mr-3" />
               Batch Management
             </h1>
-            <p className="text-gray-600 mt-1">Manage academic batches under programs</p>
+            <p className="text-gray-600 mt-1">
+              Batch creation is available only in Setup Wizard.
+            </p>
           </div>
           <div className="flex space-x-3">
             <button
@@ -266,13 +212,6 @@ const BatchManagement = () => {
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
-            </button>
-            <button
-              onClick={() => { resetForm(); setShowCreateModal(true); }}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Batch
             </button>
           </div>
         </div>
@@ -340,7 +279,11 @@ const BatchManagement = () => {
           </div>
 
           {batches.map((batch) => (
-            <div key={batch._id} className="px-6 py-4 hover:bg-gray-50 grid grid-cols-8 gap-4 items-center">
+            <div
+              key={batch._id}
+              onClick={() => navigate(`/batch-detail/${batch._id}`)}
+              className="px-6 py-4 hover:bg-gray-50 grid grid-cols-8 gap-4 items-center cursor-pointer"
+            >
               <div className="col-span-2">
                 <div className="text-sm font-medium text-gray-900">{batch.name}</div>
                 {batch.cohort && (
@@ -370,21 +313,30 @@ const BatchManagement = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => navigate(`/batch-detail/${batch._id}`)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/batch-detail/${batch._id}`);
+                  }}
                   className="p-1 text-gray-400 hover:text-green-600"
                   title="View Details"
                 >
                   <Eye className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => handleEdit(batch)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEdit(batch);
+                  }}
                   className="p-1 text-gray-400 hover:text-blue-600"
                   title="Edit"
                 >
                   <Edit className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => handleDelete(batch)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(batch);
+                  }}
                   className="p-1 text-gray-400 hover:text-red-600"
                   title="Delete"
                 >
@@ -399,13 +351,7 @@ const BatchManagement = () => {
           <div className="text-center py-12">
             <Layers className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">No Batches Found</h2>
-            <p className="text-gray-600 mb-4">Get started by creating your first batch.</p>
-            <button
-              onClick={() => { resetForm(); setShowCreateModal(true); }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Create Batch
-            </button>
+            <p className="text-gray-600 mb-4">Create batches from Setup Wizard.</p>
           </div>
         )}
 
@@ -449,131 +395,6 @@ const BatchManagement = () => {
           </div>
         )}
       </div>
-
-      {/* Create Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Create New Batch</h2>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={handleCreate} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Program *</label>
-                <select
-                  name="program"
-                  value={formData.program}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Program</option>
-                  {programs.map(p => (
-                    <option key={p._id} value={p._id}>{p.name} ({p.code})</option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Year *</label>
-                  <input
-                    type="number"
-                    name="year"
-                    value={formData.year}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="e.g., 2024"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Batch Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="Auto-filled from start date"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cohort Mapping</label>
-                <input
-                  type="text"
-                  name="cohort"
-                  value={formData.cohort}
-                  onChange={handleInputChange}
-                  placeholder="e.g., Cohort 2024-A"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
-                  <input
-                    type="date"
-                    name="startDate"
-                    value={formData.startDate}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                  <input
-                    type="date"
-                    name="expectedEndDate"
-                    value={formData.expectedEndDate}
-                    onChange={handleInputChange}
-                    placeholder="Auto-computed from program"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Max Strength</label>
-                <input
-                  type="number"
-                  name="maxStrength"
-                  value={formData.maxStrength}
-                  onChange={handleInputChange}
-                  min="0"
-                  placeholder="0 = unlimited"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-white transition-colors ${
-                    submitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-                  }`}
-                >
-                  <Save className="w-4 h-4" />
-                  <span>{submitting ? 'Creating...' : 'Create Batch'}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Edit Modal */}
       {showEditModal && editingBatch && (

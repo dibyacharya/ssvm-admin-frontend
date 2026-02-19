@@ -86,6 +86,7 @@ function App() {
               <Route path="course-management" element={<Navigate to="/courses" replace />} />
               <Route path="course-management/:courseId" element={<CourseManagementDetails />} />
               <Route path="programs" element={<ProgramManagement />} />
+              <Route path="programs/:programId" element={<ProgramReview />} />
               <Route path="programs/:programId/review" element={<ProgramReview />} />
               <Route path="batches" element={<BatchManagement />} />
               <Route path="schedule" element={<Navigate to="/batches" replace />} />

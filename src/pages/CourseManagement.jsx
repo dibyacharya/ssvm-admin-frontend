@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Plus, Calendar, User, Users, GraduationCap, Edit, FileUp, X, Save, Search } from 'lucide-react';
+import { BookOpen, Plus, Calendar, User, Users, GraduationCap, Edit, FileUp, X, Save, Search, Trash2 } from 'lucide-react';
 import { useCourse } from '../contexts/CourseContext';
 import { getPeriodLabel } from '../utils/periodLabel';
 import { getAllSemester } from '../services/semester.services';
+import { deleteCourse } from '../services/courses.service';
 
 export const CourseManagement = () => {
   const navigate = useNavigate();
@@ -16,7 +17,8 @@ export const CourseManagement = () => {
     handleCreateCourse,
     updating,
     creating,
-    clearError
+    clearError,
+    setCourses
   } = useCourse();
 
   const [semesters, setSemesters] = useState([]);
@@ -27,11 +29,22 @@ export const CourseManagement = () => {
   const [quickCreateCode, setQuickCreateCode] = useState('');
   const [quickCreateTitle, setQuickCreateTitle] = useState('');
   const [quickCreateError, setQuickCreateError] = useState('');
+  const [toast, setToast] = useState(null);
+  const [deleteTargetCourse, setDeleteTargetCourse] = useState(null);
+  const [deletingCourseId, setDeletingCourseId] = useState('');
 
   useEffect(() => {
     fetchCourses();
     fetchSemesters();
   }, []);
+
+  useEffect(() => {
+    if (!toast) return undefined;
+    const timer = window.setTimeout(() => {
+      setToast(null);
+    }, 3200);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
 
   const fetchSemesters = async () => {
     try {
@@ -129,6 +142,50 @@ export const CourseManagement = () => {
         err?.message ||
         'Failed to create course.';
       setQuickCreateError(msg);
+    }
+  };
+
+  const openDeleteModal = (course) => {
+    if (!course?._id) return;
+    setDeleteTargetCourse(course);
+  };
+
+  const closeDeleteModal = () => {
+    if (deletingCourseId) return;
+    setDeleteTargetCourse(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    const courseId = deleteTargetCourse?._id;
+    if (!courseId || deletingCourseId) return;
+
+    setDeletingCourseId(courseId);
+    try {
+      const response = await deleteCourse(courseId);
+      setCourses((prev) =>
+        Array.isArray(prev) ? prev.filter((course) => course?._id !== courseId) : []
+      );
+      await fetchCourses();
+      setToast({
+        type: 'success',
+        message: response?.message || 'Course deleted successfully.',
+      });
+      setDeleteTargetCourse(null);
+    } catch (err) {
+      const statusCode = err?.response?.status;
+      const errorCode = err?.response?.data?.code;
+      const dependencyMessage =
+        'Cannot delete course because it is assigned to a semester/batch. Remove assignment first.';
+      const message =
+        statusCode === 409 || errorCode === 'COURSE_ASSIGNED'
+          ? dependencyMessage
+          : err?.response?.data?.error ||
+            err?.response?.data?.message ||
+            err?.message ||
+            'Failed to delete course.';
+      setToast({ type: 'error', message });
+    } finally {
+      setDeletingCourseId('');
     }
   };
 
@@ -273,6 +330,15 @@ export const CourseManagement = () => {
                           <Users className="w-3 h-3 mr-1" />
                           Students
                         </Link>
+                        <button
+                          type="button"
+                          onClick={() => openDeleteModal(course)}
+                          disabled={!courseId || deletingCourseId === courseId}
+                          className="inline-flex items-center px-2 py-1 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          <Trash2 className="w-3 h-3 mr-1" />
+                          {deletingCourseId === courseId ? 'Deleting...' : 'Delete'}
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -433,6 +499,60 @@ export const CourseManagement = () => {
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-60"
                 >
                   {creating ? 'Creating...' : 'Create & Open'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div
+          className={`fixed top-4 right-4 z-[60] rounded-lg border px-4 py-3 text-sm shadow-lg ${
+            toast.type === 'success'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+              : 'border-red-200 bg-red-50 text-red-700'
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+
+      {deleteTargetCourse && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-5 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">Delete Course</h2>
+              <button
+                onClick={closeDeleteModal}
+                disabled={Boolean(deletingCourseId)}
+                className="p-1 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-60"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-gray-700">
+                Are you sure you want to delete this course?
+              </p>
+              <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
+                <p className="font-medium text-gray-900">{deleteTargetCourse?.title || 'Untitled Course'}</p>
+                <p className="text-gray-600">{deleteTargetCourse?.courseCode || 'N/A'}</p>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  onClick={closeDeleteModal}
+                  disabled={Boolean(deletingCourseId)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  disabled={Boolean(deletingCourseId)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-60"
+                >
+                  {deletingCourseId ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
             </div>

@@ -1,61 +1,63 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import {
-  Layers,
   ArrowLeft,
   Calendar,
-  Users,
-  BookOpen,
-  GraduationCap,
+  Layers,
   RefreshCw,
-  User,
-  Upload,
+  Save,
   Search,
+  User,
+  Users,
   X,
-} from "lucide-react";
-import { getBatchById, getBatchStudents } from "../services/batch.service";
-import { getProgramById } from "../services/program.service";
-import { downloadStudentProfileTemplate } from "../services/studentImport.service";
-import SemesterManager from "../components/academic/SemesterManager";
-import CSVUpload from "../components/courseManagement/csvUpload";
-import { safeDisplay } from "../utils/nullSafety";
+  Edit3,
+} from 'lucide-react';
+import { getBatchById, getBatchStudents, updateBatch } from '../services/batch.service';
+import { getProgramById } from '../services/program.service';
+import SemesterManager from '../components/academic/SemesterManager';
 
 const statusColors = {
-  upcoming: "bg-blue-100 text-blue-800",
-  ongoing: "bg-green-100 text-green-800",
-  completed: "bg-gray-100 text-gray-800",
-  active: "bg-green-100 text-green-800",
-  graduated: "bg-gray-100 text-gray-800",
-  archived: "bg-gray-100 text-gray-800",
-  Assigned: "bg-green-100 text-green-800",
-  "Not Assigned": "bg-amber-100 text-amber-800",
+  upcoming: 'bg-blue-100 text-blue-800',
+  ongoing: 'bg-green-100 text-green-800',
+  completed: 'bg-gray-100 text-gray-800',
+  active: 'bg-green-100 text-green-800',
+  graduated: 'bg-gray-100 text-gray-800',
+  archived: 'bg-gray-100 text-gray-800',
+  Assigned: 'bg-green-100 text-green-800',
+  'Not Assigned': 'bg-amber-100 text-amber-800',
 };
 
 const normalizeStatus = (status) => {
-  if (!status) return "upcoming";
-  if (status === "active") return "ongoing";
-  if (status === "graduated") return "completed";
+  if (!status) return 'upcoming';
+  if (status === 'active') return 'ongoing';
+  if (status === 'graduated') return 'completed';
   return status;
 };
 
 const formatDate = (dateString) => {
-  if (!dateString) return "-";
+  if (!dateString) return '-';
   try {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
     });
   } catch {
     return dateString;
   }
 };
 
-const getStudentDisplayName = (student) =>
-  student?.name || student?.user?.name || "-";
+const toInputDate = (value) => {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toISOString().slice(0, 10);
+};
+
+const getStudentDisplayName = (student) => student?.name || student?.user?.name || '-';
 
 const getStudentPrimaryId = (student) =>
-  student?.registrationNumber || student?.enrollmentNumber || "-";
+  student?.registrationNumber || student?.enrollmentNumber || '-';
 
 const BatchDetail = () => {
   const { batchId } = useParams();
@@ -64,16 +66,43 @@ const BatchDetail = () => {
   const [program, setProgram] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("semesters");
-  const [showStudentUpload, setShowStudentUpload] = useState(false);
-  const [templateDownloading, setTemplateDownloading] = useState(false);
-  const [templateDownloadError, setTemplateDownloadError] = useState("");
 
   const [students, setStudents] = useState([]);
   const [studentsLoading, setStudentsLoading] = useState(false);
-  const [studentsError, setStudentsError] = useState("");
-  const [studentSearch, setStudentSearch] = useState("");
+  const [studentsError, setStudentsError] = useState('');
+  const [studentSearch, setStudentSearch] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
+
+  const [isEditingBatch, setIsEditingBatch] = useState(false);
+  const [batchSubmitting, setBatchSubmitting] = useState(false);
+  const [batchFormError, setBatchFormError] = useState('');
+  const [batchForm, setBatchForm] = useState({
+    program: '',
+    year: '',
+    name: '',
+    cohort: '',
+    startDate: '',
+    expectedEndDate: '',
+    maxStrength: '',
+  });
+
+  const [activeBatchTab, setActiveBatchTab] = useState('SEMESTER');
+  const [hasLoadedStudents, setHasLoadedStudents] = useState(false);
+
+  const applyBatchToForm = (batchData) => {
+    setBatchForm({
+      program: batchData?.program?._id || batchData?.program || '',
+      year: batchData?.year ? String(batchData.year) : '',
+      name: batchData?.name || '',
+      cohort: batchData?.cohort || '',
+      startDate: toInputDate(batchData?.startDate),
+      expectedEndDate: toInputDate(batchData?.expectedEndDate),
+      maxStrength:
+        batchData?.maxStrength !== undefined && batchData?.maxStrength !== null
+          ? String(batchData.maxStrength)
+          : '',
+    });
+  };
 
   const fetchBatchData = async () => {
     try {
@@ -82,6 +111,7 @@ const BatchDetail = () => {
 
       const batchData = await getBatchById(batchId);
       setBatch(batchData);
+      applyBatchToForm(batchData);
 
       const programId = batchData?.program?._id || batchData?.program;
       if (programId) {
@@ -89,12 +119,12 @@ const BatchDetail = () => {
           const programData = await getProgramById(programId);
           setProgram(programData);
         } catch (err) {
-          console.error("Error fetching program:", err);
+          console.error('Error fetching program:', err);
         }
       }
     } catch (err) {
-      setError("Failed to fetch batch details");
-      console.error("Error fetching batch:", err);
+      setError('Failed to fetch batch details');
+      console.error('Error fetching batch:', err);
     } finally {
       setLoading(false);
     }
@@ -103,14 +133,14 @@ const BatchDetail = () => {
   const fetchBatchStudents = async () => {
     try {
       setStudentsLoading(true);
-      setStudentsError("");
+      setStudentsError('');
       const data = await getBatchStudents(batchId);
       setStudents(Array.isArray(data?.students) ? data.students : []);
     } catch (err) {
       const message =
         err?.response?.data?.error ||
         err?.response?.data?.message ||
-        "Failed to fetch students for this batch";
+        'Failed to fetch students for this batch';
       setStudentsError(message);
       setStudents([]);
     } finally {
@@ -118,43 +148,41 @@ const BatchDetail = () => {
     }
   };
 
-  const handleUploadSuccess = async () => {
-    setShowStudentUpload(false);
-    await fetchBatchData();
-    if (activeTab === "students") {
-      await fetchBatchStudents();
+  const handleBatchFormChange = (event) => {
+    const { name, value } = event.target;
+    setBatchForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleBatchUpdate = async (event) => {
+    event.preventDefault();
+    try {
+      setBatchSubmitting(true);
+      setBatchFormError('');
+
+      await updateBatch(batchId, {
+        name: batchForm.name,
+        cohort: batchForm.cohort,
+        startDate: batchForm.startDate,
+        expectedEndDate: batchForm.expectedEndDate,
+        maxStrength: batchForm.maxStrength ? Number(batchForm.maxStrength) : 0,
+      });
+
+      await fetchBatchData();
+      setIsEditingBatch(false);
+    } catch (err) {
+      setBatchFormError(
+        err?.response?.data?.error || err?.response?.data?.message || 'Failed to update batch.'
+      );
+    } finally {
+      setBatchSubmitting(false);
     }
   };
 
-  const handleDownloadStudentTemplate = async (format) => {
-    setTemplateDownloadError("");
-    setTemplateDownloading(true);
-    try {
-      const response = await downloadStudentProfileTemplate(format);
-      const contentType =
-        response?.headers?.["content-type"] ||
-        (format === "xlsx"
-          ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          : "text/csv; charset=utf-8");
-      const blob =
-        response?.data instanceof Blob
-          ? response.data
-          : new Blob([response?.data], { type: contentType });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `student_profile_template.${format === "xlsx" ? "xlsx" : "csv"}`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      const message =
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        err?.message ||
-        "Failed to download template.";
-      setTemplateDownloadError(message);
-    } finally {
-      setTemplateDownloading(false);
+  const handleBatchTabChange = (tabKey) => {
+    setActiveBatchTab(tabKey);
+    if (tabKey === 'STUDENT' && !hasLoadedStudents) {
+      setHasLoadedStudents(true);
+      fetchBatchStudents();
     }
   };
 
@@ -163,10 +191,13 @@ const BatchDetail = () => {
   }, [batchId]);
 
   useEffect(() => {
-    if (activeTab === "students") {
-      fetchBatchStudents();
-    }
-  }, [activeTab, batchId]);
+    setActiveBatchTab('SEMESTER');
+    setHasLoadedStudents(false);
+    setStudents([]);
+    setStudentsError('');
+    setStudentSearch('');
+    setSelectedStudent(null);
+  }, [batchId]);
 
   const filteredStudents = useMemo(() => {
     const needle = studentSearch.trim().toLowerCase();
@@ -184,7 +215,7 @@ const BatchDetail = () => {
         student?.program?.code,
       ]
         .filter(Boolean)
-        .join(" ")
+        .join(' ')
         .toLowerCase();
       return haystack.includes(needle);
     });
@@ -196,9 +227,7 @@ const BatchDetail = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Loading Batch Details
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Batch Details</h2>
             <p className="text-gray-600">Please wait...</p>
           </div>
         </div>
@@ -238,8 +267,9 @@ const BatchDetail = () => {
     );
   }
 
-  const programName = batch.program?.name || program?.name || "-";
-  const programCode = batch.program?.code || program?.code || "";
+  const displayStatus = normalizeStatus(batch.status);
+  const programName = batch.program?.name || program?.name || '-';
+  const programCode = batch.program?.code || program?.code || '';
 
   return (
     <div className="space-y-6">
@@ -249,7 +279,7 @@ const BatchDetail = () => {
       </Link>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center">
               <Layers className="w-8 h-8 text-blue-600 mr-3" />
@@ -257,54 +287,41 @@ const BatchDetail = () => {
             </h1>
             <p className="text-gray-600 mt-1">
               {programName}
-              {programCode ? ` (${programCode})` : ""}
+              {programCode ? ` (${programCode})` : ''}
             </p>
-            {templateDownloadError && (
-              <p className="text-sm text-red-600 mt-1">{templateDownloadError}</p>
-            )}
+            <div className="mt-2">
+              <span
+                className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
+                  statusColors[displayStatus] || 'bg-gray-100 text-gray-800'
+                }`}
+              >
+                {displayStatus}
+              </span>
+            </div>
+            {batchFormError && <p className="text-sm text-red-600 mt-2">{batchFormError}</p>}
           </div>
-          <div className="flex items-center space-x-3">
-            {(() => {
-              const displayStatus = normalizeStatus(batch.status);
-              return (
-                <span
-                  className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
-                    statusColors[displayStatus] || "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {displayStatus}
-                </span>
-              );
-            })()}
-            <button
-              onClick={() => handleDownloadStudentTemplate("csv")}
-              disabled={templateDownloading}
-              className={`flex items-center px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors ${
-                templateDownloading ? "opacity-60 cursor-not-allowed" : ""
-              }`}
-            >
-              Template CSV
-            </button>
-            <button
-              onClick={() => handleDownloadStudentTemplate("xlsx")}
-              disabled={templateDownloading}
-              className={`flex items-center px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors ${
-                templateDownloading ? "opacity-60 cursor-not-allowed" : ""
-              }`}
-            >
-              Template XLSX
-            </button>
-            <button
-              onClick={() => setShowStudentUpload(true)}
-              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Students
-            </button>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {!isEditingBatch ? (
+              <button
+                onClick={() => {
+                  applyBatchToForm(batch);
+                  setBatchFormError('');
+                  setIsEditingBatch(true);
+                }}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Edit3 className="w-4 h-4 mr-2" />
+                Edit
+              </button>
+            ) : null}
+
             <button
               onClick={() => {
                 fetchBatchData();
-                if (activeTab === "students") fetchBatchStudents();
+                if (hasLoadedStudents || activeBatchTab === 'STUDENT') {
+                  fetchBatchStudents();
+                }
               }}
               className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
@@ -314,90 +331,180 @@ const BatchDetail = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-4">
-          <div className="flex items-center text-gray-600">
-            <Calendar className="w-5 h-5 mr-2 text-gray-400" />
-            <span className="text-sm">
-              {formatDate(batch.startDate)} - {formatDate(batch.expectedEndDate)}
-            </span>
-          </div>
-          <div className="flex items-center text-gray-600">
-            <Users className="w-5 h-5 mr-2 text-gray-400" />
-            <span className="text-sm">
-              Max Strength: {batch.maxStrength > 0 ? batch.maxStrength : "Unlimited"}
-            </span>
-          </div>
-          <div className="flex items-center text-gray-600">
-            <Layers className="w-5 h-5 mr-2 text-gray-400" />
-            <span className="text-sm">Cohort: {batch.cohort || "-"}</span>
-          </div>
-          <div className="flex items-center text-gray-600">
-            <GraduationCap className="w-5 h-5 mr-2 text-gray-400" />
-            <span className="text-sm">Year: {batch.year || "-"}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <BookOpen className="w-5 h-5 mr-2 text-blue-600" />
-          Key Resources
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-1 gap-4">
-          <div className="flex items-start">
-            <User className="w-5 h-5 mr-2 text-gray-400 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-gray-700">Program Coordinator</p>
-              <p className="text-sm text-gray-600">{safeDisplay(program?.programCoordinator)}</p>
+        {!isEditingBatch ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
+            <div className="flex items-center text-gray-600">
+              <Calendar className="w-5 h-5 mr-2 text-gray-400" />
+              <span className="text-sm">
+                {formatDate(batch.startDate)} - {formatDate(batch.expectedEndDate)}
+              </span>
+            </div>
+            <div className="flex items-center text-gray-600">
+              <User className="w-5 h-5 mr-2 text-gray-400" />
+              <span className="text-sm">Year: {batch.year || '-'}</span>
             </div>
           </div>
-        </div>
+        ) : (
+          <form onSubmit={handleBatchUpdate} className="mt-5 border border-gray-200 rounded-lg p-4 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Program</label>
+                <input
+                  type="text"
+                  value={programName}
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                <input
+                  type="text"
+                  value={batchForm.year}
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Batch Name *</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={batchForm.name}
+                  onChange={handleBatchFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cohort Mapping</label>
+                <input
+                  type="text"
+                  name="cohort"
+                  value={batchForm.cohort}
+                  onChange={handleBatchFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+                <input
+                  type="date"
+                  name="startDate"
+                  value={batchForm.startDate}
+                  onChange={handleBatchFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
+                <input
+                  type="date"
+                  name="expectedEndDate"
+                  value={batchForm.expectedEndDate}
+                  onChange={handleBatchFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Max Strength</label>
+                <input
+                  type="number"
+                  name="maxStrength"
+                  value={batchForm.maxStrength}
+                  onChange={handleBatchFormChange}
+                  min="0"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEditingBatch(false);
+                  applyBatchToForm(batch);
+                  setBatchFormError('');
+                }}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={batchSubmitting}
+                className={`flex items-center px-4 py-2 text-white rounded-md ${
+                  batchSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {batchSubmitting ? 'Saving...' : 'Save Batch'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="border-b border-gray-200 px-6">
-          <div className="flex space-x-4">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="px-6 pt-5 pb-4 border-b border-gray-200">
+          <div className="inline-flex items-center gap-2 rounded-lg bg-gray-100 p-1">
             <button
-              onClick={() => setActiveTab("semesters")}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === "semesters"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              type="button"
+              onClick={() => handleBatchTabChange('SEMESTER')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeBatchTab === 'SEMESTER'
+                  ? 'bg-white text-blue-700 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <Calendar className="w-4 h-4 inline mr-1" />
-              Semesters
+              <span className="inline-flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Semester
+              </span>
             </button>
             <button
-              onClick={() => setActiveTab("students")}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === "students"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              type="button"
+              onClick={() => handleBatchTabChange('STUDENT')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeBatchTab === 'STUDENT'
+                  ? 'bg-white text-blue-700 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <Users className="w-4 h-4 inline mr-1" />
-              Students
+              <span className="inline-flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Student
+              </span>
             </button>
           </div>
         </div>
 
         <div className="p-6">
-          {activeTab === "semesters" && (
+          <div className={activeBatchTab === 'SEMESTER' ? '' : 'hidden'}>
             <SemesterManager
               batchId={batchId}
               periodType={program?.periodType}
               programTotalCredits={program?.totalCredits || 0}
+              detailedView
+              allowSemesterCreation={false}
+              setupWizardOnly
             />
-          )}
+          </div>
 
-          {activeTab === "students" && (
-            <div className="space-y-4">
+          {(hasLoadedStudents || activeBatchTab === 'STUDENT') && (
+            <div className={activeBatchTab === 'STUDENT' ? 'space-y-4' : 'hidden'}>
               <div className="flex items-center justify-between">
                 <h3 className="text-md font-semibold text-gray-900">Batch Students</h3>
-                <div className="text-sm text-gray-500">
-                  Total: {filteredStudents.length}
-                </div>
+                <div className="text-sm text-gray-500">Total: {filteredStudents.length}</div>
               </div>
 
               <div className="relative max-w-md">
@@ -420,14 +527,12 @@ const BatchDetail = () => {
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
                   <Users className="w-10 h-10 text-gray-400 mx-auto mb-3" />
                   <p className="text-gray-700 font-medium">No students found</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    No students are currently mapped to this batch.
-                  </p>
+                  <p className="text-sm text-gray-500 mt-1">No students are currently mapped to this batch.</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                <div className="overflow-x-auto border border-gray-200 rounded-lg max-h-[480px] overflow-y-auto">
                   <table className="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-gray-50 sticky top-0">
                       <tr>
                         <th className="px-4 py-3 text-left font-medium text-gray-600">Roll Number</th>
                         <th className="px-4 py-3 text-left font-medium text-gray-600">Registration/Enrollment</th>
@@ -443,21 +548,20 @@ const BatchDetail = () => {
                           className="hover:bg-blue-50 cursor-pointer"
                           onClick={() => setSelectedStudent(student)}
                         >
-                          <td className="px-4 py-3 text-gray-700">{student.rollNumber || "-"}</td>
+                          <td className="px-4 py-3 text-gray-700">{student.rollNumber || '-'}</td>
                           <td className="px-4 py-3 text-gray-700">{getStudentPrimaryId(student)}</td>
                           <td className="px-4 py-3 text-gray-900 font-medium">{getStudentDisplayName(student)}</td>
                           <td className="px-4 py-3">
                             <span
                               className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                                statusColors[student.status] || "bg-gray-100 text-gray-800"
+                                statusColors[student.status] || 'bg-gray-100 text-gray-800'
                               }`}
                             >
-                              {student.status || "Assigned"}
+                              {student.status || 'Assigned'}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-gray-700">
-                            {(student.program?.name || "-") +
-                              (student.stream ? ` / ${student.stream}` : "")}
+                            {(student.program?.name || '-') + (student.stream ? ` / ${student.stream}` : '')}
                           </td>
                         </tr>
                       ))}
@@ -469,15 +573,6 @@ const BatchDetail = () => {
           )}
         </div>
       </div>
-
-      {showStudentUpload && (
-        <CSVUpload
-          batchId={batchId}
-          onClose={() => setShowStudentUpload(false)}
-          onSuccess={handleUploadSuccess}
-        />
-      )}
-
       {selectedStudent && (
         <div className="fixed inset-0 z-50 flex">
           <div
@@ -503,31 +598,60 @@ const BatchDetail = () => {
               <section>
                 <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Basic</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><span className="text-gray-500">Name:</span> {getStudentDisplayName(selectedStudent)}</div>
-                  <div><span className="text-gray-500">Email:</span> {selectedStudent.email || "-"}</div>
-                  <div><span className="text-gray-500">Phone:</span> {selectedStudent.phone || "-"}</div>
-                  <div><span className="text-gray-500">Roll Number:</span> {selectedStudent.rollNumber || "-"}</div>
+                  <div>
+                    <span className="text-gray-500">Name:</span> {getStudentDisplayName(selectedStudent)}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Email:</span> {selectedStudent.email || '-'}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Phone:</span> {selectedStudent.phone || '-'}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Roll Number:</span> {selectedStudent.rollNumber || '-'}
+                  </div>
                 </div>
               </section>
 
               <section>
                 <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Identifiers</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><span className="text-gray-500">Registration Number:</span> {selectedStudent.registrationNumber || "-"}</div>
-                  <div><span className="text-gray-500">Enrollment Number:</span> {selectedStudent.enrollmentNumber || "-"}</div>
-                  <div><span className="text-gray-500">DEB ID:</span> {selectedStudent.debId || "-"}</div>
+                  <div>
+                    <span className="text-gray-500">Registration Number:</span>{' '}
+                    {selectedStudent.registrationNumber || '-'}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Enrollment Number:</span>{' '}
+                    {selectedStudent.enrollmentNumber || '-'}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">DEB ID:</span> {selectedStudent.debId || '-'}
+                  </div>
                 </div>
               </section>
 
               <section>
                 <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Profile</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><span className="text-gray-500">Sex:</span> {selectedStudent.sex || "-"}</div>
-                  <div><span className="text-gray-500">Age:</span> {selectedStudent.age ?? "-"}</div>
-                  <div><span className="text-gray-500">Mode:</span> {selectedStudent.mode || "-"}</div>
-                  <div><span className="text-gray-500">Company Associated:</span> {selectedStudent.companyAssociated || "-"}</div>
-                  <div><span className="text-gray-500">Stream:</span> {selectedStudent.stream || "-"}</div>
-                  <div><span className="text-gray-500">Source:</span> {selectedStudent.source || "-"}</div>
+                  <div>
+                    <span className="text-gray-500">Sex:</span> {selectedStudent.sex || '-'}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Age:</span> {selectedStudent.age ?? '-'}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Mode:</span> {selectedStudent.mode || '-'}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Company Associated:</span>{' '}
+                    {selectedStudent.companyAssociated || '-'}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Stream:</span> {selectedStudent.stream || '-'}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Source:</span> {selectedStudent.source || '-'}
+                  </div>
                 </div>
               </section>
 
@@ -535,26 +659,32 @@ const BatchDetail = () => {
                 <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Program & Batch</h4>
                 <div className="grid grid-cols-1 gap-3">
                   <div>
-                    <span className="text-gray-500">Program:</span>{" "}
+                    <span className="text-gray-500">Program:</span>{' '}
                     {selectedStudent.program
-                      ? `${selectedStudent.program.name || "-"} (${selectedStudent.program.code || "-"})`
-                      : "-"}
+                      ? `${selectedStudent.program.name || '-'} (${selectedStudent.program.code || '-'})`
+                      : '-'}
                   </div>
                   <div>
-                    <span className="text-gray-500">Batch:</span>{" "}
+                    <span className="text-gray-500">Batch:</span>{' '}
                     {selectedStudent.batch
-                      ? `${selectedStudent.batch.name || "-"} (${selectedStudent.batch.year || "-"})`
-                      : "-"}
+                      ? `${selectedStudent.batch.name || '-'} (${selectedStudent.batch.year || '-'})`
+                      : '-'}
                   </div>
-                  <div><span className="text-gray-500">Status:</span> {selectedStudent.status || "-"}</div>
+                  <div>
+                    <span className="text-gray-500">Status:</span> {selectedStudent.status || '-'}
+                  </div>
                 </div>
               </section>
 
               <section>
                 <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Audit</h4>
                 <div className="grid grid-cols-1 gap-2">
-                  <div><span className="text-gray-500">Created At:</span> {formatDate(selectedStudent.createdAt)}</div>
-                  <div><span className="text-gray-500">Updated At:</span> {formatDate(selectedStudent.updatedAt)}</div>
+                  <div>
+                    <span className="text-gray-500">Created At:</span> {formatDate(selectedStudent.createdAt)}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Updated At:</span> {formatDate(selectedStudent.updatedAt)}
+                  </div>
                 </div>
               </section>
             </div>

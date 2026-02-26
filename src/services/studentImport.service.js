@@ -18,8 +18,12 @@ export const importStudentsFromTemplate = async ({
 }) => {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("programId", programId);
-  formData.append("batchId", batchId);
+  if (programId) {
+    formData.append("programId", programId);
+  }
+  if (batchId) {
+    formData.append("batchId", batchId);
+  }
   if (studentType) {
     formData.append("studentType", studentType);
   }

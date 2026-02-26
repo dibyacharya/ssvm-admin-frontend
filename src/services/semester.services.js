@@ -35,9 +35,28 @@ export const getSemesterTimetable = async (id) => {
   return response.data;
 };
 
-export const updateSemesterWeeklyTimetable = async (id, weeklyTimetable) => {
+export const getSemesterDateView = async (id) => {
+  const response = await api.get(`/semesters/${id}/timetable/date-view`);
+  return response.data;
+};
+
+export const updateSemesterWeeklyTimetable = async (id, weeklyClassSchedule) => {
   const response = await api.put(`/semesters/${id}/timetable/weekly`, {
-    weeklyTimetable,
+    weeklyClassSchedule,
+  });
+  return response.data;
+};
+
+export const updateSemesterSlotTemplates = async (id, slotTemplates) => {
+  const response = await api.put(`/semesters/${id}/timetable/slots`, {
+    slotTemplates,
+  });
+  return response.data;
+};
+
+export const updateSemesterDateClassSchedule = async (id, dateClassSchedule) => {
+  const response = await api.put(`/semesters/${id}/timetable/date`, {
+    dateClassSchedule,
   });
   return response.data;
 };

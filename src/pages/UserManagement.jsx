@@ -19,15 +19,14 @@ import {
   Eye
 } from 'lucide-react';
 import {
-  getUsers,
+  listUsers,
   createUser,
   updateUser,
   deleteUser,
   bulkDeleteUsers,
   getUserDetails,
   updateUserDetails,
-  resetUserPassword,
-  sendUserInvite
+  resetUserPassword
 } from '../services/user.service';
 import { getProgramsDropdown } from '../services/program.service';
 import { getBatchesDropdown } from '../services/batch.service';
@@ -108,9 +107,7 @@ const createDetailForm = (payload = {}) => {
       roleLabel: user.roleLabel || '',
       isActive: user.isActive !== false,
       mobileNo: user.mobileNo || '',
-      inviteStatus: user.inviteStatus || null,
-      inviteSentAt: user.inviteSentAt || null,
-      inviteExpiresAt: user.inviteExpiresAt || null
+      passwordResetAt: user.passwordResetAt || null
     },
     personalProfile: {
       ...DEFAULT_PERSONAL_PROFILE,
@@ -268,7 +265,6 @@ const UserManagement = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [filterRole, setFilterRole] = useState('');
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [deleting, setDeleting] = useState(null);
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -307,8 +303,7 @@ const UserManagement = () => {
   const [rolesLoading, setRolesLoading] = useState(false);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
-  const [inviteBanner, setInviteBanner] = useState(null);
-  const [inviteActionByUser, setInviteActionByUser] = useState({});
+  const [feedbackBanner, setFeedbackBanner] = useState(null);
   const [filterProgramId, setFilterProgramId] = useState('');
   const [filterBatchId, setFilterBatchId] = useState('');
   const [programsList, setProgramsList] = useState([]);
@@ -375,6 +370,16 @@ const UserManagement = () => {
       const preferred = String(preferredAccessRole || 'student')
         .trim()
         .toLowerCase();
+      if (preferred === 'admin') {
+        const nonSuperAdminRole = roleOptions.find((role) => {
+          const key = String(role?.key || '').trim().toLowerCase();
+          const accessRole = String(role?.accessRole || '').trim().toLowerCase();
+          return accessRole === 'admin' && key && key !== 'super_admin';
+        });
+        if (nonSuperAdminRole?.key) {
+          return String(nonSuperAdminRole.key).toLowerCase();
+        }
+      }
       const exact = roleOptions.find((role) => String(role?.key || '').toLowerCase() === preferred);
       if (exact?.key) return String(exact.key).toLowerCase();
       const byAccess = roleOptions.find(
@@ -396,12 +401,7 @@ const UserManagement = () => {
     return roleOptionsByKey.get(key) || null;
   }, [formData.roleKey, roleOptionsByKey]);
 
-  const selectedFilterAccessRole = useMemo(
-    () => getRoleAccessRole(filterRole),
-    [filterRole, getRoleAccessRole]
-  );
-  const isStudentSectionActive =
-    activeUserSection === 'student' || selectedFilterAccessRole === 'student';
+  const isStudentSectionActive = activeUserSection === 'student';
 
   const onlinePrograms = useMemo(
     () =>
@@ -446,33 +446,30 @@ const UserManagement = () => {
 
   useEffect(() => {
     if (!showUserModal || isEditMode) return;
+    if (createContext.flow === 'executive_add') return;
     if ((formData.roleKey || '').trim()) return;
     const nextRoleKey = resolveDefaultRoleKey('student');
     setFormData((prev) => ({ ...prev, roleKey: nextRoleKey }));
-  }, [showUserModal, isEditMode, formData.roleKey, resolveDefaultRoleKey]);
-
-  useEffect(() => {
-    if (!showUserModal || isEditMode || createContext.flow !== 'executive_add') return;
-    if (!roleOptions.length) return;
-    const executiveRoleKey = resolveDefaultRoleKey('admin');
-    setFormData((prev) =>
-      prev.roleKey === executiveRoleKey ? prev : { ...prev, roleKey: executiveRoleKey }
-    );
-  }, [showUserModal, isEditMode, createContext.flow, roleOptions, resolveDefaultRoleKey]);
+  }, [showUserModal, isEditMode, formData.roleKey, resolveDefaultRoleKey, createContext.flow]);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const params = { page: currentPage, limit };
-      if (filterRole) {
-        params.roleKey = filterRole;
-      } else if (activeUserSection === 'student') {
-        params.role = 'student';
-      } else if (activeUserSection === 'teacher') {
-        params.role = 'teacher';
+      const params = {
+        page: currentPage,
+        limit,
+        sort:
+          activeUserSection === 'student'
+            ? 'rollNo_asc'
+            : 'employeeId_asc'
+      };
+      if (activeUserSection === 'teacher') {
+        params.userType = 'teacher';
       } else if (activeUserSection === 'executive') {
-        params.role = 'admin';
+        params.userType = 'executive_staff';
+      } else {
+        params.userType = 'student';
       }
       if (debouncedSearch) params.search = debouncedSearch;
       if (isStudentSectionActive && filterProgramId) params.program = filterProgramId;
@@ -480,7 +477,7 @@ const UserManagement = () => {
       if (isStudentSectionActive && studentModeFilter) {
         params.mode = studentModeFilter;
       }
-      const data = await getUsers(params);
+      const data = await listUsers(params);
       setUsers(data.users || []);
       setPagination(
         data.pagination || {
@@ -498,7 +495,6 @@ const UserManagement = () => {
     }
   }, [
     currentPage,
-    filterRole,
     activeUserSection,
     debouncedSearch,
     filterProgramId,
@@ -517,24 +513,15 @@ const UserManagement = () => {
       setFilterProgramId('');
       setFilterBatchId('');
     }
-  }, [filterRole, isStudentSectionActive]);
+  }, [isStudentSectionActive]);
 
   useEffect(() => {
-    if (!roleOptions.length) return;
-    const sectionRole =
-      activeUserSection === 'teacher'
-        ? 'teacher'
-        : activeUserSection === 'executive'
-        ? 'admin'
-        : 'student';
-    const defaultRoleKey = resolveDefaultRoleKey(sectionRole);
-    setFilterRole((prev) => (prev === defaultRoleKey ? prev : defaultRoleKey));
     setCurrentPage(1);
     setSelectedUsers([]);
     if (activeUserSection !== 'student') {
       setStudentModeFilter('');
     }
-  }, [activeUserSection, roleOptions, resolveDefaultRoleKey]);
+  }, [activeUserSection]);
 
   useEffect(() => {
     if (isStudentSectionActive) {
@@ -585,9 +572,10 @@ const UserManagement = () => {
     studentType = 'regular',
     studentMode = MODE_OF_DELIVERY.REGULAR
   } = {}) => {
-    const defaultRoleKey = String(
-      roleKey || resolveDefaultRoleKey(preferredAccessRole)
-    ).toLowerCase();
+    const defaultRoleKey =
+      flow === 'executive_add'
+        ? String(roleKey || '').toLowerCase()
+        : String(roleKey || resolveDefaultRoleKey(preferredAccessRole)).toLowerCase();
     setCreateContext({
       flow,
       roleLocked
@@ -646,7 +634,7 @@ const UserManagement = () => {
   const openExecutiveAdd = () => {
     openCreateUserModal({
       preferredAccessRole: 'admin',
-      roleKey: resolveDefaultRoleKey('admin'),
+      roleKey: '',
       roleLocked: true,
       flow: 'executive_add'
     });
@@ -740,20 +728,24 @@ const UserManagement = () => {
     e.preventDefault();
     setFormSubmitting(true);
     setFormError('');
-    setInviteBanner(null);
+    setFeedbackBanner(null);
 
     try {
       if (!formData.name.trim() || !formData.email.trim()) {
         throw new Error('Name and email are required');
       }
 
+      const isExecutiveCreate = !isEditMode && createContext.flow === 'executive_add';
       const selectedRoleKey = String(formData.roleKey || '').trim().toLowerCase();
-      if (!isEditMode && !selectedRoleKey) {
+      if (!isEditMode && !isExecutiveCreate && !selectedRoleKey) {
         throw new Error('Role is required');
       }
-      const mappedAccessRole = getRoleAccessRole(selectedRoleKey);
+      const mappedAccessRole = isExecutiveCreate ? 'admin' : getRoleAccessRole(selectedRoleKey);
 
       if (!isEditMode) {
+        if (createContext.flow === 'executive_add' && selectedRoleKey === 'super_admin') {
+          throw new Error('Executive Staff cannot be created with SUPER_ADMIN role.');
+        }
         if (mappedAccessRole === 'teacher' && !formData.employeeId.trim()) {
           throw new Error('Employee ID is required for teacher accounts');
         }
@@ -792,10 +784,17 @@ const UserManagement = () => {
             : formData.studentMode || MODE_OF_DELIVERY.REGULAR;
         const normalizedSessionCode = String(formData.sessionCode || '').trim().toUpperCase();
         const parsedAdmissionYear = Number.parseInt(String(formData.admissionYear || ''), 10);
+        const resolvedUserType =
+          mappedAccessRole === 'teacher'
+            ? 'teacher'
+            : mappedAccessRole === 'admin'
+            ? 'executive_staff'
+            : 'student';
         const payload = {
           name: formData.name.trim(),
           email: formData.email.trim(),
-          roleKey: selectedRoleKey,
+          userType: resolvedUserType,
+          ...(isExecutiveCreate ? {} : { roleKey: selectedRoleKey }),
           mobileNo: formData.mobileNo.trim() || undefined,
           employeeId: formData.employeeId.trim() || undefined,
           designation:
@@ -824,15 +823,15 @@ const UserManagement = () => {
             mappedAccessRole === 'student' ? formData.enrollmentNumber.trim() || undefined : undefined
         };
         const response = await createUser(payload);
-        const inviteSent = response?.emailStatus === 'SENT';
+        const emailSent = response?.emailStatus === 'SENT';
         const generatedEnrollmentNo =
           response?.generatedEnrollmentNumber ||
           (response?.userIdMapping?.source === 'Enrollment Number'
             ? response?.userIdMapping?.userId
             : '');
-        setInviteBanner({
-          type: inviteSent ? 'success' : response?.emailStatus === 'FAILED' ? 'error' : 'success',
-          text: inviteSent
+        setFeedbackBanner({
+          type: emailSent ? 'success' : response?.emailStatus === 'FAILED' ? 'error' : 'success',
+          text: emailSent
             ? `User created and credentials email sent.${
                 generatedEnrollmentNo ? ` Enrollment No: ${generatedEnrollmentNo}.` : ''
               }`
@@ -1155,33 +1154,22 @@ const UserManagement = () => {
     }
   };
 
-  const getRoleBadge = (role) => {
+  const getAccessRoleBadge = (roleTag) => {
     const config = {
-      admin: 'bg-red-100 text-red-800',
-      teacher: 'bg-blue-100 text-blue-800',
-      student: 'bg-purple-100 text-purple-800'
+      SUPER_ADMIN: 'bg-red-100 text-red-800',
+      DEAN: 'bg-amber-100 text-amber-800',
+      ASSOCIATE_DEAN: 'bg-orange-100 text-orange-800',
+      PROGRAM_COORDINATOR: 'bg-emerald-100 text-emerald-800',
+      COURSE_COORDINATOR: 'bg-sky-100 text-sky-800',
+      TEACHER: 'bg-blue-100 text-blue-800',
+      TA: 'bg-indigo-100 text-indigo-800',
+      STUDENT: 'bg-violet-100 text-violet-800'
     };
-    return config[role] || 'bg-gray-100 text-gray-800';
+    return config[String(roleTag || '').trim().toUpperCase()] || 'bg-gray-100 text-gray-700';
   };
 
   const getStatusBadge = (isActive) => {
     return isActive === false ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
-  };
-
-  const getInviteBadge = (inviteStatus) => {
-    const normalized = String(inviteStatus || 'PENDING').toUpperCase();
-    const palette = {
-      PENDING: 'bg-yellow-100 text-yellow-800',
-      SENDING: 'bg-blue-100 text-blue-800',
-      SENT: 'bg-emerald-100 text-emerald-800',
-      FAILED: 'bg-red-100 text-red-800',
-      ACCEPTED: 'bg-green-100 text-green-800',
-      EXPIRED: 'bg-gray-100 text-gray-700'
-    };
-    return {
-      label: normalized,
-      className: palette[normalized] || 'bg-gray-100 text-gray-700'
-    };
   };
 
   const getSourceBadge = (targetUser) => {
@@ -1267,39 +1255,25 @@ const UserManagement = () => {
     return { label: 'User ID', value: targetUser.userId || targetUser.username || targetUser.email || '—' };
   };
 
-  const handleResendInvite = async (userId, { keepDrawerOpen = false } = {}) => {
-    if (!userId) return;
-    setInviteActionByUser((prev) => ({ ...prev, [userId]: true }));
-    setInviteBanner(null);
-    try {
-      const response = await sendUserInvite(userId);
-      setInviteBanner({
-        type: 'success',
-        text: response?.message || 'Invite sent successfully.'
-      });
-      await fetchUsers();
-      if (keepDrawerOpen && selectedUserId === userId) {
-        setDetailForm((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            user: {
-              ...prev.user,
-              inviteStatus: response?.inviteStatus || prev.user.inviteStatus,
-              inviteSentAt: response?.inviteSentAt || prev.user.inviteSentAt
-            }
-          };
-        });
-      }
-    } catch (err) {
-      const message = err.response?.data?.message || err.response?.data?.error || 'Failed to send invite';
-      setInviteBanner({
-        type: 'error',
-        text: message
-      });
-    } finally {
-      setInviteActionByUser((prev) => ({ ...prev, [userId]: false }));
+  const getTabPrimaryIdentifierInfo = (targetUser) => {
+    if (!targetUser) return { label: 'Identifier', value: '—' };
+
+    if (activeUserSection === 'student') {
+      const value =
+        targetUser.studentInfo?.rollNumber ||
+        targetUser.academicProfile?.rollNumber ||
+        targetUser.rollNumber ||
+        targetUser.rollNo ||
+        '—';
+      return { label: 'Roll No', value: value || '—' };
     }
+
+    const employeeId =
+      targetUser.teacherInfo?.employeeId ||
+      targetUser.employeeId ||
+      targetUser.userId ||
+      '—';
+    return { label: 'Employee ID', value: employeeId || '—' };
   };
 
   const renderPageButtons = () => {
@@ -1509,21 +1483,6 @@ const UserManagement = () => {
             />
           </div>
 
-          {activeUserSection !== 'student' && (
-            <select
-              value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">All Roles</option>
-              {roleOptions.map((role) => (
-                <option key={role._id || role.key} value={String(role.key || '').toLowerCase()}>
-                  {role.label}
-                </option>
-              ))}
-            </select>
-          )}
-
           {activeUserSection === 'student' && (
             <select
               value={studentModeFilter}
@@ -1592,19 +1551,19 @@ const UserManagement = () => {
         </div>
       )}
 
-      {inviteBanner && (
+      {feedbackBanner && (
         <div
           className={`rounded-lg border p-4 ${
-            inviteBanner.type === 'success'
+            feedbackBanner.type === 'success'
               ? 'border-green-200 bg-green-50 text-green-800'
               : 'border-red-200 bg-red-50 text-red-800'
           }`}
         >
           <div className="flex items-center justify-between gap-4">
-            <p className="text-sm">{inviteBanner.text}</p>
+            <p className="text-sm">{feedbackBanner.text}</p>
             <button
               type="button"
-              onClick={() => setInviteBanner(null)}
+              onClick={() => setFeedbackBanner(null)}
               className="text-xs underline underline-offset-2"
             >
               Dismiss
@@ -1657,7 +1616,7 @@ const UserManagement = () => {
                 <div
                   key={user._id}
                   className="px-6 py-4 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => openUserDetail(user._id)}
+                  onClick={() => navigate(`/users/${user._id}/profile`)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4 min-w-0">
@@ -1680,8 +1639,13 @@ const UserManagement = () => {
                           <span className="truncate">{user.email}</span>
                         </div>
                         <div className="text-xs text-gray-500 mt-0.5">
-                          {getUserIdDisplayInfo(user).label}: {getUserIdDisplayInfo(user).value}
+                          {getTabPrimaryIdentifierInfo(user).label}: {getTabPrimaryIdentifierInfo(user).value}
                         </div>
+                        {getUserIdDisplayInfo(user).value !== getTabPrimaryIdentifierInfo(user).value && (
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            {getUserIdDisplayInfo(user).label}: {getUserIdDisplayInfo(user).value}
+                          </div>
+                        )}
                         {user.designation && (
                           <div className="text-xs text-gray-500 mt-0.5">
                             Designation: {user.designation}
@@ -1697,13 +1661,27 @@ const UserManagement = () => {
                     </div>
 
                     <div className="flex items-center space-x-6">
-                      <span
-                        className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getRoleBadge(
-                          user.roleAccessRole || user.role
-                        )}`}
-                      >
-                        {user.roleLabel || user.roleKey || user.role}
-                      </span>
+                      <div className="flex flex-wrap items-center justify-end gap-1 max-w-[260px]">
+                        {Array.isArray(user.accessRoles) && user.accessRoles.length > 0 ? (
+                          [...new Set(user.accessRoles
+                            .map((tag) => String(tag || '').trim().toUpperCase())
+                            .filter(Boolean))]
+                            .map((tag) => (
+                              <span
+                                key={`${user._id}-${tag}`}
+                                className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getAccessRoleBadge(
+                                  tag
+                                )}`}
+                              >
+                                {tag}
+                              </span>
+                            ))
+                        ) : (
+                          <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                            No Tags
+                          </span>
+                        )}
+                      </div>
 
                       <span
                         className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
@@ -1721,21 +1699,10 @@ const UserManagement = () => {
                         {user.isActive === false ? 'Inactive' : 'Active'}
                       </span>
 
-                      <span
-                        className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                          getInviteBadge(user.inviteStatus).className
-                        }`}
-                      >
-                        Invite: {getInviteBadge(user.inviteStatus).label}
-                      </span>
-
                       <div className="text-sm text-gray-500 hidden md:flex flex-col items-end">
                         <div className="flex items-center">
                           <Calendar className="w-3 h-3 mr-1" />
                           {formatDate(user.createdAt)}
-                        </div>
-                        <div className="text-xs mt-0.5">
-                          Invite sent: {formatDate(user.inviteSentAt)}
                         </div>
                       </div>
 
@@ -1743,22 +1710,7 @@ const UserManagement = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleResendInvite(user._id);
-                          }}
-                          className="p-1 text-gray-400 hover:text-emerald-600 disabled:opacity-50"
-                          title="Resend Invite"
-                          disabled={Boolean(inviteActionByUser[user._id])}
-                        >
-                          <Mail
-                            className={`w-4 h-4 ${
-                              inviteActionByUser[user._id] ? 'animate-pulse' : ''
-                            }`}
-                          />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openUserDetail(user._id);
+                            navigate(`/users/${user._id}/profile`);
                           }}
                           className="p-1 text-gray-400 hover:text-blue-600"
                           title="View Profile"
@@ -2071,7 +2023,12 @@ const UserManagement = () => {
                 <button
                   type="submit"
                   className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
-                  disabled={formSubmitting || (!isEditMode && !formData.roleKey)}
+                  disabled={
+                    formSubmitting ||
+                    (!isEditMode &&
+                      createContext.flow !== 'executive_add' &&
+                      !formData.roleKey)
+                  }
                 >
                   {formSubmitting ? 'Saving...' : isEditMode ? 'Update User' : 'Create User'}
                 </button>
@@ -2700,40 +2657,6 @@ const UserManagement = () => {
                             className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
                             placeholder="Optional username"
                           />
-                        </div>
-                      </div>
-
-                      <div className="rounded-lg border border-gray-200 p-4 space-y-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="text-sm font-semibold text-gray-800">Onboarding Invite</div>
-                            <div className="mt-1 flex items-center gap-2">
-                              <span
-                                className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                                  getInviteBadge(detailForm.user.inviteStatus).className
-                                }`}
-                              >
-                                {getInviteBadge(detailForm.user.inviteStatus).label}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                Sent: {formatDate(detailForm.user.inviteSentAt)}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                Expires: {formatDate(detailForm.user.inviteExpiresAt)}
-                              </span>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleResendInvite(selectedUserId, { keepDrawerOpen: true })
-                            }
-                            className="inline-flex items-center rounded border border-emerald-300 px-3 py-1.5 text-xs text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
-                            disabled={Boolean(inviteActionByUser[selectedUserId])}
-                          >
-                            <Mail className="w-3.5 h-3.5 mr-1.5" />
-                            {inviteActionByUser[selectedUserId] ? 'Sending...' : 'Resend Invite'}
-                          </button>
                         </div>
                       </div>
 

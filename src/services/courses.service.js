@@ -177,6 +177,86 @@ export const getAdminCourseMaterials = async (courseId) => {
   return response.data;
 };
 
+export const getAdminCourseModules = async (courseId) => {
+  const response = await api.get(`/admin/courses/${courseId}/modules`);
+  return response.data;
+};
+
+export const createAdminCourseModule = async (courseId, payload = {}) => {
+  const response = await api.post(`/admin/courses/${courseId}/modules`, payload);
+  return response.data;
+};
+
+export const updateAdminCourseModule = async (courseId, moduleId, payload = {}) => {
+  const response = await api.patch(
+    `/admin/courses/${courseId}/modules/${moduleId}`,
+    payload
+  );
+  return response.data;
+};
+
+export const deleteAdminCourseModule = async (courseId, moduleId) => {
+  const response = await api.delete(`/admin/courses/${courseId}/modules/${moduleId}`);
+  return response.data;
+};
+
+export const uploadCourseModulePdf = async (courseId, moduleId, payload = {}) => {
+  const formData = new FormData();
+  if (payload?.title) formData.append("title", payload.title);
+  if (payload?.file) formData.append("file", payload.file);
+  const response = await api.post(
+    `/admin/courses/${courseId}/modules/${moduleId}/pdfs`,
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } }
+  );
+  return response.data;
+};
+
+export const uploadCourseModulePresentation = async (
+  courseId,
+  moduleId,
+  payload = {}
+) => {
+  const formData = new FormData();
+  if (payload?.title) formData.append("title", payload.title);
+  if (payload?.file) formData.append("file", payload.file);
+  const response = await api.post(
+    `/admin/courses/${courseId}/modules/${moduleId}/presentations`,
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } }
+  );
+  return response.data;
+};
+
+export const addCourseModuleVideo = async (courseId, moduleId, payload = {}) => {
+  const response = await api.post(`/admin/courses/${courseId}/modules/${moduleId}/videos`, {
+    title: payload?.title,
+    url: payload?.url,
+  });
+  return response.data;
+};
+
+export const deleteCourseModulePdf = async (courseId, moduleId, pdfId) => {
+  const response = await api.delete(
+    `/admin/courses/${courseId}/modules/${moduleId}/pdfs/${pdfId}`
+  );
+  return response.data;
+};
+
+export const deleteCourseModulePresentation = async (courseId, moduleId, pptId) => {
+  const response = await api.delete(
+    `/admin/courses/${courseId}/modules/${moduleId}/presentations/${pptId}`
+  );
+  return response.data;
+};
+
+export const deleteCourseModuleVideo = async (courseId, moduleId, videoId) => {
+  const response = await api.delete(
+    `/admin/courses/${courseId}/modules/${moduleId}/videos/${videoId}`
+  );
+  return response.data;
+};
+
 export const addCourseMaterialItem = async (courseId, moduleNo, payload = {}) => {
   const normalizedType = String(payload?.type || "").toLowerCase();
   const requiresFile = normalizedType === "pdf" || normalizedType === "presentation";

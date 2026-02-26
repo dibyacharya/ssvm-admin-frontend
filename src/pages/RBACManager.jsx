@@ -14,6 +14,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import {
   listRoles,
+  getRoleFeatures,
   createRole,
   deleteRole as deleteRoleApi,
   actAsRolePreview,
@@ -91,6 +92,11 @@ const toRoleKey = (value) =>
 const getPermissionKey = (roleId, featureId, actionId, scopeId) =>
   `${roleId}-${featureId}-${actionId}-${scopeId}`;
 
+const toActionLabel = (actionKey) =>
+  String(actionKey || '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (match) => match.toUpperCase());
+
 const getDefaultPermissionForRole = (role, feature, action, scope) => {
   if (role.isCustom) {
     return action.id === 'view';
@@ -144,6 +150,34 @@ const getRealRole = (user) => {
   return fromRole;
 };
 
+const ADMIN_FEATURE_ACCESS_ROLES = [
+  'SUPER_ADMIN',
+  'DEAN',
+  'ASSOCIATE_DEAN',
+  'PROGRAM_COORDINATOR',
+  'COURSE_COORDINATOR',
+];
+
+const normalizeAccessRoleTag = (value) =>
+  String(value || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+const normalizeAccessRoles = (values) => {
+  if (!Array.isArray(values)) return [];
+  const seen = new Set();
+  const normalized = [];
+  values.forEach((value) => {
+    const roleTag = normalizeAccessRoleTag(value);
+    if (!roleTag || seen.has(roleTag)) return;
+    seen.add(roleTag);
+    normalized.push(roleTag);
+  });
+  return normalized;
+};
+
 const RBACManager = () => {
   const { user, updateUser } = useAuth();
 
@@ -162,6 +196,11 @@ const RBACManager = () => {
   const [showAddRoleModal, setShowAddRoleModal] = useState(false);
   const [addingRole, setAddingRole] = useState(false);
   const [addRoleError, setAddRoleError] = useState('');
+  const [featuresLoading, setFeaturesLoading] = useState(false);
+  const [featuresError, setFeaturesError] = useState('');
+  const [availableFeatures, setAvailableFeatures] = useState([]);
+  const [matrixSearchTerm, setMatrixSearchTerm] = useState('');
+  const [newRolePermissions, setNewRolePermissions] = useState({});
   const [deleteRoleError, setDeleteRoleError] = useState('');
   const [deletingRoleId, setDeletingRoleId] = useState('');
   const [newRoleForm, setNewRoleForm] = useState({
@@ -175,9 +214,15 @@ const RBACManager = () => {
 
   const [previewBusy, setPreviewBusy] = useState(false);
   const [previewError, setPreviewError] = useState('');
+  const [toastState, setToastState] = useState(null);
 
   const realRole = getRealRole(user);
-  const isAdminUser = realRole === 'admin';
+  const accessRoles = useMemo(() => normalizeAccessRoles(user?.accessRoles), [user?.accessRoles]);
+  const hasAdminFeatureRole = useMemo(
+    () => accessRoles.some((roleTag) => ADMIN_FEATURE_ACCESS_ROLES.includes(roleTag)),
+    [accessRoles]
+  );
+  const isAdminUser = realRole === 'admin' || hasAdminFeatureRole;
   const effectiveRole = String(user?.effectiveRole || '').trim().toLowerCase();
   const isPreviewActive = Boolean(effectiveRole && effectiveRole !== realRole);
 
@@ -222,6 +267,51 @@ const RBACManager = () => {
     () => roles.map((role) => ({ name: role.name, color: role.color })),
     [roles]
   );
+
+  const matrixActionColumns = useMemo(() => {
+    const actionSet = new Set();
+    availableFeatures.forEach((feature) => {
+      (feature?.actions || []).forEach((action) => {
+        const normalized = String(action || '').trim().toLowerCase();
+        if (normalized) actionSet.add(normalized);
+      });
+    });
+    return Array.from(actionSet);
+  }, [availableFeatures]);
+
+  const filteredAvailableFeatures = useMemo(() => {
+    const query = String(matrixSearchTerm || '').trim().toLowerCase();
+    if (!query) return availableFeatures;
+    return availableFeatures.filter((feature) => {
+      const name = String(feature?.featureName || '').toLowerCase();
+      const key = String(feature?.featureKey || '').toLowerCase();
+      return name.includes(query) || key.includes(query);
+    });
+  }, [availableFeatures, matrixSearchTerm]);
+
+  const selectedFeatureCount = useMemo(
+    () =>
+      Object.values(newRolePermissions).filter(
+        (actionsList) => Array.isArray(actionsList) && actionsList.length > 0
+      ).length,
+    [newRolePermissions]
+  );
+
+  const selectedPermissionCount = useMemo(
+    () =>
+      Object.values(newRolePermissions).reduce((sum, actionsList) => {
+        if (!Array.isArray(actionsList)) return sum;
+        return sum + actionsList.length;
+      }, 0),
+    [newRolePermissions]
+  );
+
+  const showToast = (type, message) => {
+    setToastState({ type, message });
+    window.setTimeout(() => {
+      setToastState((prev) => (prev?.message === message ? null : prev));
+    }, 3000);
+  };
 
   useEffect(() => {
     const defaults = getDefaultPermissionsForRoles(roles);
@@ -271,9 +361,37 @@ const RBACManager = () => {
     }
   };
 
+  const loadFeatures = async () => {
+    setFeaturesLoading(true);
+    setFeaturesError('');
+    try {
+      const payload = await getRoleFeatures();
+      const rows = Array.isArray(payload?.features) ? payload.features : [];
+      const normalized = rows.map((feature) => ({
+        featureKey: String(feature?.featureKey || '').trim().toLowerCase(),
+        featureName: String(feature?.featureName || feature?.featureKey || '').trim(),
+        actions: Array.isArray(feature?.actions)
+          ? [...new Set(feature.actions.map((action) => String(action || '').trim().toLowerCase()).filter(Boolean))]
+          : []
+      }));
+      setAvailableFeatures(normalized);
+    } catch (error) {
+      setFeaturesError(
+        error?.response?.data?.error ||
+          error?.response?.data?.message ||
+          error?.message ||
+          'Failed to load feature permissions'
+      );
+      setAvailableFeatures([]);
+    } finally {
+      setFeaturesLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!isAdminUser) return;
     loadRoles();
+    loadFeatures();
   }, [isAdminUser]);
 
   const togglePermission = (roleId, featureId, actionId, scopeId) => {
@@ -381,6 +499,58 @@ const RBACManager = () => {
     }));
   };
 
+  const toggleMatrixPermission = (featureKey, action) => {
+    setNewRolePermissions((prev) => {
+      const currentActions = Array.isArray(prev[featureKey]) ? prev[featureKey] : [];
+      const exists = currentActions.includes(action);
+      const nextActions = exists
+        ? currentActions.filter((entry) => entry !== action)
+        : [...currentActions, action];
+
+      const next = { ...prev };
+      if (nextActions.length === 0) {
+        delete next[featureKey];
+      } else {
+        next[featureKey] = nextActions;
+      }
+      return next;
+    });
+  };
+
+  const setAllFeatureActions = (featureKey, actionsList, checked) => {
+    const normalizedActions = Array.isArray(actionsList) ? actionsList : [];
+    setNewRolePermissions((prev) => {
+      const next = { ...prev };
+      if (!checked || normalizedActions.length === 0) {
+        delete next[featureKey];
+      } else {
+        next[featureKey] = [...new Set(normalizedActions)];
+      }
+      return next;
+    });
+  };
+
+  const setAllActionColumn = (action, checked) => {
+    setNewRolePermissions((prev) => {
+      const next = { ...prev };
+      availableFeatures.forEach((feature) => {
+        const featureKey = String(feature?.featureKey || '').trim().toLowerCase();
+        const featureActions = Array.isArray(feature?.actions) ? feature.actions : [];
+        if (!featureKey || !featureActions.includes(action)) return;
+
+        const existing = Array.isArray(next[featureKey]) ? next[featureKey] : [];
+        if (checked) {
+          next[featureKey] = [...new Set([...existing, action])];
+        } else {
+          const reduced = existing.filter((entry) => entry !== action);
+          if (reduced.length === 0) delete next[featureKey];
+          else next[featureKey] = reduced;
+        }
+      });
+      return next;
+    });
+  };
+
   const submitCreateRole = async () => {
     const label = String(newRoleForm.label || '').trim();
     const key = toRoleKey(newRoleForm.key || label);
@@ -394,16 +564,30 @@ const RBACManager = () => {
       setAddRoleError('Role Name is required');
       return;
     }
+    if (!key) {
+      setAddRoleError('Role Code is required');
+      return;
+    }
+
+    const permissions = Object.entries(newRolePermissions)
+      .map(([featureKey, actionsList]) => ({
+        featureKey,
+        actions: Array.isArray(actionsList)
+          ? [...new Set(actionsList.map((action) => String(action || '').trim().toLowerCase()).filter(Boolean))]
+          : []
+      }))
+      .filter((entry) => entry.actions.length > 0);
 
     setAddingRole(true);
     setAddRoleError('');
     try {
       await createRole({
-        label,
-        key,
+        roleName: label,
+        roleKey: key,
         description,
         parentRoleId: parentRoleId || undefined,
-        childRoleIds
+        childRoleIds,
+        permissions
       });
       setShowAddRoleModal(false);
       setNewRoleForm({
@@ -413,8 +597,11 @@ const RBACManager = () => {
         parentRoleId: '',
         childRoleIds: []
       });
+      setNewRolePermissions({});
+      setMatrixSearchTerm('');
       setKeyTouched(false);
       await loadRoles();
+      showToast('success', 'Role created successfully');
     } catch (error) {
       setAddRoleError(
         error?.response?.data?.error ||
@@ -422,20 +609,10 @@ const RBACManager = () => {
           error?.message ||
           'Failed to create role'
       );
+      showToast('error', 'Failed to create role');
     } finally {
       setAddingRole(false);
     }
-  };
-
-  const toggleChildRoleSelection = (roleId) => {
-    setNewRoleForm((prev) => {
-      const current = Array.isArray(prev.childRoleIds) ? prev.childRoleIds : [];
-      const exists = current.includes(roleId);
-      const next = exists
-        ? current.filter((id) => id !== roleId)
-        : [...current, roleId];
-      return { ...prev, childRoleIds: next };
-    });
   };
 
   const handleDeleteRole = async (role) => {
@@ -455,6 +632,7 @@ const RBACManager = () => {
         await handleExitPreview();
       }
       await loadRoles();
+      showToast('success', 'Role deleted successfully');
     } catch (error) {
       setDeleteRoleError(
         error?.response?.data?.error ||
@@ -462,6 +640,7 @@ const RBACManager = () => {
           error?.message ||
           'Failed to delete role'
       );
+      showToast('error', 'Failed to delete role');
     } finally {
       setDeletingRoleId('');
     }
@@ -486,6 +665,18 @@ const RBACManager = () => {
 
   return (
     <div className="space-y-6">
+      {toastState && (
+        <div
+          className={`fixed right-6 top-6 z-[60] rounded-lg border px-4 py-2 text-sm shadow-lg ${
+            toastState.type === 'success'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+              : 'border-red-200 bg-red-50 text-red-800'
+          }`}
+        >
+          {toastState.message}
+        </div>
+      )}
+
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
           <div>
@@ -530,7 +721,12 @@ const RBACManager = () => {
                   parentRoleId: '',
                   childRoleIds: []
                 });
+                setNewRolePermissions({});
+                setMatrixSearchTerm('');
                 setKeyTouched(false);
+                if (!featuresLoading && availableFeatures.length === 0) {
+                  loadFeatures();
+                }
               }}
               className="flex items-center px-4 py-2 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
             >
@@ -756,109 +952,235 @@ const RBACManager = () => {
 
       {showAddRoleModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
               <h3 className="text-lg font-semibold text-gray-900">Add Role</h3>
-              <button onClick={() => setShowAddRoleModal(false)} className="text-gray-500 hover:text-gray-700">
+              <button
+                onClick={() => setShowAddRoleModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {addRoleError && (
-              <div className="mb-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                {addRoleError}
-              </div>
-            )}
+            <div className="p-6 space-y-4">
+              {addRoleError && (
+                <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {addRoleError}
+                </div>
+              )}
 
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role Name</label>
-                <input
-                  type="text"
-                  value={newRoleForm.label}
-                  onChange={(event) => handleRoleLabelChange(event.target.value)}
-                  placeholder="e.g. Content Reviewer"
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Role Name</label>
+                  <input
+                    type="text"
+                    value={newRoleForm.label}
+                    onChange={(event) => handleRoleLabelChange(event.target.value)}
+                    placeholder="e.g. Content Reviewer"
+                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Role Code (roleKey)</label>
+                  <input
+                    type="text"
+                    value={newRoleForm.key}
+                    onChange={(event) => {
+                      setKeyTouched(true);
+                      setNewRoleForm((prev) => ({
+                        ...prev,
+                        key: toRoleKey(event.target.value)
+                      }));
+                    }}
+                    placeholder="content_reviewer"
+                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Reporting To</label>
+                  <select
+                    value={newRoleForm.parentRoleId}
+                    onChange={(event) =>
+                      setNewRoleForm((prev) => ({
+                        ...prev,
+                        parentRoleId: event.target.value,
+                        childRoleIds: (prev.childRoleIds || []).filter(
+                          (id) => id !== event.target.value
+                        )
+                      }))
+                    }
+                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">No reporting role</option>
+                    {apiRoles.map((role) => (
+                      <option key={role._id} value={role._id}>
+                        {role.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description (optional)
+                  </label>
+                  <textarea
+                    value={newRoleForm.description}
+                    onChange={(event) =>
+                      setNewRoleForm((prev) => ({ ...prev, description: event.target.value }))
+                    }
+                    rows={3}
+                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role Key</label>
-                <input
-                  type="text"
-                  value={newRoleForm.key}
-                  onChange={(event) => {
-                    setKeyTouched(true);
-                    setNewRoleForm((prev) => ({ ...prev, key: event.target.value }));
-                  }}
-                  placeholder="content_reviewer"
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+              <div className="rounded border border-gray-200">
+                <div className="flex flex-col gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3 md:flex-row md:items-center md:justify-between">
+                  <h4 className="text-sm font-semibold text-gray-900">Permission Matrix</h4>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      value={matrixSearchTerm}
+                      onChange={(event) => setMatrixSearchTerm(event.target.value)}
+                      placeholder="Search features..."
+                      className="w-56 rounded border border-gray-300 px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <span className="text-xs text-gray-600">
+                      {selectedFeatureCount} features selected, {selectedPermissionCount} total permissions
+                    </span>
+                  </div>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
-                <textarea
-                  value={newRoleForm.description}
-                  onChange={(event) =>
-                    setNewRoleForm((prev) => ({ ...prev, description: event.target.value }))
-                  }
-                  rows={3}
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+                {featuresError && (
+                  <div className="border-b border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+                    {featuresError}
+                  </div>
+                )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Parent Role (optional)</label>
-                <select
-                  value={newRoleForm.parentRoleId}
-                  onChange={(event) =>
-                    setNewRoleForm((prev) => ({
-                      ...prev,
-                      parentRoleId: event.target.value,
-                      childRoleIds: (prev.childRoleIds || []).filter((id) => id !== event.target.value)
-                    }))
-                  }
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">No parent role</option>
-                  {apiRoles.map((role) => (
-                    <option key={role._id} value={role._id}>
-                      {role.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                <div className="max-h-[48vh] overflow-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="sticky top-0 z-10 bg-white">
+                      <tr className="border-b border-gray-200">
+                        <th className="px-4 py-2 text-left font-semibold text-gray-700">
+                          Feature
+                        </th>
+                        {matrixActionColumns.map((action) => {
+                          const actionEnabledForAll = availableFeatures
+                            .filter((feature) => (feature?.actions || []).includes(action))
+                            .every((feature) =>
+                              (newRolePermissions[feature.featureKey] || []).includes(action)
+                            );
+                          return (
+                            <th
+                              key={`action-header-${action}`}
+                              className="px-3 py-2 text-center font-semibold text-gray-700"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setAllActionColumn(action, !actionEnabledForAll)}
+                                className="text-xs text-blue-700 hover:underline"
+                              >
+                                {toActionLabel(action)}
+                              </button>
+                            </th>
+                          );
+                        })}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {featuresLoading && (
+                        <tr>
+                          <td
+                            colSpan={Math.max(1, matrixActionColumns.length + 1)}
+                            className="px-4 py-4 text-center text-sm text-gray-500"
+                          >
+                            Loading features...
+                          </td>
+                        </tr>
+                      )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Child Roles (optional)</label>
-                <div className="max-h-36 overflow-auto rounded border border-gray-200 p-2 space-y-1">
-                  {apiRoles.length === 0 && (
-                    <p className="text-xs text-gray-500">No roles available</p>
-                  )}
-                  {apiRoles.map((role) => {
-                    const disabled = role._id === newRoleForm.parentRoleId;
-                    const checked = (newRoleForm.childRoleIds || []).includes(role._id);
-                    return (
-                      <label
-                        key={`child-${role._id}`}
-                        className={`flex items-center gap-2 text-sm ${disabled ? 'text-gray-400' : 'text-gray-700'}`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          disabled={disabled}
-                          onChange={() => toggleChildRoleSelection(role._id)}
-                        />
-                        <span>{role.label}</span>
-                      </label>
-                    );
-                  })}
+                      {!featuresLoading && filteredAvailableFeatures.length === 0 && (
+                        <tr>
+                          <td
+                            colSpan={Math.max(1, matrixActionColumns.length + 1)}
+                            className="px-4 py-4 text-center text-sm text-gray-500"
+                          >
+                            No features found.
+                          </td>
+                        </tr>
+                      )}
+
+                      {filteredAvailableFeatures.map((feature) => {
+                        const featureActions = Array.isArray(feature?.actions)
+                          ? feature.actions
+                          : [];
+                        const selectedActions = Array.isArray(
+                          newRolePermissions[feature.featureKey]
+                        )
+                          ? newRolePermissions[feature.featureKey]
+                          : [];
+                        const allSelected =
+                          featureActions.length > 0 &&
+                          featureActions.every((action) => selectedActions.includes(action));
+                        return (
+                          <tr key={feature.featureKey} className="border-b border-gray-100">
+                            <td className="px-4 py-2 text-gray-800">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{feature.featureName}</span>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setAllFeatureActions(
+                                      feature.featureKey,
+                                      featureActions,
+                                      !allSelected
+                                    )
+                                  }
+                                  className="text-xs text-blue-700 hover:underline"
+                                >
+                                  {allSelected ? 'Clear all' : 'Select all'}
+                                </button>
+                              </div>
+                              <p className="text-xs text-gray-500">{feature.featureKey}</p>
+                            </td>
+
+                            {matrixActionColumns.map((action) => {
+                              const supported = featureActions.includes(action);
+                              const checked = selectedActions.includes(action);
+                              return (
+                                <td
+                                  key={`${feature.featureKey}-${action}`}
+                                  className="px-3 py-2 text-center"
+                                >
+                                  {!supported ? (
+                                    <span className="text-gray-300">—</span>
+                                  ) : (
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={() =>
+                                        toggleMatrixPermission(feature.featureKey, action)
+                                      }
+                                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 mt-5">
+            <div className="flex justify-end gap-2 border-t border-gray-200 px-6 py-4">
               <button
                 onClick={() => setShowAddRoleModal(false)}
                 disabled={addingRole}

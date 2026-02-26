@@ -416,14 +416,6 @@ const StudentImportModal = ({
       setError("Please choose a file first.");
       return;
     }
-    if (!selectedProgramId) {
-      setError("Please select a program.");
-      return;
-    }
-    if (!selectedBatchId) {
-      setError("Please select a batch.");
-      return;
-    }
     setSubmitting(true);
     setError("");
     setUnknownColumns([]);
@@ -432,8 +424,8 @@ const StudentImportModal = ({
       const payload = await importStudentsFromTemplate({
         file,
         mode,
-        programId: selectedProgramId,
-        batchId: selectedBatchId,
+        programId: selectedProgramId || undefined,
+        batchId: selectedBatchId || undefined,
         studentType: "regular",
         studentMode: normalizedStudentMode,
       });
@@ -658,8 +650,11 @@ const StudentImportModal = ({
             <>
               <div className="rounded-lg border border-gray-200 p-4 space-y-2">
                 <div className="text-sm font-medium text-gray-800">
-                  Download Template
+                  Download template aligned with Student Profile fields
                 </div>
+                <p className="text-xs text-gray-600">
+                  Program/Batch assignment can be done after import from Admin UI. Enrolment No is intentionally excluded for offline bulk uploads.
+                </p>
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
@@ -732,7 +727,7 @@ const StudentImportModal = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Program <span className="text-red-600">*</span>
+                    Program (optional)
                   </label>
                   <select
                     value={selectedProgramId}
@@ -758,7 +753,7 @@ const StudentImportModal = ({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Batch <span className="text-red-600">*</span>
+                    Batch (optional)
                   </label>
                   <select
                     value={selectedBatchId}

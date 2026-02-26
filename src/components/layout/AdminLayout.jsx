@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { globalSearch } from '../../services/user.service';
@@ -34,6 +34,7 @@ const sidebarItems = [
   { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
   { id: 'rbac', name: 'Roles & Permissions', icon: Shield, path: '/rbac' },
   { id: 'users', name: 'User Management', icon: Users, path: '/users' },
+  { id: 'helpdesk', name: 'Helpdesk', icon: MessageSquare, path: '/helpdesk' },
   {
     id: 'program-management',
     name: 'Program Management',
@@ -49,13 +50,33 @@ const sidebarItems = [
   },
   { id: 'courses', name: 'Course Management', icon: BookOpen, path: '/courses' }
 ];
+const RBAC_VISIBILITY_ROLES = [
+  'SUPER_ADMIN',
+  'DEAN',
+  'ASSOCIATE_DEAN',
+  'PROGRAM_COORDINATOR',
+  'COURSE_COORDINATOR',
+];
+const SIDEBAR_COLLAPSE_KEY = 'admin_sidebar_collapsed';
 
 const AdminLayout = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, hasAnyAccessRole } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const isDevMode = import.meta.env.DEV === true;
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return window.innerWidth >= 768;
+  });
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return window.localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -64,6 +85,17 @@ const AdminLayout = () => {
   const [probeToast, setProbeToast] = useState(null);
   const [corsBanner, setCorsBanner] = useState(null);
   const searchRef = useRef(null);
+  const isLegacyAdminUser = ['admin', 'super admin'].includes(
+    String(user?.role || '').trim().toLowerCase()
+  );
+  const canViewRbac = Boolean(
+    (typeof hasAnyAccessRole === 'function' && hasAnyAccessRole(RBAC_VISIBILITY_ROLES, user)) ||
+      isLegacyAdminUser
+  );
+  const visibleSidebarItems = useMemo(
+    () => sidebarItems.filter((item) => item.id !== 'rbac' || canViewRbac),
+    [canViewRbac]
+  );
 
   // Sidebar group expand/collapse
   const [expandedGroups, setExpandedGroups] = useState(() => {
@@ -79,6 +111,26 @@ const AdminLayout = () => {
     return expanded;
   });
 
+  useEffect(() => {
+    const onResize = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktop) {
+      setSidebarOpen(false);
+    }
+  }, [isDesktop]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SIDEBAR_COLLAPSE_KEY, String(Boolean(isCollapsed)));
+    } catch {
+      // ignore localStorage failures
+    }
+  }, [isCollapsed]);
+
   // Auto-expand group when navigating to a child route
   useEffect(() => {
     sidebarItems.forEach(item => {
@@ -92,6 +144,10 @@ const AdminLayout = () => {
 
   const toggleGroup = (groupId) => {
     setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
+  };
+
+  const handleSidebarCollapseToggle = () => {
+    setIsCollapsed((prev) => !prev);
   };
 
   // Debounced global search
@@ -133,7 +189,7 @@ const AdminLayout = () => {
     setSearchQuery('');
   }, [location.pathname]);
 
-  const handleSearchResultClick = (type, item) => {
+  const handleSearchResultClick = (type) => {
     setShowSearchDropdown(false);
     setSearchQuery('');
     if (type === 'users') {
@@ -218,46 +274,88 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <div className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform
+        fixed md:static inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform
+        ${isCollapsed ? 'md:w-[72px]' : 'md:w-64'}
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 transition-transform duration-300 ease-in-out
+        md:translate-x-0 transition-all duration-300 ease-in-out
       `}>
         {/* Sidebar Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center">
-           <img src="/logo_full.png" alt="" className="h-12" />
+        <div className={`relative flex items-center justify-between border-b border-gray-200 ${isCollapsed ? 'p-3' : 'p-6'}`}>
+          <div className={`flex items-center ${isCollapsed ? 'justify-center w-full' : ''}`}>
+            <img src="/logo_full.png" alt="KIITX" className={isCollapsed ? 'h-8 w-8 object-contain' : 'h-12'} />
           </div>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-1 rounded-md hover:bg-gray-100"
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
+          <div className={`flex items-center ${isCollapsed ? 'absolute right-2 top-2' : ''}`}>
+            <button
+              onClick={handleSidebarCollapseToggle}
+              className="hidden md:inline-flex p-2 rounded-md hover:bg-gray-100"
+              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {isCollapsed ? (
+                <ChevronRight className="w-5 h-5 text-gray-500" />
+              ) : (
+                <ChevronRight className="w-5 h-5 text-gray-500 rotate-180" />
+              )}
+            </button>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="md:hidden p-1 rounded-md hover:bg-gray-100"
+              aria-label="Close sidebar"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {sidebarItems.map((item) => {
+        <nav className={`flex-1 ${isCollapsed ? 'p-2' : 'p-4'} space-y-1 overflow-y-auto`}>
+          {visibleSidebarItems.map((item) => {
             const Icon = item.icon;
 
             // Group item with children
             if (item.type === 'group') {
               const isExpanded = expandedGroups[item.id];
               const isGroupActive = item.children?.some(child => isActiveRoute(child.path));
+
+              if (isCollapsed) {
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setIsCollapsed(false);
+                      setExpandedGroups((prev) => ({ ...prev, [item.id]: true }));
+                    }}
+                    className={`
+                      w-full flex items-center justify-center px-2 py-3 rounded-lg text-sm font-medium transition-colors
+                      ${isGroupActive
+                        ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      }
+                    `}
+                    title={item.name}
+                    aria-label={item.name}
+                  >
+                    <Icon className={`w-5 h-5 ${isGroupActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                  </button>
+                );
+              }
+
               return (
                 <div key={item.id}>
                   <button
+                    type="button"
                     onClick={() => toggleGroup(item.id)}
                     className={`
                       w-full flex items-center px-3 py-3 rounded-lg text-sm font-medium transition-colors
@@ -309,13 +407,19 @@ const AdminLayout = () => {
               return (
                 <div
                   key={item.id}
-                  className="flex items-center px-3 py-3 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed opacity-60"
+                  className={`flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-3 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed opacity-60`}
+                  title={isCollapsed ? item.name : undefined}
+                  aria-label={item.name}
                 >
-                  <Icon className="w-5 h-5 mr-3 text-gray-300" />
-                  {item.name}
-                  <span className="ml-auto text-[10px] font-semibold uppercase bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded">
-                    Soon
-                  </span>
+                  <Icon className={`w-5 h-5 ${isCollapsed ? '' : 'mr-3'} text-gray-300`} />
+                  {!isCollapsed && (
+                    <>
+                      {item.name}
+                      <span className="ml-auto text-[10px] font-semibold uppercase bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded">
+                        Soon
+                      </span>
+                    </>
+                  )}
                 </div>
               );
             }
@@ -327,57 +431,66 @@ const AdminLayout = () => {
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
                 className={`
-                  flex items-center px-3 py-3 rounded-lg text-sm font-medium transition-colors
+                  flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-3 rounded-lg text-sm font-medium transition-colors
                   ${isActive
                     ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
                     : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                   }
                 `}
+                title={isCollapsed ? item.name : undefined}
+                aria-label={item.name}
               >
-                <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
-                {item.name}
+                <Icon className={`w-5 h-5 ${isCollapsed ? '' : 'mr-3'} ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                {!isCollapsed && item.name}
               </Link>
             );
           })}
         </nav>
 
         {/* User Profile Section */}
-        <div className="p-4 border-t border-gray-200">
+        <div className={`${isCollapsed ? 'p-2' : 'p-4'} border-t border-gray-200`}>
           <button
             type="button"
             onClick={openMyProfile}
-            className="mb-3 flex w-full items-center rounded-lg px-1 py-1 text-left transition-colors hover:bg-gray-50"
+            className={`mb-3 flex w-full items-center rounded-lg ${isCollapsed ? 'justify-center px-2 py-2' : 'px-1 py-1 text-left'} transition-colors hover:bg-gray-50`}
             title="Open My Profile"
+            aria-label="Open My Profile"
           >
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
               <span className="text-white font-medium">{profileBadge}</span>
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-              <p className="text-xs text-gray-500">{user?.role}</p>
-            </div>
+            {!isCollapsed && (
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+                <p className="text-xs text-gray-500">{user?.role}</p>
+              </div>
+            )}
           </button>
           <button
             onClick={handleLogout}
-            className="flex items-center w-full px-3 py-2 text-sm text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+            className={`flex items-center w-full ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 text-sm text-red-600 rounded-lg hover:bg-red-50 transition-colors`}
+            title={isCollapsed ? 'Sign Out' : undefined}
+            aria-label="Sign Out"
           >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
+            <LogOut className={`w-4 h-4 ${isCollapsed ? '' : 'mr-2'}`} />
+            {!isCollapsed && 'Sign Out'}
           </button>
           {isDevMode && (
             <button
               onClick={handleProbeBackend}
               disabled={probeLoading}
-              className="mt-2 flex items-center w-full px-3 py-2 text-xs text-blue-700 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-60"
+              className={`mt-2 flex items-center w-full ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 text-xs text-blue-700 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-60`}
+              title={isCollapsed ? 'Probe Backend' : undefined}
+              aria-label="Probe Backend"
             >
-              {probeLoading ? 'Probing...' : 'Probe Backend'}
+              {isCollapsed ? (probeLoading ? '...' : 'Probe') : (probeLoading ? 'Probing...' : 'Probe Backend')}
             </button>
           )}
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* Top Header */}
         <header className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
@@ -385,9 +498,23 @@ const AdminLayout = () => {
             <div className="flex items-center">
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 rounded-md hover:bg-gray-100"
+                className="md:hidden p-2 rounded-md hover:bg-gray-100"
+                aria-label="Open sidebar"
               >
                 <Menu className="w-5 h-5 text-gray-600" />
+              </button>
+
+              <button
+                onClick={handleSidebarCollapseToggle}
+                className="hidden md:inline-flex p-2 rounded-md hover:bg-gray-100"
+                aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                {isCollapsed ? (
+                  <ChevronRight className="w-5 h-5 text-gray-600" />
+                ) : (
+                  <ChevronRight className="w-5 h-5 text-gray-600 rotate-180" />
+                )}
               </button>
               
               {/* Search Bar */}

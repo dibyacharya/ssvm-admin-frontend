@@ -5,6 +5,10 @@ export const getUsers = async (params = {}) => {
   return response.data;
 };
 
+export const listUsers = async (params = {}) => {
+  return getUsers(params);
+};
+
 export const createUser = async (payload) => {
   const response = await api.post("/admin/users", payload);
   return response.data;
@@ -30,8 +34,28 @@ export const getUserProfile = async (userId) => {
   return response.data;
 };
 
+export const getUserProgress = async (userId) => {
+  const response = await api.get(`/admin/users/${userId}/progress`);
+  return response.data;
+};
+
+export const updateUserProgress = async (userId, payload) => {
+  const response = await api.put(`/admin/users/${userId}/progress`, payload);
+  return response.data;
+};
+
 export const updateUserProfile = async (userId, payload) => {
   const response = await api.put(`/admin/users/${userId}/profile`, payload);
+  return response.data;
+};
+
+export const getUserAccessRoles = async (userId) => {
+  const response = await api.get(`/admin/users/${userId}/access-roles`);
+  return response.data;
+};
+
+export const updateUserAccessRoles = async (userId, payload) => {
+  const response = await api.put(`/admin/users/${userId}/access-roles`, payload);
   return response.data;
 };
 
@@ -154,3 +178,34 @@ export const globalSearch = async (query, type, limit = 10) => {
   const response = await api.get("/admin/search", { params });
   return response.data;
 };
+
+const userService = {
+  getUsers,
+  listUsers,
+  createUser,
+  updateUser,
+  getUserDetails,
+  updateUserDetails,
+  getUserProfile,
+  getUserProgress,
+  updateUserProgress,
+  updateUserProfile,
+  getUserAccessRoles,
+  updateUserAccessRoles,
+  changeMyPassword,
+  uploadUserProfilePhoto,
+  deleteUserProfilePhoto,
+  resetUserPassword,
+  sendUserInvite,
+  deleteUser,
+  bulkDeleteUsers,
+  getTeachers,
+  getTeacherProfile,
+  updateTeacherProfile,
+  uploadTeacherProfilePhoto,
+  deleteTeacherProfilePhoto,
+  getStudents,
+  globalSearch,
+};
+
+export default userService;

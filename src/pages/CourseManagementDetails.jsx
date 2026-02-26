@@ -6,10 +6,17 @@ import {
   getCourseTaxonomySubcategories,
   updateCourseDescription,
   getCourseMaterials,
-  getAdminCourseMaterials,
-  addCourseMaterialItem,
+  getAdminCourseModules,
+  createAdminCourseModule,
+  updateAdminCourseModule,
+  deleteAdminCourseModule,
+  uploadCourseModulePdf,
+  uploadCourseModulePresentation,
+  addCourseModuleVideo,
+  deleteCourseModulePdf,
+  deleteCourseModulePresentation,
+  deleteCourseModuleVideo,
   updateCourseMaterialItem,
-  deleteCourseMaterialItem,
   getCourseStudents,
 } from "../services/courses.service";
 import { useAuth } from "../contexts/AuthContext";
@@ -56,13 +63,6 @@ const materialCategoryConfig = [
     isFile: false,
     accept: "",
     helper: "Add a video URL (YouTube/Drive/etc.).",
-  },
-  {
-    type: "link",
-    label: "Links",
-    isFile: false,
-    accept: "",
-    helper: "Add a learning resource URL (must start with http/https).",
   },
 ];
 
@@ -233,7 +233,8 @@ const CourseManagementDetails = () => {
   });
   const [materialsLoading, setMaterialsLoading] = useState(false);
   const [materialSaving, setMaterialSaving] = useState(false);
-  const [selectedModuleNo, setSelectedModuleNo] = useState(null);
+  const [moduleSaving, setModuleSaving] = useState(false);
+  const [selectedModuleId, setSelectedModuleId] = useState("");
   const [materialDrafts, setMaterialDrafts] = useState({
     pdf: { title: "", file: null, url: "" },
     presentation: { title: "", file: null, url: "" },
@@ -396,7 +397,7 @@ const CourseManagementDetails = () => {
     () =>
       (Array.isArray(materials?.modules) ? materials.modules : [])
         .slice()
-        .sort((left, right) => Number(left?.moduleNo || 0) - Number(right?.moduleNo || 0)),
+        .sort((left, right) => Number(left?.order || 0) - Number(right?.order || 0)),
     [materials]
   );
 
@@ -413,10 +414,10 @@ const CourseManagementDetails = () => {
   const selectedMaterialModule = useMemo(() => {
     if (materialModules.length === 0) return null;
     const exactMatch = materialModules.find(
-      (module) => Number(module?.moduleNo) === Number(selectedModuleNo)
+      (module) => String(module?._id || "") === String(selectedModuleId || "")
     );
     return exactMatch || materialModules[0];
-  }, [materialModules, selectedModuleNo]);
+  }, [materialModules, selectedModuleId]);
 
   const optionSets = useMemo(() => {
     const collect = (selector) =>
@@ -543,7 +544,7 @@ const CourseManagementDetails = () => {
     setMaterialsLoading(true);
     try {
       const response = isAdmin
-        ? await getAdminCourseMaterials(courseId)
+        ? await getAdminCourseModules(courseId)
         : await getCourseMaterials(courseId);
       const nextModules = Array.isArray(response?.modules) ? response.modules : [];
       setMaterials({
@@ -551,16 +552,14 @@ const CourseManagementDetails = () => {
         modules: nextModules,
       });
       if (nextModules.length > 0) {
-        setSelectedModuleNo((prev) => {
+        setSelectedModuleId((prev) => {
           const hasCurrentSelection = nextModules.some(
-            (module) => Number(module?.moduleNo) === Number(prev)
+            (module) => String(module?._id || "") === String(prev || "")
           );
-          return hasCurrentSelection
-            ? prev
-            : Number(nextModules[0]?.moduleNo) || null;
+          return hasCurrentSelection ? prev : String(nextModules[0]?._id || "");
         });
       } else {
-        setSelectedModuleNo(null);
+        setSelectedModuleId("");
       }
     } catch (err) {
       setError(
@@ -616,13 +615,13 @@ const CourseManagementDetails = () => {
   useEffect(() => {
     if (materialModules.length === 0) return;
     if (selectedMaterialModule) {
-      if (selectedModuleNo !== selectedMaterialModule.moduleNo) {
-        setSelectedModuleNo(selectedMaterialModule.moduleNo);
+      if (String(selectedModuleId || "") !== String(selectedMaterialModule._id || "")) {
+        setSelectedModuleId(String(selectedMaterialModule._id || ""));
       }
       return;
     }
-    setSelectedModuleNo(materialModules[0].moduleNo);
-  }, [materialModules, selectedMaterialModule, selectedModuleNo]);
+    setSelectedModuleId(String(materialModules[0]?._id || ""));
+  }, [materialModules, selectedMaterialModule, selectedModuleId]);
 
   useEffect(() => {
     const tabFromQuery = (searchParams.get("tab") || "").toLowerCase();
@@ -1127,8 +1126,8 @@ const CourseManagementDetails = () => {
     return parsed.toLocaleDateString();
   };
 
-  const getActiveModuleNo = () =>
-    Number(selectedMaterialModule?.moduleNo || selectedModuleNo || 1);
+  const getActiveModuleId = () =>
+    String(selectedMaterialModule?._id || selectedModuleId || "");
 
   const validateMaterialDraft = ({ type, title, url, file }) => {
     if (!(title || "").toString().trim()) {
@@ -1148,6 +1147,11 @@ const CourseManagementDetails = () => {
 
   const handleAddMaterialItem = async (type) => {
     if (!canManageMaterials) return;
+    const moduleId = getActiveModuleId();
+    if (!moduleId) {
+      setError("Please create/select a module first.");
+      return;
+    }
     const draft = materialDrafts?.[type] || { title: "", file: null, url: "" };
     const validationError = validateMaterialDraft({
       type,
@@ -1164,12 +1168,26 @@ const CourseManagementDetails = () => {
     setError("");
     setSuccess("");
     try {
-      await addCourseMaterialItem(courseId, getActiveModuleNo(), {
-        type,
-        title: draft.title,
-        url: draft.url,
-        file: draft.file,
-      });
+      if (type === "pdf") {
+        await uploadCourseModulePdf(courseId, moduleId, {
+          title: draft.title,
+          file: draft.file,
+        });
+      } else if (type === "presentation") {
+        await uploadCourseModulePresentation(courseId, moduleId, {
+          title: draft.title,
+          file: draft.file,
+        });
+      } else if (type === "video") {
+        await addCourseModuleVideo(courseId, moduleId, {
+          title: draft.title,
+          url: draft.url,
+        });
+      } else {
+        setError("Unsupported material type.");
+        setMaterialSaving(false);
+        return;
+      }
       resetMaterialDraft(type);
       setSuccess("Course material added.");
       await loadMaterials();
@@ -1240,6 +1258,11 @@ const CourseManagementDetails = () => {
 
   const handleDeleteMaterial = async (item) => {
     if (!canManageMaterials || !item?._id) return;
+    const moduleId = getActiveModuleId();
+    if (!moduleId) {
+      setError("Module not selected.");
+      return;
+    }
     if (typeof window !== "undefined") {
       const confirmed = window.confirm(
         `Delete "${item.title || "this material"}"?`
@@ -1250,7 +1273,17 @@ const CourseManagementDetails = () => {
     setError("");
     setSuccess("");
     try {
-      await deleteCourseMaterialItem(courseId, item._id);
+      if (item.type === "pdf") {
+        await deleteCourseModulePdf(courseId, moduleId, item._id);
+      } else if (item.type === "presentation") {
+        await deleteCourseModulePresentation(courseId, moduleId, item._id);
+      } else if (item.type === "video") {
+        await deleteCourseModuleVideo(courseId, moduleId, item._id);
+      } else {
+        setError("Unsupported material type.");
+        setMaterialSaving(false);
+        return;
+      }
       setSuccess("Course material deleted.");
       if (editingMaterialId === item._id) {
         cancelEditingMaterial();
@@ -1262,6 +1295,79 @@ const CourseManagementDetails = () => {
       );
     } finally {
       setMaterialSaving(false);
+    }
+  };
+
+  const handleAddModule = async () => {
+    if (!canManageMaterials) return;
+    setModuleSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      const response = await createAdminCourseModule(courseId, {});
+      setSuccess("Module created.");
+      await loadMaterials();
+      const createdModuleId = response?.module?._id || response?.module?.moduleId || "";
+      if (createdModuleId) {
+        setSelectedModuleId(String(createdModuleId));
+      }
+    } catch (err) {
+      setError(err?.response?.data?.error || err?.message || "Failed to create module");
+    } finally {
+      setModuleSaving(false);
+    }
+  };
+
+  const handleRenameModule = async (module) => {
+    if (!canManageMaterials || !module?._id) return;
+    if (typeof window === "undefined") return;
+    const currentTitle = module?.title || module?.moduleTitle || "";
+    const nextTitleRaw = window.prompt("Rename module", currentTitle);
+    if (nextTitleRaw === null) return;
+    const nextTitle = nextTitleRaw.trim();
+    if (!nextTitle) {
+      setError("Module title cannot be empty.");
+      return;
+    }
+    if (nextTitle === currentTitle) return;
+
+    setModuleSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      await updateAdminCourseModule(courseId, module._id, { title: nextTitle });
+      setSuccess("Module renamed.");
+      await loadMaterials();
+      setSelectedModuleId(String(module._id));
+    } catch (err) {
+      setError(err?.response?.data?.error || err?.message || "Failed to rename module");
+    } finally {
+      setModuleSaving(false);
+    }
+  };
+
+  const handleDeleteModule = async (module) => {
+    if (!canManageMaterials || !module?._id) return;
+    if (typeof window !== "undefined") {
+      const confirmed = window.confirm(
+        `Delete module "${module?.title || module?.moduleTitle || "Untitled"}"?`
+      );
+      if (!confirmed) return;
+    }
+    setModuleSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      await deleteAdminCourseModule(courseId, module._id);
+      setSuccess("Module deleted.");
+      if (String(selectedModuleId) === String(module._id)) {
+        setSelectedModuleId("");
+      }
+      await loadMaterials();
+    } catch (err) {
+      setError(err?.response?.data?.error || err?.message || "Failed to delete module");
+    } finally {
+      setModuleSaving(false);
     }
   };
 
@@ -2158,21 +2264,24 @@ const CourseManagementDetails = () => {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
               <aside className="lg:col-span-3 border border-gray-200 rounded-lg p-3 bg-gray-50">
-                <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Modules</p>
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">Modules</p>
+                  {canManageMaterials && (
+                    <button
+                      type="button"
+                      onClick={handleAddModule}
+                      disabled={moduleSaving}
+                      className="rounded border border-blue-300 px-2 py-1 text-xs text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                    >
+                      {moduleSaving ? "Saving..." : "+ Add Module"}
+                    </button>
+                  )}
+                </div>
                 {materialsLoading ? (
                   <p className="text-sm text-gray-500">Loading modules...</p>
                 ) : materialModules.length === 0 ? (
                   <div className="space-y-2">
                     <p className="text-sm text-gray-500">No module materials yet.</p>
-                    {canManageMaterials && (
-                      <button
-                        type="button"
-                        onClick={() => setSelectedModuleNo(1)}
-                        className="w-full rounded border border-blue-300 px-2 py-1.5 text-xs text-blue-700 hover:bg-blue-50"
-                      >
-                        Start with Module 1
-                      </button>
-                    )}
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -2183,29 +2292,60 @@ const CourseManagementDetails = () => {
                         Number(module?.counts?.video || 0) +
                         Number(module?.counts?.link || 0);
                       const isSelected =
-                        Number(module?.moduleNo) === Number(selectedMaterialModule?.moduleNo);
+                        String(module?._id || "") ===
+                        String(selectedMaterialModule?._id || "");
                       return (
-                        <button
-                          key={`material-module-${module.moduleNo}`}
-                          type="button"
-                          onClick={() => setSelectedModuleNo(Number(module.moduleNo))}
-                          className={`w-full text-left rounded border px-3 py-2 transition-colors ${
+                        <div
+                          key={`material-module-${module._id || module.moduleNo}`}
+                          className={`w-full rounded border px-3 py-2 transition-colors ${
                             isSelected
                               ? "bg-blue-600 border-blue-700 text-white"
                               : "bg-white border-gray-200 text-gray-700 hover:border-blue-300"
                           }`}
                         >
-                          <p className="text-sm font-semibold">
-                            Module {module.moduleNo}
-                          </p>
-                          <p
-                            className={`text-xs ${
-                              isSelected ? "text-blue-100" : "text-gray-500"
-                            }`}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedModuleId(String(module?._id || ""))}
+                            className="w-full text-left"
                           >
-                            {totalCount} item{totalCount === 1 ? "" : "s"}
-                          </p>
-                        </button>
+                            <p className="text-sm font-semibold">
+                              {module?.title || module?.moduleTitle || `Module ${module?.moduleNo || "-"}`}
+                            </p>
+                            <p
+                              className={`text-xs ${
+                                isSelected ? "text-blue-100" : "text-gray-500"
+                              }`}
+                            >
+                              {totalCount} item{totalCount === 1 ? "" : "s"}
+                            </p>
+                          </button>
+                          {canManageMaterials && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleRenameModule(module)}
+                                className={`rounded border px-2 py-0.5 text-[11px] ${
+                                  isSelected
+                                    ? "border-blue-200 text-blue-100 hover:bg-blue-500"
+                                    : "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                                }`}
+                              >
+                                Rename
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteModule(module)}
+                                className={`rounded border px-2 py-0.5 text-[11px] ${
+                                  isSelected
+                                    ? "border-blue-200 text-blue-100 hover:bg-blue-500"
+                                    : "border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
+                                }`}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       );
                     })}
                   </div>
@@ -2220,9 +2360,10 @@ const CourseManagementDetails = () => {
                     </p>
                     <h3 className="text-lg font-semibold text-gray-900">
                       {selectedMaterialModule
-                        ? selectedMaterialModule.moduleTitle ||
-                          `Module ${selectedMaterialModule.moduleNo}`
-                        : `Module ${selectedModuleNo || 1}`}
+                        ? selectedMaterialModule.title ||
+                          selectedMaterialModule.moduleTitle ||
+                          `Module ${selectedMaterialModule.moduleNo || 1}`
+                        : "Select Module"}
                     </h3>
                   </div>
                   {!canManageMaterials && (

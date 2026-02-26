@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/auth/Login';
 import AdminLayout from './components/layout/AdminLayout';
@@ -21,8 +21,9 @@ import EnrollmentStudentDetail from './pages/EnrollmentStudentDetail';
 import CourseManagementDetails from './pages/CourseManagementDetails';
 import CourseManagementEntry from './pages/CourseManagementEntry';
 import UserProfile from './pages/UserProfile';
-import TeacherProfile from './pages/TeacherProfile';
 import RBACManager from './pages/RBACManager';
+import Helpdesk from './pages/Helpdesk';
+import HelpdeskErrorBoundary from './components/common/HelpdeskErrorBoundary';
 import { Analytics, Certificates, Forums, Settings } from './pages/PlaceholderComponents';
 
 // Protected Route Component
@@ -44,6 +45,24 @@ const ProtectedRoute = ({ children }) => {
 const PublicRoute = ({ children }) => {
   const { user } = useAuth();
   return !user ? children : <Navigate to="/dashboard" replace />;
+};
+
+const LegacyUserProfileRedirect = ({ paramName = 'userId' }) => {
+  const params = useParams();
+  const targetUserId = params?.[paramName];
+  if (!targetUserId) {
+    return <Navigate to="/users" replace />;
+  }
+  return <Navigate to={`/users/${targetUserId}/profile`} replace />;
+};
+
+const MyProfileRedirect = () => {
+  const { user } = useAuth();
+  const currentUserId = user?._id || user?.id || '';
+  if (!currentUserId) {
+    return <Navigate to="/users" replace />;
+  }
+  return <Navigate to={`/users/${currentUserId}/profile`} replace />;
 };
 
 function App() {
@@ -77,11 +96,24 @@ function App() {
               <Route path="rbac" element={<RBACManager />} />
               <Route path="users" element={<UserManagement />} />
               <Route path="users/:userId/profile" element={<UserProfile />} />
-              <Route path="teachers/:id/profile" element={<TeacherProfile />} />
-              <Route path="users/:userId" element={<UserManagement />} />
+              <Route path="users/:userId" element={<LegacyUserProfileRedirect paramName="userId" />} />
+              <Route path="teachers/:id/profile" element={<LegacyUserProfileRedirect paramName="id" />} />
+              <Route path="students/:id/profile" element={<LegacyUserProfileRedirect paramName="id" />} />
+              <Route path="profile" element={<MyProfileRedirect />} />
+              <Route path="my-profile" element={<MyProfileRedirect />} />
+              <Route path="user-profile" element={<MyProfileRedirect />} />
+              <Route path="account/profile" element={<MyProfileRedirect />} />
               <Route path="courses" element={<CourseManagementEntry />} />
               <Route path="courses/list" element={<CourseManagement />} />
               <Route path="courses/:courseId" element={<CourseManagementDetails />} />
+              <Route
+                path="helpdesk"
+                element={
+                  <HelpdeskErrorBoundary>
+                    <Helpdesk />
+                  </HelpdeskErrorBoundary>
+                }
+              />
               {/* Backward-compatible aliases */}
               <Route path="course-management" element={<Navigate to="/courses" replace />} />
               <Route path="course-management/:courseId" element={<CourseManagementDetails />} />

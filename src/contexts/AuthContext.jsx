@@ -2,6 +2,69 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/api';
 
 const AuthContext = createContext();
+const ACCESS_ROLE_TAGS = new Set([
+  'SUPER_ADMIN',
+  'DEAN',
+  'ASSOCIATE_DEAN',
+  'PROGRAM_COORDINATOR',
+  'COURSE_COORDINATOR',
+  'TEACHER',
+  'TA',
+  'STUDENT',
+]);
+
+const ACCESS_ROLE_ALIASES = {
+  super_admin: 'SUPER_ADMIN',
+  superadmin: 'SUPER_ADMIN',
+  admin: 'SUPER_ADMIN',
+  dean: 'DEAN',
+  associate_dean: 'ASSOCIATE_DEAN',
+  assoc_dean: 'ASSOCIATE_DEAN',
+  program_coordinator: 'PROGRAM_COORDINATOR',
+  program_coord: 'PROGRAM_COORDINATOR',
+  course_coordinator: 'COURSE_COORDINATOR',
+  course_coord: 'COURSE_COORDINATOR',
+  teacher: 'TEACHER',
+  ta: 'TA',
+  student: 'STUDENT',
+};
+
+const toAliasToken = (value) =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+const normalizeAccessRoleTag = (value) => {
+  const aliasToken = toAliasToken(value);
+  if (!aliasToken) return '';
+  const mapped = ACCESS_ROLE_ALIASES[aliasToken];
+  if (mapped) return mapped;
+  const canonical = aliasToken.toUpperCase();
+  return ACCESS_ROLE_TAGS.has(canonical) ? canonical : '';
+};
+
+const normalizeAccessRoles = (values) => {
+  if (!Array.isArray(values)) return [];
+  const seen = new Set();
+  const normalized = [];
+  values.forEach((value) => {
+    const roleTag = normalizeAccessRoleTag(value);
+    if (!roleTag || seen.has(roleTag)) return;
+    seen.add(roleTag);
+    normalized.push(roleTag);
+  });
+  return normalized;
+};
+
+const normalizeUserShape = (value) => {
+  if (!value || typeof value !== 'object') return null;
+  return {
+    ...value,
+    accessRoles: normalizeAccessRoles(value.accessRoles),
+  };
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -22,7 +85,7 @@ export const AuthProvider = ({ children }) => {
     
     if (savedToken && savedUser) {
       try {
-        setUser(JSON.parse(savedUser));
+        setUser(normalizeUserShape(JSON.parse(savedUser)));
       } catch (error) {
         // Clear invalid data
         localStorage.removeItem('token');
@@ -40,10 +103,10 @@ export const AuthProvider = ({ children }) => {
         const { token, user: userData } = response.data;
         
         // Store token and user data, changing admin role to Super Admin
-        const userWithRole = {
+        const userWithRole = normalizeUserShape({
           ...userData,
           role: userData.role === 'admin' ? 'Super Admin' : userData.role
-        };
+        });
         
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(userWithRole));
@@ -55,17 +118,15 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Login error:', error);
-      
-      // Handle different error scenarios
-      if (error.response?.data?.message || error.response?.data?.error) {
-        return { success: false, error: error.response.data.message || error.response.data.error };
-      } else if (error.response?.status === 401) {
-        return { success: false, error: 'Invalid credentials' };
-      } else if (error.response?.status >= 500) {
-        return { success: false, error: 'Server error. Please try again later.' };
-      } else {
-        return { success: false, error: 'Network error. Please check your connection.' };
+
+      const code = error.response?.data?.code;
+      if (code === 'USER_NOT_FOUND') {
+        return { success: false, error: 'Wrong User ID' };
       }
+      if (code === 'INVALID_PASSWORD') {
+        return { success: false, error: 'Wrong Password' };
+      }
+      return { success: false, error: 'Login failed. Please try again.' };
     }
   };
 
@@ -77,10 +138,10 @@ export const AuthProvider = ({ children }) => {
         const { token, user } = response.data;
         
         // Store token and user data, changing admin role to Super Admin
-        const userWithRole = {
+        const userWithRole = normalizeUserShape({
           ...user,
           role: user.role === 'admin' ? 'Super Admin' : user.role
-        };
+        });
         
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(userWithRole));
@@ -111,9 +172,22 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateUser = (userData) => {
-    const updatedUser = { ...user, ...userData };
+    const updatedUser = normalizeUserShape({ ...(user || {}), ...(userData || {}) });
     setUser(updatedUser);
     localStorage.setItem('user', JSON.stringify(updatedUser));
+  };
+
+  const hasAccessRole = (roleTag, targetUser = user) => {
+    const normalizedTarget = normalizeAccessRoleTag(roleTag);
+    if (!normalizedTarget) return false;
+    const assigned = normalizeAccessRoles(targetUser?.accessRoles);
+    if (assigned.includes('SUPER_ADMIN')) return true;
+    return assigned.includes(normalizedTarget);
+  };
+
+  const hasAnyAccessRole = (roleTags = [], targetUser = user) => {
+    if (!Array.isArray(roleTags)) return false;
+    return roleTags.some((roleTag) => hasAccessRole(roleTag, targetUser));
   };
 
   const value = {
@@ -122,6 +196,8 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUser,
+    hasAccessRole,
+    hasAnyAccessRole,
     loading,
     isAuthenticated: !!user
   };

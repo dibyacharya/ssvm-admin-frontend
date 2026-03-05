@@ -1,0 +1,158 @@
+parameters:
+  - name: containerapp_name
+    type: string
+  - name: resource_group
+    type: string
+    default: 'rg-kiit-lms-dev'
+  - name: revision_name
+    type: string
+    default: ''  # If empty, will rollback to previous revision
+  - name: build_id
+    type: string
+    default: ''  # Optional: rollback to specific build ID
+
+stages:
+  - stage: RollbackContainerApp
+    displayName: 'Rollback Container App'
+    jobs:
+      - job: Rollback
+        displayName: 'Rollback Container App Deployment'
+        steps:
+          - task: AzureCLI@2
+            displayName: 'List Available Revisions'
+            inputs:
+              azureSubscription: 'kiit-it-analytics'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Listing all revisions for ${{ parameters.containerapp_name }}..."
+                az containerapp revision list \
+                  --name ${{ parameters.containerapp_name }} \
+                  --resource-group ${{ parameters.resource_group }} \
+                  --query "[].{Name:name, Active:properties.active, Created:properties.createdTime, Traffic:properties.trafficWeight}" \
+                  -o table
+                
+                echo ""
+                echo "Current active revision:"
+                az containerapp revision list \
+                  --name ${{ parameters.containerapp_name }} \
+                  --resource-group ${{ parameters.resource_group }} \
+                  --query "[?properties.active].{Name:name, Created:properties.createdTime, Traffic:properties.trafficWeight}" \
+                  -o table
+
+          - task: AzureCLI@2
+            displayName: 'Rollback to Previous Revision'
+            inputs:
+              azureSubscription: 'kiit-it-analytics'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                set -e
+                
+                CONTAINERAPP_NAME="${{ parameters.containerapp_name }}"
+                RESOURCE_GROUP="${{ parameters.resource_group }}"
+                REVISION_NAME="${{ parameters.revision_name }}"
+                BUILD_ID="${{ parameters.build_id }}"
+                
+                # If specific revision name provided, use it
+                if [ -n "$REVISION_NAME" ]; then
+                  echo "Rolling back to specific revision: $REVISION_NAME"
+                  TARGET_REVISION="$REVISION_NAME"
+                
+                # If build ID provided, find revision by build ID
+                elif [ -n "$BUILD_ID" ]; then
+                  echo "Finding revision for build ID: $BUILD_ID"
+                  TARGET_REVISION=$(az containerapp revision list \
+                    --name $CONTAINERAPP_NAME \
+                    --resource-group $RESOURCE_GROUP \
+                    --query "[?contains(name, 'build-$BUILD_ID')].name" -o tsv | head -n 1)
+                  
+                  if [ -z "$TARGET_REVISION" ]; then
+                    echo "##[error]No revision found for build ID: $BUILD_ID"
+                    exit 1
+                  fi
+                  echo "Found revision: $TARGET_REVISION"
+                
+                # Otherwise, rollback to previous revision
+                else
+                  echo "Rolling back to previous revision..."
+                  
+                  # Get current active revision
+                  CURRENT_REVISION=$(az containerapp revision list \
+                    --name $CONTAINERAPP_NAME \
+                    --resource-group $RESOURCE_GROUP \
+                    --query "[?properties.active].name" -o tsv | head -n 1)
+                  
+                  echo "Current active revision: $CURRENT_REVISION"
+                  
+                  # Get all revisions sorted by creation time (newest first)
+                  ALL_REVISIONS=($(az containerapp revision list \
+                    --name $CONTAINERAPP_NAME \
+                    --resource-group $RESOURCE_GROUP \
+                    --query "[].name" -o tsv | sort -r))
+                  
+                  # Find the previous revision (second in the list if current is first)
+                  if [ "${ALL_REVISIONS[0]}" == "$CURRENT_REVISION" ] && [ ${#ALL_REVISIONS[@]} -gt 1 ]; then
+                    TARGET_REVISION="${ALL_REVISIONS[1]}"
+                  else
+                    TARGET_REVISION="${ALL_REVISIONS[1]}"
+                  fi
+                  
+                  if [ -z "$TARGET_REVISION" ]; then
+                    echo "##[error]No previous revision found to rollback to"
+                    exit 1
+                  fi
+                  
+                  echo "Target revision for rollback: $TARGET_REVISION"
+                fi
+                
+                # Activate the target revision
+                echo "Activating revision: $TARGET_REVISION"
+                az containerapp revision activate \
+                  --name $CONTAINERAPP_NAME \
+                  --resource-group $RESOURCE_GROUP \
+                  --revision $TARGET_REVISION
+                
+                # Set 100% traffic to the activated revision
+                echo "Setting 100% traffic to revision: $TARGET_REVISION"
+                az containerapp revision set-mode \
+                  --name $CONTAINERAPP_NAME \
+                  --resource-group $RESOURCE_GROUP \
+                  --mode single \
+                  --revision $TARGET_REVISION
+                
+                echo "Rollback completed successfully!"
+                echo "Active revision: $TARGET_REVISION"
+                
+                # Show current status
+                echo ""
+                echo "Current revision status:"
+                az containerapp revision list \
+                  --name $CONTAINERAPP_NAME \
+                  --resource-group $RESOURCE_GROUP \
+                  --query "[?properties.active].{Name:name, Created:properties.createdTime, Traffic:properties.trafficWeight}" \
+                  -o table
+
+          - task: AzureCLI@2
+            displayName: 'Verify Rollback'
+            inputs:
+              azureSubscription: 'kiit-it-analytics'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Verifying rollback..."
+                ACTIVE_REVISION=$(az containerapp revision list \
+                  --name ${{ parameters.containerapp_name }} \
+                  --resource-group ${{ parameters.resource_group }} \
+                  --query "[?properties.active].name" -o tsv | head -n 1)
+                
+                echo "Active revision: $ACTIVE_REVISION"
+                
+                # Check if container app is healthy
+                echo "Checking container app health..."
+                az containerapp show \
+                  --name ${{ parameters.containerapp_name }} \
+                  --resource-group ${{ parameters.resource_group }} \
+                  --query "{Name:name, Status:properties.provisioningState, FQDN:properties.configuration.ingress.fqdn}" \
+                  -o table
+

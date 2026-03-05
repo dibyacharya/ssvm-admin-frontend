@@ -1,6 +1,7 @@
 import api, { API_URL } from "./api";
 
 const COURSE_LIST_ENDPOINT = "/admin/courses";
+const COURSE_LIST_DETAILED_ENDPOINT = "/admin/courses/all";
 
 const buildAbsoluteApiUrl = (endpoint) => {
   const base = String(API_URL || "").replace(/\/+$/, "");
@@ -24,7 +25,10 @@ const ensureCoursesPayload = (payload, endpoint) => {
   }
 };
 
-export const getAllCourses = async (params = {}) => {
+export const getAllCourses = async (params = {}, options = {}) => {
+  const endpoint = options?.detailed
+    ? COURSE_LIST_DETAILED_ENDPOINT
+    : COURSE_LIST_ENDPOINT;
   const limit = 200;
   let page = 1;
   let totalPages = 1;
@@ -35,14 +39,14 @@ export const getAllCourses = async (params = {}) => {
     typeof searchInput === "string" && searchInput.trim()
       ? searchInput.trim()
       : "";
-  const absoluteUrl = buildAbsoluteApiUrl(COURSE_LIST_ENDPOINT);
+  const absoluteUrl = buildAbsoluteApiUrl(endpoint);
 
   if (import.meta.env.DEV) {
     console.log("[CourseAPI] course list URL", absoluteUrl);
   }
 
   while (page <= totalPages) {
-    const response = await api.get(COURSE_LIST_ENDPOINT, {
+    const response = await api.get(endpoint, {
       params: {
         page,
         limit,
@@ -182,6 +186,11 @@ export const getAdminCourseModules = async (courseId) => {
   return response.data;
 };
 
+export const getTeacherContent = async (courseId) => {
+  const response = await api.get(`/admin/courses/${courseId}/teacher-content`);
+  return response.data;
+};
+
 export const createAdminCourseModule = async (courseId, payload = {}) => {
   const response = await api.post(`/admin/courses/${courseId}/modules`, payload);
   return response.data;
@@ -253,6 +262,21 @@ export const deleteCourseModulePresentation = async (courseId, moduleId, pptId) 
 export const deleteCourseModuleVideo = async (courseId, moduleId, videoId) => {
   const response = await api.delete(
     `/admin/courses/${courseId}/modules/${moduleId}/videos/${videoId}`
+  );
+  return response.data;
+};
+
+export const addCourseModuleLink = async (courseId, moduleId, payload = {}) => {
+  const response = await api.post(`/admin/courses/${courseId}/modules/${moduleId}/links`, {
+    title: payload?.title,
+    url: payload?.url,
+  });
+  return response.data;
+};
+
+export const deleteCourseModuleLink = async (courseId, moduleId, linkId) => {
+  const response = await api.delete(
+    `/admin/courses/${courseId}/modules/${moduleId}/links/${linkId}`
   );
   return response.data;
 };

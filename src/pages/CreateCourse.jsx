@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createCourse } from '../services/courses.service';
 import { getAllSemester } from '../services/semester.services';
 import { useParams, useNavigate } from 'react-router-dom';
+import { getPeriodLabel } from '../utils/periodLabel';
 
 const CreateCourse = () => {
   const { codeid } = useParams();
@@ -47,6 +48,10 @@ const CreateCourse = () => {
   const totalCredits = (formData.creditPoints.lecture || 0) +
     (formData.creditPoints.tutorial || 0) +
     (formData.creditPoints.practical || 0);
+
+  // Derive period label from selected semester's program
+  const selectedSem = semesters.find((s) => s._id === formData.semester);
+  const periodLabel = getPeriodLabel(selectedSem?.batch?.program?.periodType);
 
   // Fetch semesters and teachers when component mounts
   useEffect(() => {
@@ -316,10 +321,10 @@ const CreateCourse = () => {
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Semester *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{periodLabel} *</label>
             {loadingSemesters ? (
               <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
-                Loading semesters...
+                Loading {periodLabel.toLowerCase()}s...
               </div>
             ) : semesterError ? (
               <div className="w-full px-3 py-2 border border-red-300 rounded-md bg-red-50 text-red-700">
@@ -333,7 +338,7 @@ const CreateCourse = () => {
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Select a semester</option>
+                <option value="">Select a {periodLabel.toLowerCase()}</option>
                 {semesters.map((semester) => (
                   <option key={semester._id} value={semester._id}>
                     {semester.name} ({formatDate(semester.startDate)} - {formatDate(semester.endDate)})
@@ -342,7 +347,7 @@ const CreateCourse = () => {
               </select>
             )}
             {!loadingSemesters && !semesterError && semesters.length === 0 && (
-              <p className="text-xs text-orange-600 mt-1">No semesters available. Please create a semester first.</p>
+              <p className="text-xs text-orange-600 mt-1">No {periodLabel.toLowerCase()}s available. Please create a {periodLabel.toLowerCase()} first.</p>
             )}
           </div>
 
@@ -435,7 +440,7 @@ const CreateCourse = () => {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mid Semester Exam Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mid {periodLabel} Exam Date</label>
               <input
                 type="date"
                 value={formData.courseSchedule.midSemesterExamDate}
@@ -445,7 +450,7 @@ const CreateCourse = () => {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">End Semester Exam Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">End {periodLabel} Exam Date</label>
               <input
                 type="date"
                 value={formData.courseSchedule.endSemesterExamDate}

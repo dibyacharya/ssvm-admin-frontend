@@ -34,7 +34,6 @@ const sidebarItems = [
   { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
   { id: 'rbac', name: 'Roles & Permissions', icon: Shield, path: '/rbac' },
   { id: 'users', name: 'User Management', icon: Users, path: '/users' },
-  { id: 'helpdesk', name: 'Helpdesk', icon: MessageSquare, path: '/helpdesk' },
   {
     id: 'program-management',
     name: 'Program Management',
@@ -44,11 +43,11 @@ const sidebarItems = [
       { id: 'onboarding', name: 'Setup Wizard', icon: Wand2, path: '/onboarding' },
       { id: 'programs', name: 'Programs', icon: ClipboardList, path: '/programs' },
       { id: 'batches', name: 'Batches', icon: Layers, path: '/batches' },
-      { id: 'cohorts', name: 'Student Enrollment', icon: Users, path: '/cohorts' },
       { id: 'gantt', name: 'Gantt Chart', icon: GitBranch, path: '/gantt' },
     ]
   },
-  { id: 'courses', name: 'Course Management', icon: BookOpen, path: '/courses' }
+  { id: 'courses', name: 'Course Management', icon: BookOpen, path: '/courses/list' },
+  { id: 'helpdesk', name: 'Helpdesk', icon: MessageSquare, path: '/helpdesk' }
 ];
 const RBAC_VISIBILITY_ROLES = [
   'SUPER_ADMIN',
@@ -319,7 +318,7 @@ const AdminLayout = () => {
         </div>
 
         {/* Navigation */}
-        <nav className={`flex-1 ${isCollapsed ? 'p-2' : 'p-4'} space-y-1 overflow-y-auto`}>
+        <nav className={`flex flex-1 flex-col ${isCollapsed ? 'p-2' : 'p-4'} gap-1 overflow-y-auto`}>
           {visibleSidebarItems.map((item) => {
             const Icon = item.icon;
 
@@ -432,6 +431,7 @@ const AdminLayout = () => {
                 onClick={() => setSidebarOpen(false)}
                 className={`
                   flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-3 rounded-lg text-sm font-medium transition-colors
+                  ${item.id === 'helpdesk' ? 'mt-auto border-t border-gray-200 pt-4' : ''}
                   ${isActive
                     ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
                     : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'

@@ -13,17 +13,21 @@ import {
   uploadCourseModulePdf,
   uploadCourseModulePresentation,
   addCourseModuleVideo,
+  addCourseModuleLink,
   deleteCourseModulePdf,
   deleteCourseModulePresentation,
   deleteCourseModuleVideo,
+  deleteCourseModuleLink,
   updateCourseMaterialItem,
   getCourseStudents,
 } from "../services/courses.service";
+import { API_URL } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import {
   NCRF_LEVEL_OPTIONS as TOP_LEVEL_NCRF_LEVEL_OPTIONS,
   NCRF_LEVEL_VALUES as TOP_LEVEL_NCRF_LEVEL_VALUES,
 } from "../constants/ncrf";
+import { getPeriodLabel } from "../utils/periodLabel";
 
 const tabs = [
   { id: "description", label: "Course Description" },
@@ -44,7 +48,7 @@ const defaultMoCodes = Array.from({ length: 6 }, (_, index) => `MO${index + 1}`)
 const materialCategoryConfig = [
   {
     type: "pdf",
-    label: "PDFs",
+    label: "Course Content",
     isFile: true,
     accept: ".pdf,application/pdf",
     helper: "Upload PDF files.",
@@ -63,6 +67,13 @@ const materialCategoryConfig = [
     isFile: false,
     accept: "",
     helper: "Add a video URL (YouTube/Drive/etc.).",
+  },
+  {
+    type: "link",
+    label: "Links",
+    isFile: false,
+    accept: "",
+    helper: "Add a resource link (website/article/etc.).",
   },
 ];
 
@@ -402,7 +413,7 @@ const CourseManagementDetails = () => {
   );
 
   const apiOrigin = useMemo(() => {
-    const base = (import.meta.env.VITE_API_BASE_URL || "").toString().trim();
+    const base = (API_URL || "").toString().trim();
     if (!base) return "";
     try {
       return new URL(base).origin;
@@ -460,6 +471,11 @@ const CourseManagementDetails = () => {
       statuses: collect((row) => row.status),
       teachers: collect((row) => row.teacherNames),
     };
+  }, [students]);
+
+  const studentPeriodLabel = useMemo(() => {
+    const pt = students.find((r) => r.program?.periodType)?.program?.periodType;
+    return getPeriodLabel(pt);
   }, [students]);
 
   const loadTaxonomyCategories = async () => {
@@ -1183,6 +1199,11 @@ const CourseManagementDetails = () => {
           title: draft.title,
           url: draft.url,
         });
+      } else if (type === "link") {
+        await addCourseModuleLink(courseId, moduleId, {
+          title: draft.title,
+          url: draft.url,
+        });
       } else {
         setError("Unsupported material type.");
         setMaterialSaving(false);
@@ -1279,6 +1300,8 @@ const CourseManagementDetails = () => {
         await deleteCourseModulePresentation(courseId, moduleId, item._id);
       } else if (item.type === "video") {
         await deleteCourseModuleVideo(courseId, moduleId, item._id);
+      } else if (item.type === "link") {
+        await deleteCourseModuleLink(courseId, moduleId, item._id);
       } else {
         setError("Unsupported material type.");
         setMaterialSaving(false);
@@ -2590,6 +2613,7 @@ const CourseManagementDetails = () => {
               </section>
             </div>
           )}
+
         </div>
       )}
 
@@ -2639,7 +2663,7 @@ const CourseManagementDetails = () => {
                   onChange={(e) => setFilters((prev) => ({ ...prev, semester: e.target.value }))}
                   className="border border-gray-300 rounded px-2 py-2 text-xs"
                 >
-                  <option value="">Semester</option>
+                  <option value="">{studentPeriodLabel}</option>
                   {optionSets.semesters.map((item) => (
                     <option key={item.value} value={item.value}>
                       {item.label}
@@ -2708,7 +2732,7 @@ const CourseManagementDetails = () => {
                       <th className="px-3 py-2 text-left">Program</th>
                       <th className="px-3 py-2 text-left">Stream</th>
                       <th className="px-3 py-2 text-left">Batch</th>
-                      <th className="px-3 py-2 text-left">Semester</th>
+                      <th className="px-3 py-2 text-left">{studentPeriodLabel}</th>
                       <th className="px-3 py-2 text-left">Stage</th>
                       <th className="px-3 py-2 text-left">Status</th>
                       <th className="px-3 py-2 text-left">Teacher</th>

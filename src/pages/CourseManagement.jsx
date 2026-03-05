@@ -49,7 +49,15 @@ export const CourseManagement = () => {
   const fetchSemesters = async () => {
     try {
       const data = await getAllSemester();
-      setSemesters(Array.isArray(data) ? data : data.semesters || []);
+      const list = Array.isArray(data) ? data : data.semesters || [];
+      // Deduplicate by _id in case backend returns overlapping results
+      const seen = new Set();
+      const unique = list.filter(s => {
+        if (!s._id || seen.has(s._id)) return false;
+        seen.add(s._id);
+        return true;
+      });
+      setSemesters(unique);
     } catch (err) {
       console.error('Error fetching semesters:', err);
     }
@@ -565,7 +573,7 @@ export const CourseManagement = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Change Semester</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Change {getPeriodLabel(semesters.find(s => s._id === changeSemesterCourse?.semester?._id)?.batch?.program?.periodType)}</h2>
               <button
                 onClick={() => { setChangeSemesterCourse(null); setSelectedSemesterId(''); }}
                 className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
@@ -581,18 +589,18 @@ export const CourseManagement = () => {
               </div>
 
               <div>
-                <p className="text-sm text-gray-600 mb-1">Current Semester</p>
+                <p className="text-sm text-gray-600 mb-1">Current {getPeriodLabel(semesters.find(s => s._id === changeSemesterCourse?.semester?._id)?.batch?.program?.periodType)}</p>
                 <p className="font-medium text-gray-900">{changeSemesterCourse.semester?.name || 'None'}</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">New Semester *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New {getPeriodLabel(semesters.find(s => s._id === changeSemesterCourse?.semester?._id)?.batch?.program?.periodType)} *</label>
                 <select
                   value={selectedSemesterId}
                   onChange={(e) => setSelectedSemesterId(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Select Semester</option>
+                  <option value="">Select {getPeriodLabel(semesters.find(s => s._id === changeSemesterCourse?.semester?._id)?.batch?.program?.periodType)}</option>
                   {semesters.map(s => (
                     <option key={s._id} value={s._id}>{s.name}</option>
                   ))}
@@ -616,7 +624,7 @@ export const CourseManagement = () => {
                   }`}
                 >
                   <Save className="w-4 h-4" />
-                  <span>{updating ? 'Updating...' : 'Update Semester'}</span>
+                  <span>{updating ? 'Updating...' : `Update ${getPeriodLabel(semesters.find(s => s._id === changeSemesterCourse?.semester?._id)?.batch?.program?.periodType)}`}</span>
                 </button>
               </div>
             </div>

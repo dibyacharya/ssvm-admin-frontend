@@ -3,7 +3,26 @@ node_modules/
 
 # build output
 dist/
+build/
+
+# env / config
+.env
+.env.*
+public/config.js
 
 # mac junk
 .DS_Store
 **/.DS_Store
+
+# test output
+test-results/
+playwright-report/
+coverage/
+
+# editor / IDE
+.vscode/
+.idea/
+
+# logs
+*.log
+npm-debug.log*

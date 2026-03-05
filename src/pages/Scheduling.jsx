@@ -273,7 +273,7 @@ export const Scheduling = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="text-center py-12">
             <RefreshCw className="w-16 h-16 text-blue-400 mx-auto mb-4 animate-spin" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Period Data</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Schedule Data</h2>
             <p className="text-gray-600">Please wait while we fetch the scheduling information...</p>
           </div>
         </div>
@@ -449,8 +449,8 @@ export const Scheduling = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="text-center py-12">
             <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">No Periods Found</h2>
-            <p className="text-gray-600 mb-4">Get started by creating your first period.</p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">No {filterPeriodType !== 'all' ? getPeriodLabel(filterPeriodType) : 'Period'}s Found</h2>
+            <p className="text-gray-600 mb-4">Get started by creating your first {filterPeriodType !== 'all' ? getPeriodLabel(filterPeriodType).toLowerCase() : 'period'}.</p>
             <button
               onClick={() => setShowCreateForm(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
@@ -630,7 +630,7 @@ export const Scheduling = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Edit Period</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Edit {getPeriodLabel(editingSemester?.batch?.program?.periodType)}</h2>
               <button
                 onClick={() => { setShowEditForm(false); setEditingSemester(null); }}
                 className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
@@ -653,7 +653,7 @@ export const Scheduling = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Period Number</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{getPeriodLabel(editingSemester?.batch?.program?.periodType)} Number</label>
                 <input
                   type="number"
                   name="semNumber"
@@ -704,7 +704,7 @@ export const Scheduling = () => {
                   }`}
                 >
                   <Save className="w-4 h-4" />
-                  <span>{updating ? 'Updating...' : 'Update Period'}</span>
+                  <span>{updating ? 'Updating...' : `Update ${getPeriodLabel(editingSemester?.batch?.program?.periodType)}`}</span>
                 </button>
               </div>
             </form>
@@ -716,8 +716,8 @@ export const Scheduling = () => {
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Delete Period</h2>
-            <p className="text-gray-600 mb-6">Are you sure you want to delete this period? This action cannot be undone.</p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Delete {getPeriodLabel(semesters.find(s => s._id === deletingSemesterId)?.batch?.program?.periodType)}</h2>
+            <p className="text-gray-600 mb-6">Are you sure you want to delete this {getPeriodLabel(semesters.find(s => s._id === deletingSemesterId)?.batch?.program?.periodType).toLowerCase()}? This action cannot be undone.</p>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => { setShowDeleteConfirm(false); setDeletingSemesterId(null); }}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, Plus, Trash2, Loader2, AlertTriangle, Edit3, X } from 'lucide-react';
-import { createSemester, deleteSemester, getSemestersByBatch, updateSemester } from '../../services/semester.services';
+import { createSemester, deleteSemester, updateSemester } from '../../services/semester.services';
 import { calculateEndDate } from '../../utils/dateCalculator';
 import { getPeriodLabel } from '../../utils/periodLabel';
 
@@ -11,7 +11,7 @@ const fadeUp = {
 };
 
 const StepSemesterSetup = ({ state, dispatch, goNext, goBack }) => {
-  const { programData, programId, batchId, batchData, semesters } = state;
+  const { programData, programId, semesters } = state;
   const periodType = programData?.periodType || 'semester';
   const periodLabel = getPeriodLabel(periodType);
   const totalExpected = programData?.totalSemesters || 0;
@@ -27,10 +27,6 @@ const StepSemesterSetup = ({ state, dispatch, goNext, goBack }) => {
     if (semesters.length > 0) {
       const lastSem = semesters[semesters.length - 1];
       startDate = lastSem.endDate || '';
-    } else if (batchData?.startDate) {
-      startDate = typeof batchData.startDate === 'string'
-        ? batchData.startDate.split('T')[0]
-        : batchData.startDate;
     }
     const endDate = startDate ? (calculateEndDate(startDate, periodType) || '') : '';
     return {
@@ -64,29 +60,6 @@ const StepSemesterSetup = ({ state, dispatch, goNext, goBack }) => {
 
   const toIdString = (value) => (value == null ? '' : String(value));
   const getSemesterId = (semester) => toIdString(semester?._id || semester?.id || '');
-
-  // Load existing semesters when picking an existing batch
-  useEffect(() => {
-    if (!batchId || semesters.length > 0) return;
-    let cancelled = false;
-    const load = async () => {
-      setLoadingSemesters(true);
-      try {
-        const data = await getSemestersByBatch(batchId);
-        if (cancelled) return;
-        const list = data.semesters || data || [];
-        if (list.length > 0) {
-          dispatch({ type: 'SET_SEMESTERS', semesters: list });
-        }
-      } catch (err) {
-        if (!cancelled) setError('Failed to load existing semesters.');
-      } finally {
-        if (!cancelled) setLoadingSemesters(false);
-      }
-    };
-    load();
-    return () => { cancelled = true; };
-  }, [batchId]);
 
   // Update form defaults after semesters are loaded from API
   useEffect(() => {
@@ -134,7 +107,6 @@ const StepSemesterSetup = ({ state, dispatch, goNext, goBack }) => {
     try {
       const payload = {
         program: programId,
-        batch: batchId,
         name: formData.name,
         semNumber: Number(formData.semNumber) || semesters.length + 1,
         startDate: formData.startDate,
@@ -298,7 +270,7 @@ const StepSemesterSetup = ({ state, dispatch, goNext, goBack }) => {
   };
 
   const handleContinue = () => {
-    dispatch({ type: 'MARK_COMPLETE', step: 3 });
+    dispatch({ type: 'MARK_COMPLETE', step: 2 });
     goNext();
   };
 
@@ -309,7 +281,7 @@ const StepSemesterSetup = ({ state, dispatch, goNext, goBack }) => {
     <div>
       <h1 className="text-2xl font-semibold tracking-tight text-gray-900">{periodLabel} Setup</h1>
       <p className="mt-1 text-sm text-gray-500">
-        Add {periodLabel.toLowerCase()}s for this batch.
+        Add {periodLabel.toLowerCase()}s for this program.
         {totalExpected > 0 && (
           <span className="ml-1 font-medium text-gray-700">
             {semesters.length} of {totalExpected} created

@@ -4,17 +4,25 @@ import {
   AlertTriangle,
   ArrowLeft,
   Camera,
+  Check,
   ChevronDown,
   ChevronRight,
+  Copy,
   Edit3,
+  KeyRound,
   Loader2,
   RefreshCw,
   Save,
+  Shield,
   Trash2,
   X,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import userService from "../services/user.service";
+import userService, { resetUserPassword } from "../services/user.service";
+import { listRoles } from "../services/role.service";
+import { getPeriodLabel } from "../utils/periodLabel";
+import { getProgramsDropdown } from "../services/program.service";
+import { getBatchesDropdown } from "../services/batch.service";
 
 const ADMIN_ACCESS_ROLE_SET = new Set([
   "SUPER_ADMIN",
@@ -420,6 +428,8 @@ const normalizeTemplate = (input, canonicalFields, aliases = {}) => {
   return normalized;
 };
 
+const normalizeRoleTag = (value) => String(value || "").trim().toUpperCase();
+
 const normalizePersonalTemplate = (input) =>
   normalizeTemplate(input, CANONICAL_PERSONAL_DETAIL_FIELDS, CANONICAL_ALIASES);
 
@@ -445,12 +455,26 @@ const buildTeacherDisplayName = (details = {}, fallbackName = "") => {
   return String(fallbackName || "").trim();
 };
 
-const readProfilePhotoUrl = (profileData) =>
-  profileData?.profilePhotoUrl ||
-  profileData?.photoUrl ||
-  profileData?.user?.photoUrl ||
-  profileData?.personalDetails?.[TEACHER_PROFILE_PHOTO_FIELD] ||
-  "";
+const readProfilePhotoUrl = (profileData) => {
+  let raw =
+    profileData?.profilePhotoUrl ||
+    profileData?.photoUrl ||
+    profileData?.user?.photoUrl ||
+    profileData?.personalDetails?.[TEACHER_PROFILE_PHOTO_FIELD] ||
+    "";
+  if (!raw) return "";
+  // If already a full URL (Azure or external), use as-is
+  if (/^https?:\/\//i.test(raw)) return raw;
+  // Strip any broken host prefix (e.g. "0.0.0.0:5000/uploads/..." → "/uploads/...")
+  const uploadsIdx = raw.indexOf("/uploads/");
+  if (uploadsIdx > 0) {
+    raw = raw.substring(uploadsIdx);
+  }
+  // Prepend backend base URL for relative paths
+  const backendUrl =
+    (typeof window !== "undefined" && window.RUNTIME_CONFIG?.BACKEND_URL) || "";
+  return backendUrl ? `${backendUrl}${raw}` : raw;
+};
 
 const validatePersonalDetailsDraft = (draft, { isTeacher = false } = {}) => {
   const validateDateValue = (value, label) => {
@@ -538,9 +562,26 @@ export default function UserProfile() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
+  const [academicDraft, setAcademicDraft] = useState({});
+
+  const [programsList, setProgramsList] = useState([]);
+  const [batchesList, setBatchesList] = useState([]);
+
   const [expandedSemesters, setExpandedSemesters] = useState([]);
   const [notice, setNotice] = useState(null);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [roleTagOptions, setRoleTagOptions] = useState([]);
+  const [roleTagDraft, setRoleTagDraft] = useState([]);
+  const [roleTagLoading, setRoleTagLoading] = useState(false);
+  const [roleTagSaving, setRoleTagSaving] = useState(false);
+  const [roleTagError, setRoleTagError] = useState("");
+
+  const [passwordInput, setPasswordInput] = useState("");
+  const [resetModal, setResetModal] = useState({ open: false, mode: "manual" });
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetResult, setResetResult] = useState(null);
+  const [resetError, setResetError] = useState("");
+  const [passwordCopied, setPasswordCopied] = useState(false);
 
   const photoInputRef = useRef(null);
   const requestIdRef = useRef(0);
@@ -580,6 +621,16 @@ export default function UserProfile() {
       const { normalizedProfile, teacherProfile } = normalizeProfileForUI(profile);
       setProfileData(normalizedProfile);
       setEditDraft(normalizedProfile.personalDetails);
+      const normalizedAccessRoles = Array.isArray(normalizedProfile?.user?.accessRoles)
+        ? Array.from(
+            new Set(
+              normalizedProfile.user.accessRoles
+                .map((entry) => normalizeRoleTag(entry))
+                .filter(Boolean)
+            )
+          )
+        : [];
+      setRoleTagDraft(normalizedAccessRoles);
       setUpdateReason("");
       setSaveError("");
       setEditMode(false);
@@ -622,6 +673,58 @@ export default function UserProfile() {
     }
   }, [normalizeProfileForUI, userId]);
 
+  const loadRoleTagOptions = useCallback(async () => {
+    if (!userId) return;
+    setRoleTagLoading(true);
+    setRoleTagError("");
+    try {
+      const [rolesPayload, accessPayload] = await Promise.all([
+        listRoles(),
+        userService.getUserAccessRoles(userId),
+      ]);
+
+      const activeRoles = Array.isArray(rolesPayload?.roles)
+        ? rolesPayload.roles.filter((role) => role?.isActive !== false)
+        : [];
+      const allowedTags = Array.isArray(accessPayload?.allowedRoles)
+        ? Array.from(
+            new Set(
+              accessPayload.allowedRoles
+                .map((entry) => normalizeRoleTag(entry))
+                .filter(Boolean)
+            )
+          )
+        : [];
+
+      const roleLabelByKey = new Map(
+        activeRoles
+          .map((role) => {
+            const key = normalizeRoleTag(role?.key);
+            if (!key) return null;
+            return [key, role?.label || key];
+          })
+          .filter(Boolean)
+      );
+
+      const options = allowedTags
+        .filter((tag) => roleLabelByKey.has(tag))
+        .map((tag) => ({
+          value: tag,
+          label: roleLabelByKey.get(tag) || tag,
+        }))
+        .sort((left, right) => left.label.localeCompare(right.label));
+
+      setRoleTagOptions(options);
+    } catch (optionsError) {
+      setRoleTagOptions([]);
+      setRoleTagError(
+        getErrorMessage(optionsError, "Failed to load role tag options.")
+      );
+    } finally {
+      setRoleTagLoading(false);
+    }
+  }, [userId]);
+
   const reloadProfileOnly = useCallback(async () => {
     if (!userId) return;
     const response = await userService.getUserProfile(userId);
@@ -640,6 +743,38 @@ export default function UserProfile() {
   }, [isAdmin, loadPage]);
 
   useEffect(() => {
+    if (!isAdmin || !userId) return;
+    loadRoleTagOptions();
+  }, [isAdmin, userId, loadRoleTagOptions]);
+
+  // Fetch programs & batches lists for academic dropdowns
+  useEffect(() => {
+    if (!isAdmin) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const programs = await getProgramsDropdown();
+        if (!cancelled) setProgramsList(Array.isArray(programs) ? programs : []);
+      } catch { if (!cancelled) setProgramsList([]); }
+    })();
+    return () => { cancelled = true; };
+  }, [isAdmin]);
+
+  // Re-fetch batches when academic draft programId changes
+  useEffect(() => {
+    const pid = academicDraft.programId;
+    if (!pid) { setBatchesList([]); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const batches = await getBatchesDropdown(pid);
+        if (!cancelled) setBatchesList(Array.isArray(batches) ? batches : []);
+      } catch { if (!cancelled) setBatchesList([]); }
+    })();
+    return () => { cancelled = true; };
+  }, [academicDraft.programId]);
+
+  useEffect(() => {
     if (!notice) return undefined;
     const timer = setTimeout(() => setNotice(null), 2500);
     return () => clearTimeout(timer);
@@ -649,6 +784,13 @@ export default function UserProfile() {
     () => isTeacherProfileData(profileData),
     [profileData]
   );
+  const isExecutiveProfile = useMemo(() => {
+    const profileUserType = String(profileData?.user?.userType || "")
+      .trim()
+      .toLowerCase();
+    return profileUserType === "executive_staff";
+  }, [profileData]);
+  const canManageRoleTags = isTeacherProfile || isExecutiveProfile;
 
   const headerFields = useMemo(() => {
     const details = isPlainObject(profileData?.personalDetails)
@@ -702,7 +844,7 @@ export default function UserProfile() {
       },
       {
         label: "Stage",
-        value: academic.currentStage || (semester ? `Semester ${semester}` : ""),
+        value: academic.currentStage || (semester ? `${getPeriodLabel(academic.periodType)} ${semester}` : ""),
       },
     ];
   }, [isTeacherProfile, profileData]);
@@ -723,6 +865,16 @@ export default function UserProfile() {
   const handleEditToggle = () => {
     const normalize = isTeacherProfile ? normalizeTeacherTemplate : normalizePersonalTemplate;
     setEditDraft(normalize(profileData?.personalDetails || {}));
+    // Seed academic draft from current profile data
+    const academic = isPlainObject(profileData?.academicSummary) ? profileData.academicSummary : {};
+    setAcademicDraft({
+      programId: academic.programId || "",
+      batchId: academic.batchId || "",
+      stream: academic.stream || "",
+      rollNo: academic.rollNo || academic.rollNumber || "",
+      academicYear: academic.academicYear || "",
+      session: academic.session || "",
+    });
     setUpdateReason("");
     setSaveError("");
     setEditMode(true);
@@ -731,6 +883,7 @@ export default function UserProfile() {
   const handleCancelEdit = () => {
     const normalize = isTeacherProfile ? normalizeTeacherTemplate : normalizePersonalTemplate;
     setEditDraft(normalize(profileData?.personalDetails || {}));
+    setAcademicDraft({});
     setUpdateReason("");
     setSaveError("");
     setEditMode(false);
@@ -748,13 +901,42 @@ export default function UserProfile() {
     setSaving(true);
     setSaveError("");
     try {
+      // Build academic summary patch (only include non-empty changed fields)
+      const academicPatch = {};
+      if (!isTeacherProfile && Object.keys(academicDraft).length > 0) {
+        const currentAcademic = isPlainObject(profileData?.academicSummary)
+          ? profileData.academicSummary
+          : {};
+        if (academicDraft.programId && academicDraft.programId !== (currentAcademic.programId || "")) {
+          academicPatch.programId = academicDraft.programId;
+        }
+        if (academicDraft.batchId && academicDraft.batchId !== (currentAcademic.batchId || "")) {
+          academicPatch.batchId = academicDraft.batchId;
+        }
+        if (academicDraft.stream !== undefined && academicDraft.stream !== (currentAcademic.stream || "")) {
+          academicPatch.stream = academicDraft.stream;
+        }
+        if (academicDraft.rollNo !== undefined && academicDraft.rollNo !== (currentAcademic.rollNo || currentAcademic.rollNumber || "")) {
+          academicPatch.rollNo = academicDraft.rollNo;
+        }
+        if (academicDraft.academicYear !== undefined && academicDraft.academicYear !== (currentAcademic.academicYear || "")) {
+          academicPatch.academicYear = academicDraft.academicYear;
+        }
+        if (academicDraft.session !== undefined && academicDraft.session !== (currentAcademic.session || "")) {
+          academicPatch.session = academicDraft.session;
+        }
+      }
+      const hasAcademicChanges = Object.keys(academicPatch).length > 0;
+
       await userService.updateUserProfile(userId, {
         personalDetails: editDraft,
+        ...(hasAcademicChanges ? { academicSummary: academicPatch } : {}),
         ...(updateReason.trim() ? { updateReason: updateReason.trim() } : {}),
       });
 
       await loadPage();
-      setNotice({ type: "success", message: "Personal details updated successfully." });
+      setNotice({ type: "success", message: "Profile updated successfully." });
+      setAcademicDraft({});
       setEditMode(false);
     } catch (saveErr) {
       setSaveError(getErrorMessage(saveErr, "Failed to update profile."));
@@ -821,12 +1003,97 @@ export default function UserProfile() {
     }
   };
 
+  // ── Password Reset Handlers ──
+  const openResetConfirm = (mode) => {
+    if (mode === "manual" && !passwordInput.trim()) {
+      setResetError("Enter a password before resetting.");
+      return;
+    }
+    setResetError("");
+    setResetModal({ open: true, mode });
+  };
+
+  const closeResetConfirm = () => {
+    if (resetLoading) return;
+    setResetModal({ open: false, mode: "manual" });
+  };
+
+  const handleConfirmResetPassword = async () => {
+    if (!userId) return;
+    setResetLoading(true);
+    setResetError("");
+    setResetResult(null);
+    try {
+      const payload =
+        resetModal.mode === "generate"
+          ? { generateTemp: true }
+          : { newPassword: passwordInput.trim() };
+      const response = await resetUserPassword(userId, payload);
+      setResetResult(response);
+      setPasswordInput("");
+      setPasswordCopied(false);
+      setResetModal({ open: false, mode: "manual" });
+    } catch (err) {
+      setResetError(
+        err.response?.data?.error || err.message || "Failed to reset password."
+      );
+      setResetModal({ open: false, mode: "manual" });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleCopyGeneratedPassword = async () => {
+    if (!resetResult?.tempPassword) return;
+    try {
+      await navigator.clipboard.writeText(resetResult.tempPassword);
+      setPasswordCopied(true);
+      setTimeout(() => setPasswordCopied(false), 2000);
+    } catch {
+      /* clipboard not available */
+    }
+  };
+
   const toggleSemester = (semesterNo) => {
     setExpandedSemesters((prev) =>
       prev.includes(semesterNo)
         ? prev.filter((entry) => entry !== semesterNo)
         : [...prev, semesterNo]
     );
+  };
+
+  const toggleRoleTag = (roleTag) => {
+    const normalized = normalizeRoleTag(roleTag);
+    if (!normalized) return;
+    setRoleTagDraft((prev) =>
+      prev.includes(normalized)
+        ? prev.filter((entry) => entry !== normalized)
+        : [...prev, normalized]
+    );
+    setRoleTagError("");
+  };
+
+  const handleSaveRoleTags = async () => {
+    if (!userId) return;
+    setRoleTagSaving(true);
+    setRoleTagError("");
+    try {
+      const normalized = Array.from(
+        new Set(roleTagDraft.map((entry) => normalizeRoleTag(entry)).filter(Boolean))
+      );
+      await userService.updateUserAccessRoles(userId, {
+        accessRoles: normalized,
+        updateReason: "Access role tags updated from user profile",
+      });
+      await loadPage();
+      setNotice({ type: "success", message: "Role tags updated successfully." });
+    } catch (saveRoleError) {
+      setRoleTagError(
+        getErrorMessage(saveRoleError, "Failed to update role tags.")
+      );
+    } finally {
+      setRoleTagSaving(false);
+    }
   };
 
   if (!isAdmin) {
@@ -941,14 +1208,81 @@ export default function UserProfile() {
 
           <div className="grid gap-5 p-5 lg:grid-cols-[1.6fr_0.9fr]">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {headerFields.map((field) => (
-                <div key={field.label} className="rounded-lg border border-gray-200 bg-white p-3">
-                  <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    {field.label}
+              {headerFields.map((field) => {
+                // Academic fields editable in edit mode (students only)
+                const academicEditableMap = !isTeacherProfile
+                  ? {
+                      "Roll No": { key: "rollNo", type: "text" },
+                      "Program": { key: "programId", type: "select", options: programsList, labelKey: "name", valueKey: "_id" },
+                      "Stream": { key: "stream", type: "text" },
+                      "Batch": { key: "batchId", type: "select", options: batchesList, labelKey: "name", valueKey: "_id" },
+                      "Academic Year + Session": { key: "_academicYearSession", type: "split" },
+                    }
+                  : {};
+                const editConfig = academicEditableMap[field.label];
+                const isEditableField = editMode && editConfig;
+
+                return (
+                  <div key={field.label} className="rounded-lg border border-gray-200 bg-white p-3">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      {field.label}
+                    </div>
+                    {isEditableField ? (
+                      editConfig.type === "select" ? (
+                        <select
+                          value={academicDraft[editConfig.key] || ""}
+                          onChange={(e) =>
+                            setAcademicDraft((prev) => ({
+                              ...prev,
+                              [editConfig.key]: e.target.value,
+                              // Reset batch when program changes
+                              ...(editConfig.key === "programId" ? { batchId: "" } : {}),
+                            }))
+                          }
+                          className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-400 focus:outline-none"
+                        >
+                          <option value="">Select {field.label}</option>
+                          {(editConfig.options || []).map((opt) => (
+                            <option key={opt[editConfig.valueKey]} value={opt[editConfig.valueKey]}>
+                              {opt[editConfig.labelKey]}
+                            </option>
+                          ))}
+                        </select>
+                      ) : editConfig.type === "split" ? (
+                        <div className="mt-1 flex gap-2">
+                          <input
+                            value={academicDraft.academicYear || ""}
+                            onChange={(e) =>
+                              setAcademicDraft((prev) => ({ ...prev, academicYear: e.target.value }))
+                            }
+                            placeholder="Year"
+                            className="w-1/2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-400 focus:outline-none"
+                          />
+                          <input
+                            value={academicDraft.session || ""}
+                            onChange={(e) =>
+                              setAcademicDraft((prev) => ({ ...prev, session: e.target.value }))
+                            }
+                            placeholder="Session"
+                            className="w-1/2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-400 focus:outline-none"
+                          />
+                        </div>
+                      ) : (
+                        <input
+                          value={academicDraft[editConfig.key] || ""}
+                          onChange={(e) =>
+                            setAcademicDraft((prev) => ({ ...prev, [editConfig.key]: e.target.value }))
+                          }
+                          placeholder={`Enter ${field.label}`}
+                          className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-400 focus:outline-none"
+                        />
+                      )
+                    ) : (
+                      <div className="mt-1 text-sm font-medium text-gray-800">{toDisplay(field.value)}</div>
+                    )}
                   </div>
-                  <div className="mt-1 text-sm font-medium text-gray-800">{toDisplay(field.value)}</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="rounded-lg border border-gray-200 bg-white p-4">
@@ -999,6 +1333,140 @@ export default function UserProfile() {
           </div>
         </section>
 
+        {/* ── Reset Password Section ── */}
+        <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-100 px-5 py-4">
+            <div className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-gray-600" />
+              <h2 className="text-xl font-semibold text-gray-900">Reset Password</h2>
+            </div>
+          </div>
+          <div className="space-y-3 p-5">
+            {resetError && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {resetError}
+              </div>
+            )}
+
+            {resetResult?.tempPassword && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3">
+                <p className="text-sm font-medium text-amber-900">Temporary password generated</p>
+                <p className="mt-1 break-all font-mono text-sm text-amber-800">
+                  {resetResult.tempPassword}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleCopyGeneratedPassword}
+                  className="mt-2 inline-flex items-center rounded border border-amber-300 px-2 py-1 text-xs text-amber-800 hover:bg-amber-100"
+                >
+                  {passwordCopied ? (
+                    <><Check className="mr-1 h-3.5 w-3.5" /> Copied</>
+                  ) : (
+                    <><Copy className="mr-1 h-3.5 w-3.5" /> Copy password</>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {!resetResult?.tempPassword && resetResult?.success && (
+              <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+                Password reset completed.
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <input
+                type="text"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="Enter new password"
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => openResetConfirm("manual")}
+                  disabled={resetLoading}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+                >
+                  <KeyRound className="h-4 w-4" />
+                  Set Password
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openResetConfirm("generate")}
+                  disabled={resetLoading}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                >
+                  Generate Temp
+                </button>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-500">
+              User will be required to change their password on next login.
+            </p>
+          </div>
+        </section>
+
+        {canManageRoleTags ? (
+          <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="border-b border-gray-100 px-5 py-4">
+              <h2 className="text-xl font-semibold text-gray-900">Role Tags</h2>
+            </div>
+            <div className="space-y-4 p-5">
+              {roleTagError ? (
+                <div className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm text-red-700">
+                  {roleTagError}
+                </div>
+              ) : null}
+
+              {roleTagLoading ? (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading role tags...
+                </div>
+              ) : roleTagOptions.length ? (
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                  {roleTagOptions.map((option) => (
+                    <label
+                      key={option.value}
+                      className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800"
+                    >
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300"
+                        checked={roleTagDraft.includes(option.value)}
+                        onChange={() => toggleRoleTag(option.value)}
+                        disabled={roleTagSaving}
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No active role tags available.</p>
+              )}
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleSaveRoleTags}
+                  disabled={roleTagSaving || roleTagLoading || roleTagOptions.length === 0}
+                  className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-blue-700 shadow-sm disabled:opacity-60"
+                >
+                  {roleTagSaving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  Save Role Tags
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
         {!isTeacherProfile ? (
           <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
             <div className="border-b border-gray-100 px-5 py-4">
@@ -1016,7 +1484,7 @@ export default function UserProfile() {
                 <thead>
                   <tr className="bg-gray-50 text-gray-700">
                     <th className="w-10 border border-gray-200 px-3 py-2" />
-                    <th className="border border-gray-200 px-3 py-2 text-left font-semibold">Semester</th>
+                    <th className="border border-gray-200 px-3 py-2 text-left font-semibold">{getPeriodLabel(profileData?.academicSummary?.periodType)}</th>
                     <th className="border border-gray-200 px-3 py-2 text-left font-semibold">Academic Year</th>
                     <th className="border border-gray-200 px-3 py-2 text-left font-semibold">Academic Season</th>
                     <th className="border border-gray-200 px-3 py-2 text-left font-semibold">Status</th>
@@ -1223,6 +1691,40 @@ export default function UserProfile() {
           Last updated: {toDateDisplay(profileData?.audit?.updatedAt)}
         </div>
       </div>
+
+      {/* ── Reset Password Confirmation Modal ── */}
+      {resetModal.open && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-lg bg-white shadow-xl border border-gray-200">
+            <div className="px-5 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Confirm Password Reset</h3>
+            </div>
+            <div className="px-5 py-4 text-sm text-gray-700">
+              {resetModal.mode === "generate"
+                ? "Generate a temporary password for this user and reveal it once?"
+                : "Reset this user\u2019s password to the value entered above?"}
+            </div>
+            <div className="px-5 py-4 border-t border-gray-200 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeResetConfirm}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                disabled={resetLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmResetPassword}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
+                disabled={resetLoading}
+              >
+                {resetLoading ? "Processing..." : "Confirm Reset"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

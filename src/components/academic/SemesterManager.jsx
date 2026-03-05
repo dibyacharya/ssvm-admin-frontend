@@ -13,7 +13,11 @@ import {
   Save,
   Trash,
   Trash2,
+  Upload,
+  Download,
+  Video,
   X,
+  CheckCircle,
 } from 'lucide-react';
 import {
   getSemesters,
@@ -25,7 +29,10 @@ import {
   updateSemesterWeeklyTimetable,
   updateSemesterSlotTemplates,
   updateSemesterDateClassSchedule,
+  scheduleVirtualClasses,
+  downloadTimetableTemplate,
 } from '../../services/semester.services';
+import TimetableUploadModal from './TimetableUploadModal';
 import { getCoursesForSemester, updateCourseTeachers } from '../../services/courses.service';
 import { getTeachers } from '../../services/user.service';
 import { getPeriodLabel } from '../../utils/periodLabel';
@@ -219,6 +226,11 @@ const normalizeScheduleRow = (row = {}, options = {}) => {
     virtualLink: normalizedType === 'BREAK' ? '' : String(row?.virtualLink || '').trim(),
     roomNo: normalizedType === 'BREAK' ? '' : String(row?.roomNo || '').trim(),
     campusNo: normalizedType === 'BREAK' ? '' : String(row?.campusNo || '').trim(),
+    vconfRoomId: normalizedType === 'BREAK' ? '' : String(row?.vconfRoomId || '').trim(),
+    vconfJoinUrl: normalizedType === 'BREAK' ? '' : String(row?.vconfJoinUrl || '').trim(),
+    vconfHostUrl: normalizedType === 'BREAK' ? '' : String(row?.vconfHostUrl || '').trim(),
+    meetingId: normalizedType === 'BREAK' ? null : row?.meetingId || null,
+    isVconfScheduled: normalizedType === 'BREAK' ? false : Boolean(row?.isVconfScheduled),
     source: row?.source || options?.source || '',
     courseLabel:
       row?.course?.courseCode || row?.course?.title || row?.course?.name || '',
@@ -402,6 +414,7 @@ const SemesterManager = ({
   const [timetableErrorBySemester, setTimetableErrorBySemester] = useState({});
   const [timetableNoticeBySemester, setTimetableNoticeBySemester] = useState({});
   const [activeTimetablePlanBySemester, setActiveTimetablePlanBySemester] = useState({});
+  const [showUploadModal, setShowUploadModal] = useState(null); // semesterId or null
 
   const periodLabel = getPeriodLabel(periodType);
 
@@ -580,7 +593,14 @@ const SemesterManager = ({
     try {
       const response = await getCoursesForSemester(semesterId);
       const list = Array.isArray(response) ? response : response?.courses || [];
-      const sorted = [...list].sort((a, b) => {
+      const normalized = Array.from(
+        new Map(
+          (Array.isArray(list) ? list : [])
+            .filter((course) => course && course._id && course.isActive !== false)
+            .map((course) => [String(course._id), course])
+        ).values()
+      );
+      const sorted = [...normalized].sort((a, b) => {
         const aCode = String(a?.courseCode || a?.title || '');
         const bCode = String(b?.courseCode || b?.title || '');
         return aCode.localeCompare(bCode);
@@ -631,9 +651,16 @@ const SemesterManager = ({
       const semesterRange = getSemesterRangeById(semesterId);
       const response = await getSemesterTimetable(semesterId);
       if (Array.isArray(response?.courses) && response.courses.length > 0) {
+        const sanitizedCourses = Array.from(
+          new Map(
+            response.courses
+              .filter((course) => course && course._id && course.isActive !== false)
+              .map((course) => [String(course._id), course])
+          ).values()
+        );
         setCoursesBySemester((prev) => ({
           ...prev,
-          [semesterId]: response.courses,
+          [semesterId]: sanitizedCourses,
         }));
       }
       let normalized = normalizeTimetableResponse(response, semesterRange);
@@ -1003,9 +1030,7 @@ const SemesterManager = ({
       }
 
       if (normalized.type === 'CLASS') {
-        if (normalized.mode === 'VIRTUAL' && !normalized.virtualLink) {
-          throw new Error(`Row ${index + 1}: virtual link is required for virtual classes`);
-        }
+        // virtualLink is optional for VIRTUAL mode — auto-filled when scheduling VConf classes
         if (normalized.mode === 'PHYSICAL' && (!normalized.roomNo || !normalized.campusNo)) {
           throw new Error(`Row ${index + 1}: room no and campus no are required for physical classes`);
         }
@@ -1039,6 +1064,11 @@ const SemesterManager = ({
         virtualLink: normalized.type === 'BREAK' ? '' : normalized.virtualLink,
         roomNo: normalized.type === 'BREAK' ? '' : normalized.roomNo,
         campusNo: normalized.type === 'BREAK' ? '' : normalized.campusNo,
+        vconfRoomId: normalized.type === 'BREAK' ? '' : normalized.vconfRoomId || '',
+        vconfJoinUrl: normalized.type === 'BREAK' ? '' : normalized.vconfJoinUrl || '',
+        vconfHostUrl: normalized.type === 'BREAK' ? '' : normalized.vconfHostUrl || '',
+        meetingId: normalized.type === 'BREAK' ? null : normalized.meetingId || null,
+        isVconfScheduled: normalized.type === 'BREAK' ? false : Boolean(normalized.isVconfScheduled),
       });
     });
 
@@ -1208,6 +1238,68 @@ const SemesterManager = ({
     } finally {
       setTimetableSavingBySemester((prev) => ({ ...prev, [`weekly:${semesterId}`]: false }));
     }
+  };
+
+  const handleScheduleVirtualClasses = async (semesterId) => {
+    if (!window.confirm(
+      'This will create VConf rooms and Meeting entries for all VIRTUAL class slots in the weekly timetable.\n\nAlready-scheduled classes will be skipped.\n\nProceed?'
+    )) {
+      return;
+    }
+    try {
+      setTimetableSavingBySemester((prev) => ({ ...prev, [`vconf:${semesterId}`]: true }));
+      setTimetableErrorBySemester((prev) => ({ ...prev, [semesterId]: '' }));
+      setTimetableNoticeBySemester((prev) => ({ ...prev, [semesterId]: '' }));
+
+      const result = await scheduleVirtualClasses(semesterId);
+      const msg = result?.message || `Created ${result?.summary?.created || 0} classes`;
+      setTimetableNoticeBySemester((prev) => ({ ...prev, [semesterId]: msg }));
+
+      // Refresh timetable to show updated VConf URLs
+      await fetchSemesterTimetable(semesterId);
+    } catch (err) {
+      setTimetableErrorBySemester((prev) => ({
+        ...prev,
+        [semesterId]:
+          err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          err?.message ||
+          'Failed to schedule virtual classes.',
+      }));
+    } finally {
+      setTimetableSavingBySemester((prev) => ({ ...prev, [`vconf:${semesterId}`]: false }));
+    }
+  };
+
+  const handleDownloadTemplate = async (semesterId) => {
+    try {
+      const response = await downloadTimetableTemplate(semesterId);
+      const blob = response.data;
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `timetable_template_${periodLabel.toLowerCase()}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setTimetableErrorBySemester((prev) => ({
+        ...prev,
+        [semesterId]: err?.response?.data?.error || err?.message || 'Failed to download template.',
+      }));
+    }
+  };
+
+  const handleUploadSuccess = async (semesterId) => {
+    setShowUploadModal(null);
+    setTimetableNoticeBySemester((prev) => ({
+      ...prev,
+      [semesterId]: 'Timetable imported successfully!',
+    }));
+    // Refresh timetable and switch to date view
+    await fetchSemesterTimetable(semesterId);
+    setActiveTimetablePlanBySemester((prev) => ({ ...prev, [semesterId]: 'SEMESTER' }));
   };
 
   const updateDateClassSchedule = (semesterId, rowIndex, field, value) => {
@@ -1780,14 +1872,33 @@ const SemesterManager = ({
                                   : 'text-gray-600 hover:text-gray-900'
                               }`}
                             >
-                              Semester Schedule
+                              {periodLabel} Schedule
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadTemplate(semester._id)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              Download Template
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setShowUploadModal(semester._id)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                            >
+                              <Upload className="w-3.5 h-3.5" />
+                              Upload Timetable
                             </button>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border border-blue-100 bg-blue-50 rounded-lg p-3">
                             <div>
                               <p className="text-[11px] uppercase tracking-wide text-blue-700 font-semibold">
-                                Semester Start Date
+                                {periodLabel} Start Date
                               </p>
                               <p className="text-sm text-blue-900 font-medium">
                                 {formatDate(
@@ -1797,7 +1908,7 @@ const SemesterManager = ({
                             </div>
                             <div>
                               <p className="text-[11px] uppercase tracking-wide text-blue-700 font-semibold">
-                                Semester End Date
+                                {periodLabel} End Date
                               </p>
                               <p className="text-sm text-blue-900 font-medium">
                                 {formatDate(
@@ -1809,39 +1920,40 @@ const SemesterManager = ({
 
                           {activeTimetablePlan === 'WEEKLY' && (
                             <section className="space-y-3">
-                              <div className="flex items-center justify-between">
+                              <div className="flex items-center justify-between flex-wrap gap-2">
                                 <h4 className="font-semibold text-gray-900">Weekly Class Schedule (Mon–Sun)</h4>
-                                <button
-                                  type="button"
-                                  onClick={() => saveWeeklyTimetable(semester._id)}
-                                  disabled={timetableSavingBySemester[`weekly:${semester._id}`]}
-                                  className="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
-                                >
-                                  {timetableSavingBySemester[`weekly:${semester._id}`] ? 'Saving...' : 'Save Weekly Schedule'}
-                                </button>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => saveWeeklyTimetable(semester._id)}
+                                    disabled={timetableSavingBySemester[`weekly:${semester._id}`]}
+                                    className="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                                  >
+                                    {timetableSavingBySemester[`weekly:${semester._id}`] ? 'Saving...' : 'Save Weekly Schedule'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleScheduleVirtualClasses(semester._id)}
+                                    disabled={timetableSavingBySemester[`vconf:${semester._id}`]}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                                  >
+                                    <Video className="w-3.5 h-3.5" />
+                                    {timetableSavingBySemester[`vconf:${semester._id}`] ? 'Scheduling...' : 'Schedule Virtual Classes'}
+                                  </button>
+                                </div>
                               </div>
 
                               <div className="border border-gray-200 rounded-lg p-3 space-y-3">
                                 <div className="flex items-center justify-between gap-2 flex-wrap">
                                   <h5 className="text-sm font-medium text-gray-800">Slot Templates</h5>
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => addSlotTemplateRow(semester._id)}
-                                      className="inline-flex items-center gap-1 text-xs text-blue-700 hover:text-blue-900"
-                                    >
-                                      <PlusCircle className="w-3.5 h-3.5" />
-                                      Add Template
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => saveSlotTemplates(semester._id)}
-                                      disabled={timetableSavingBySemester[`slots:${semester._id}`]}
-                                      className="px-3 py-1.5 text-xs font-medium bg-gray-800 text-white rounded-md hover:bg-gray-900 disabled:opacity-50"
-                                    >
-                                      {timetableSavingBySemester[`slots:${semester._id}`] ? 'Saving...' : 'Save Templates'}
-                                    </button>
-                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => saveSlotTemplates(semester._id)}
+                                    disabled={timetableSavingBySemester[`slots:${semester._id}`]}
+                                    className="px-3 py-1.5 text-xs font-medium bg-gray-800 text-white rounded-md hover:bg-gray-900 disabled:opacity-50"
+                                  >
+                                    {timetableSavingBySemester[`slots:${semester._id}`] ? 'Saving...' : 'Save Templates'}
+                                  </button>
                                 </div>
 
                                 <div className="space-y-2">
@@ -1931,6 +2043,14 @@ const SemesterManager = ({
                                   {(timetableEntry.slotTemplates || []).length === 0 && (
                                     <p className="text-xs text-gray-500">No slot templates configured.</p>
                                   )}
+                                  <button
+                                    type="button"
+                                    onClick={() => addSlotTemplateRow(semester._id)}
+                                    className="inline-flex items-center gap-1 text-xs text-blue-700 hover:text-blue-900 mt-1"
+                                  >
+                                    <PlusCircle className="w-3.5 h-3.5" />
+                                    Add Template
+                                  </button>
                                 </div>
 
                                 <p className="text-[11px] text-gray-500">
@@ -1959,29 +2079,8 @@ const SemesterManager = ({
                                   .filter((item) => item.row?.dayOfWeek === day.key);
                                 return (
                                   <div key={day.key} className="border border-gray-200 rounded-lg">
-                                    <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                                    <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
                                       <span className="text-sm font-medium text-gray-800">{day.label}</span>
-                                      <div className="flex items-center gap-2 flex-wrap justify-end">
-                                        {(timetableEntry.slotTemplates || []).map((template, templateIndex) => (
-                                          <button
-                                            key={`${day.key}-slot-template-${template._id || templateIndex}`}
-                                            type="button"
-                                            onClick={() => addWeeklySlot(semester._id, day.key, template)}
-                                            className="px-2 py-1 text-[11px] border border-blue-200 text-blue-700 rounded hover:bg-blue-50"
-                                            title={`${template.startTime || '--:--'} - ${template.endTime || '--:--'}`}
-                                          >
-                                            {(template.title || `Slot ${templateIndex + 1}`).trim()}
-                                          </button>
-                                        ))}
-                                        <button
-                                          type="button"
-                                          onClick={() => addWeeklySlot(semester._id, day.key)}
-                                          className="inline-flex items-center gap-1 text-xs text-blue-700 hover:text-blue-900"
-                                        >
-                                          <PlusCircle className="w-3.5 h-3.5" />
-                                          Add Empty Slot
-                                        </button>
-                                      </div>
                                     </div>
 
                                     <div className="p-3 space-y-2 max-h-56 overflow-y-auto">
@@ -2135,6 +2234,19 @@ const SemesterManager = ({
                                                   className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
                                                 />
                                               </>
+                                            ) : slot.isVconfScheduled ? (
+                                              <div className="lg:col-span-2 flex items-center gap-1 px-2 py-1.5 bg-green-50 border border-green-200 rounded-md text-xs text-green-800">
+                                                <CheckCircle className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
+                                                <a
+                                                  href={slot.vconfJoinUrl || '#'}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="truncate hover:underline"
+                                                  title={slot.vconfJoinUrl || ''}
+                                                >
+                                                  {slot.vconfJoinUrl ? 'VConf Scheduled' : 'Scheduled'}
+                                                </a>
+                                              </div>
                                             ) : (
                                               <input
                                                 type="text"
@@ -2147,8 +2259,8 @@ const SemesterManager = ({
                                                     event.target.value
                                                   )
                                                 }
-                                                placeholder="Virtual class link"
-                                                className="lg:col-span-2 px-2 py-1.5 border border-gray-300 rounded-md text-xs"
+                                                placeholder="Auto-filled on schedule"
+                                                className="lg:col-span-2 px-2 py-1.5 border border-gray-200 bg-gray-50 rounded-md text-xs text-gray-400"
                                               />
                                             )}
                                           </>
@@ -2167,6 +2279,27 @@ const SemesterManager = ({
                                     {!dayRows.length && (
                                       <p className="text-xs text-gray-500">No slots configured.</p>
                                     )}
+                                      <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-gray-100 mt-2">
+                                        {(timetableEntry.slotTemplates || []).map((template, templateIndex) => (
+                                          <button
+                                            key={`${day.key}-slot-template-${template._id || templateIndex}`}
+                                            type="button"
+                                            onClick={() => addWeeklySlot(semester._id, day.key, template)}
+                                            className="px-2 py-1 text-[11px] border border-blue-200 text-blue-700 rounded hover:bg-blue-50"
+                                            title={`${template.startTime || '--:--'} - ${template.endTime || '--:--'}`}
+                                          >
+                                            {(template.title || `Slot ${templateIndex + 1}`).trim()}
+                                          </button>
+                                        ))}
+                                        <button
+                                          type="button"
+                                          onClick={() => addWeeklySlot(semester._id, day.key)}
+                                          className="inline-flex items-center gap-1 text-xs text-blue-700 hover:text-blue-900"
+                                        >
+                                          <PlusCircle className="w-3.5 h-3.5" />
+                                          Add Empty Slot
+                                        </button>
+                                      </div>
                                   </div>
                                 </div>
                               );
@@ -2353,7 +2486,7 @@ const SemesterManager = ({
 
                               <div className="border border-gray-200 rounded-lg overflow-hidden">
                                 <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-                                  <span className="text-sm font-medium text-gray-800">Expanded Semester Schedule</span>
+                                  <span className="text-sm font-medium text-gray-800">Expanded {periodLabel} Schedule</span>
                                   <button
                                     type="button"
                                     onClick={() => fetchSemesterTimetable(semester._id)}
@@ -2371,7 +2504,8 @@ const SemesterManager = ({
                                         <th className="px-2 py-2 text-left">End</th>
                                         <th className="px-2 py-2 text-left">Course</th>
                                         <th className="px-2 py-2 text-left">Teacher</th>
-                                        <th className="px-2 py-2 text-left">Virtual Link / Room No & Campus No</th>
+                                        <th className="px-2 py-2 text-left">Location / Link</th>
+                                        <th className="px-2 py-2 text-left">VConf</th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
@@ -2402,14 +2536,29 @@ const SemesterManager = ({
                                                 ? '-'
                                                 : row.mode === 'PHYSICAL'
                                                 ? `Room ${row.roomNo || '-'} | Campus ${row.campusNo || '-'}`
+                                                : row.vconfJoinUrl
+                                                ? <a href={row.vconfJoinUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate block max-w-[200px]" title={row.vconfJoinUrl}>Join Link</a>
                                                 : row.virtualLink || '-'}
+                                            </td>
+                                            <td className="px-2 py-2">
+                                              {row.type === 'BREAK' ? (
+                                                '-'
+                                              ) : row.isVconfScheduled ? (
+                                                <span className="inline-flex items-center gap-1 text-green-700">
+                                                  <CheckCircle className="w-3 h-3" /> Scheduled
+                                                </span>
+                                              ) : row.mode === 'VIRTUAL' ? (
+                                                <span className="text-amber-600">Pending</span>
+                                              ) : (
+                                                '-'
+                                              )}
                                             </td>
                                           </tr>
                                         );
                                       })}
                                       {(timetableEntry.expandedDateSchedule || []).length === 0 && (
                                         <tr>
-                                          <td className="px-2 py-4 text-center text-gray-500" colSpan={6}>
+                                          <td className="px-2 py-4 text-center text-gray-500" colSpan={7}>
                                             No expanded semester schedule available.
                                           </td>
                                         </tr>
@@ -2749,6 +2898,16 @@ const SemesterManager = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Timetable Upload Modal */}
+      {showUploadModal && (
+        <TimetableUploadModal
+          semesterId={showUploadModal}
+          periodLabel={periodLabel}
+          onClose={() => setShowUploadModal(null)}
+          onImportSuccess={() => handleUploadSuccess(showUploadModal)}
+        />
       )}
     </div>
   );

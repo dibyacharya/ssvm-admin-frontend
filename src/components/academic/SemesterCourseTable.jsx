@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Edit3, Plus, RefreshCw, Save, X } from "lucide-react";
+import { Edit3, Plus, Save, X } from "lucide-react";
 import {
   createCourse,
+  getAllCourses,
   getCoursesForSemester,
   lookupCourseByCode,
-  unlinkCourseFromSemester,
   updateCourse,
   updateCourseTeachers,
 } from "../../services/courses.service";
@@ -169,7 +169,10 @@ const sanitizeDraft = (draft) => {
     credit_target_totalRaw === ""
       ? null
       : toNonNegativeInt(credit_target_totalRaw, null);
-  const enforce_credit_target = false;
+  const enforce_credit_target = toBooleanFlag(
+    structureSource.enforce_credit_target,
+    false
+  );
 
   const compulsorySlotsSource = Array.isArray(source.compulsorySlots) ? source.compulsorySlots : [];
   const electiveBlocksSource = Array.isArray(source.electiveBlocks) ? source.electiveBlocks : [];
@@ -817,6 +820,8 @@ const CoursePickerModal = ({
   title,
   subtitle,
   courses,
+  errorMessage,
+  onClearError,
   onClose,
   onSelect,
 }) => {
@@ -862,11 +867,20 @@ const CoursePickerModal = ({
         <div className="px-4 py-3">
           <input
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              if (onClearError) onClearError();
+            }}
             placeholder="Search by code or course name..."
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
+
+        {errorMessage ? (
+          <div className="mx-4 mb-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+            {errorMessage}
+          </div>
+        ) : null}
 
         <div className="max-h-[60vh] overflow-y-auto border-t border-gray-100">
           {filtered.length === 0 ? (
@@ -909,11 +923,11 @@ const SemesterCourseTable = ({
   periodTotalCredits,
   programId,
   periodType = "semester",
-  hideCoursePool = false,
   onUpdate,
   onAddSemester,
 }) => {
   const [courses, setCourses] = useState([]);
+  const [catalogCourses, setCatalogCourses] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [teachersLoading, setTeachersLoading] = useState(false);
   const [teacherLoadError, setTeacherLoadError] = useState("");
@@ -923,6 +937,7 @@ const SemesterCourseTable = ({
   const [savingCourse, setSavingCourse] = useState(false);
 
   const [addMode, setAddMode] = useState("");
+  const [addPanelError, setAddPanelError] = useState("");
   const [lookupLoading, setLookupLoading] = useState(false);
   const [existingCourse, setExistingCourse] = useState(null);
   const [draft, setDraft] = useState({
@@ -965,12 +980,10 @@ const SemesterCourseTable = ({
   const [assignmentSource, setAssignmentSource] = useState("");
   const blockedElectiveToggleRef = useRef(null);
   const [coursePicker, setCoursePicker] = useState(null);
+  const [coursePickerError, setCoursePickerError] = useState("");
   const [pendingAssignTarget, setPendingAssignTarget] = useState(null);
 
-  const periodLabel = getPeriodLabel(periodType) || "Semester";
-  const semesterLabel =
-    semesterData?.name ||
-    (semesterData?.semNumber ? `${periodLabel} ${semesterData.semNumber}` : periodLabel);
+  const periodLabel = getPeriodLabel(periodType);
 
   const resetDraft = () => {
     setDraft({
@@ -1032,11 +1045,6 @@ const SemesterCourseTable = ({
       .sort((left, right) => left.label.localeCompare(right.label));
   }, [teachers]);
 
-  const teacherLabelMap = useMemo(
-    () => new Map(teacherOptions.map((option) => [option.id, option.label])),
-    [teacherOptions]
-  );
-
   const fetchTeachers = async ({ silent = false } = {}) => {
     if (!silent) setTeachersLoading(true);
     setTeacherLoadError("");
@@ -1075,9 +1083,16 @@ const SemesterCourseTable = ({
     try {
       const response = await getCoursesForSemester(semesterId);
       const list = Array.isArray(response) ? response : response?.courses || [];
+      const normalizedList = Array.from(
+        new Map(
+          (Array.isArray(list) ? list : [])
+            .filter((course) => course && course._id && course.isActive !== false)
+            .map((course) => [toIdString(course._id), course])
+        ).values()
+      );
 
       const assignmentMap = {};
-      list.forEach((course) => {
+      normalizedList.forEach((course) => {
         assignmentMap[course._id] = Array.isArray(course.assignedTeachers)
           ? course.assignedTeachers
               .map((teacher) => ({
@@ -1092,7 +1107,7 @@ const SemesterCourseTable = ({
           : [];
       });
 
-      setCourses(list);
+      setCourses(normalizedList);
       setTeacherAssignments(assignmentMap);
     } catch (error) {
       console.error("Failed to load semester courses:", error);
@@ -1101,6 +1116,28 @@ const SemesterCourseTable = ({
       setTeacherAssignments({});
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCatalogCourses = async () => {
+    try {
+      const response = await getAllCourses({}, { detailed: true });
+      const list = Array.isArray(response?.courses)
+        ? response.courses
+        : Array.isArray(response)
+        ? response
+        : [];
+      const normalizedList = Array.from(
+        new Map(
+          (Array.isArray(list) ? list : [])
+            .filter((course) => course && course._id && course.isActive !== false)
+            .map((course) => [toIdString(course._id), course])
+        ).values()
+      );
+      setCatalogCourses(normalizedList);
+    } catch (error) {
+      console.error("Failed to load course catalog:", error);
+      setCatalogCourses([]);
     }
   };
 
@@ -1224,8 +1261,7 @@ const SemesterCourseTable = ({
 
   const fetchData = async () => {
     if (!semesterId) return;
-    await fetchCourses();
-    await fetchTeachers({ silent: false });
+    await Promise.all([fetchCourses(), fetchCatalogCourses(), fetchTeachers({ silent: false })]);
     await fetchCourseAssignment();
   };
 
@@ -1250,16 +1286,35 @@ const SemesterCourseTable = ({
   }, [semesterId, programId]);
 
   useEffect(() => {
-    setAssignmentDraft((prev) => pruneDraftByCourses(prev, courses));
-  }, [courses]);
+    const merged = Array.from(
+      new Map(
+        [...(Array.isArray(courses) ? courses : []), ...(Array.isArray(catalogCourses) ? catalogCourses : [])]
+          .filter((course) => course && course._id)
+          .map((course) => [toIdString(course._id), course])
+      ).values()
+    );
+    setAssignmentDraft((prev) => pruneDraftByCourses(prev, merged));
+  }, [courses, catalogCourses]);
+
+  const allCoursePool = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          [...(Array.isArray(courses) ? courses : []), ...(Array.isArray(catalogCourses) ? catalogCourses : [])]
+            .filter((course) => course && course._id && course.isActive !== false)
+            .map((course) => [toIdString(course._id), course])
+        ).values()
+      ),
+    [courses, catalogCourses]
+  );
 
   const sortedCourses = useMemo(() => {
-    return [...courses].sort((a, b) => {
+    return [...allCoursePool].sort((a, b) => {
       const aCode = (a?.courseCode || a?.title || "").toString();
       const bCode = (b?.courseCode || b?.title || "").toString();
       return aCode.localeCompare(bCode);
     });
-  }, [courses]);
+  }, [allCoursePool]);
 
   useEffect(() => {
     if (!import.meta?.env?.DEV) return;
@@ -1279,14 +1334,14 @@ const SemesterCourseTable = ({
   const courseLabelMap = useMemo(
     () =>
       new Map(
-        (sortedCourses || []).map((course) => {
+        (allCoursePool || []).map((course) => {
           const courseId = toIdString(course?._id);
           const courseLabel =
             safeDisplay(course?.courseCode) || safeDisplay(course?.title) || courseId;
           return [courseId, courseLabel];
         })
       ),
-    [sortedCourses]
+    [allCoursePool]
   );
 
   const assignmentPayload = useMemo(
@@ -1326,20 +1381,23 @@ const SemesterCourseTable = ({
         ? String(totalCreditFromPrevStep)
         : "";
     setStructureDraft((prev) => {
-      if (String(prev.credit_target_total ?? "") === nextValue && prev.enforce_credit_target === false) return prev;
-      return { ...prev, credit_target_total: nextValue, enforce_credit_target: false };
+      if (String(prev.credit_target_total ?? "") === nextValue) return prev;
+      return { ...prev, credit_target_total: nextValue };
     });
   }, [totalCreditFromPrevStep]);
 
   const assignmentSummary = useMemo(
-    () => computeSummary(assignmentPayload, courses),
-    [assignmentPayload, courses]
+    () => computeSummary(assignmentPayload, allCoursePool),
+    [assignmentPayload, allCoursePool]
   );
 
   const creditTargetStatus = useMemo(() => {
     const normalized = assignmentPayload;
     const byId = new Map(
-      (courses || []).map((course) => [toIdString(course?._id), sumCourseCredits(course)])
+      (allCoursePool || []).map((course) => [
+        toIdString(course?._id),
+        sumCourseCredits(course),
+      ])
     );
 
     const compulsoryCredits = (normalized.compulsoryCourseIds || []).reduce(
@@ -1468,7 +1526,7 @@ const SemesterCourseTable = ({
       mismatchErrors: Array.from(new Set(mismatchErrors)),
       mismatchWarnings: Array.from(new Set(mismatchWarnings)),
     };
-  }, [assignmentPayload, courses, courseLabelMap]);
+  }, [assignmentPayload, allCoursePool, courseLabelMap]);
 
   const localAssignmentWarnings = useMemo(() => {
     const warnings = [];
@@ -1555,17 +1613,19 @@ const SemesterCourseTable = ({
   const openAddPanel = (mode) => {
     setAddMode(mode);
     resetDraft();
-    setCourseError("");
+    setAddPanelError("");
   };
 
   const closeAddPanel = () => {
     setAddMode("");
     resetDraft();
     setPendingAssignTarget(null);
+    setAddPanelError("");
   };
 
   const updateDraftField = (field, value) => {
     setDraft((prev) => ({ ...prev, [field]: value }));
+    if (addPanelError) setAddPanelError("");
     if (field === "courseCode" && addMode === "existing") {
       setExistingCourse(null);
     }
@@ -1599,12 +1659,12 @@ const SemesterCourseTable = ({
 
   const handleLookupExisting = async () => {
     if (!draft.courseCode) {
-      setCourseError("Course Code is required");
+      setAddPanelError("Course Code is required.");
       return;
     }
 
     setLookupLoading(true);
-    setCourseError("");
+    setAddPanelError("");
 
     try {
       const data = await lookupCourseByCode(draft.courseCode);
@@ -1612,7 +1672,7 @@ const SemesterCourseTable = ({
       setExistingCourse(found);
     } catch (error) {
       setExistingCourse(null);
-      setCourseError(
+      setAddPanelError(
         error?.response?.data?.error ||
           error?.response?.data?.message ||
           "Course not found"
@@ -1626,7 +1686,7 @@ const SemesterCourseTable = ({
     if (!semesterId) return;
 
     setSavingCourse(true);
-    setCourseError("");
+    setAddPanelError("");
 
     try {
       const assignTarget = pendingAssignTarget;
@@ -1640,20 +1700,23 @@ const SemesterCourseTable = ({
       let createdCourseId = "";
       if (addMode === "existing") {
         if (!existingCourse) {
-          setCourseError("Lookup an existing course first.");
+          setAddPanelError("Lookup an existing course first.");
           return;
         }
-
-        const result = await createCourse({
-          semester: semesterId,
-          courseCode: existingCourse.courseCode,
-          useExistingCourse: true,
-          teachers: teachersPayload.length ? teachersPayload : undefined,
-        });
-        createdCourseId = toIdString(result?.course?._id || result?.courseId || "");
+        if (assignTarget) {
+          createdCourseId = toIdString(existingCourse?._id);
+        } else {
+          const result = await createCourse({
+            semester: semesterId,
+            courseCode: existingCourse.courseCode,
+            useExistingCourse: true,
+            teachers: teachersPayload.length ? teachersPayload : undefined,
+          });
+          createdCourseId = toIdString(result?.course?._id || result?.courseId || "");
+        }
       } else {
         if (!draft.title || !draft.courseCode) {
-          setCourseError("Course name and code are required.");
+          setAddPanelError("Course name and code are required.");
           return;
         }
 
@@ -1661,27 +1724,35 @@ const SemesterCourseTable = ({
         const tutorial = parseCreditField(draft.creditTutorial);
         const practical = parseCreditField(draft.creditPractical);
         if (lecture === null || tutorial === null || practical === null) {
-          setCourseError("Credits (L/T/P) must be integers >= 0.");
+          setAddPanelError("Credits (L/T/P) must be integers >= 0.");
           return;
         }
         if (lecture + tutorial + practical <= 0) {
-          setCourseError("Enter course credits (L/T/P) greater than 0.");
+          setAddPanelError("Enter course credits (L/T/P) greater than 0.");
           return;
         }
 
         const result = await createCourse({
-          semester: semesterId,
+          ...(assignTarget ? {} : { semester: semesterId }),
           courseType: draft.courseType,
           title: draft.title,
           courseCode: draft.courseCode,
           creditPoints: { lecture, tutorial, practical },
-          teachers: teachersPayload.length ? teachersPayload : undefined,
+          ...(assignTarget
+            ? {}
+            : {
+                teachers: teachersPayload.length ? teachersPayload : undefined,
+              }),
         });
         createdCourseId = toIdString(result?.course?._id || result?.courseId || "");
       }
 
       closeAddPanel();
-      await fetchCourses();
+      if (assignTarget) {
+        await fetchCatalogCourses();
+      } else {
+        await fetchCourses();
+      }
 
       if (assignTarget && createdCourseId) {
         if (import.meta?.env?.DEV) {
@@ -1699,63 +1770,17 @@ const SemesterCourseTable = ({
         }
       }
 
-      if (onUpdate) onUpdate();
+      if (!assignTarget && onUpdate) onUpdate();
     } catch (error) {
       console.error("Failed to save course:", error);
-      setCourseError(error?.response?.data?.message || "Failed to save course");
+      setAddPanelError(
+        error?.response?.data?.error ||
+          error?.response?.data?.message ||
+          "Failed to save course"
+      );
     } finally {
       setSavingCourse(false);
     }
-  };
-
-  const handleRemoveCourse = async (courseId) => {
-    if (!window.confirm("Are you sure you want to remove this course?")) return;
-
-    setSavingCourse(true);
-    setCourseError("");
-
-    try {
-      await unlinkCourseFromSemester(semesterId, courseId);
-      await fetchCourses();
-      if (onUpdate) onUpdate();
-    } catch (error) {
-      console.error("Failed to remove course:", error);
-      setCourseError(error?.response?.data?.message || "Failed to remove course");
-    } finally {
-      setSavingCourse(false);
-    }
-  };
-
-  const addTeacherRow = (courseId) => {
-    setTeacherAssignments((prev) => {
-      const current = prev[courseId] || [];
-      return {
-        ...prev,
-        [courseId]: [...current, { teacherId: "", roleLabel: "Teacher" }],
-      };
-    });
-  };
-
-  const updateTeacherRow = (courseId, index, field, value) => {
-    setTeacherAssignments((prev) => {
-      const current = prev[courseId] || [];
-      return {
-        ...prev,
-        [courseId]: current.map((entry, i) =>
-          i === index ? { ...entry, [field]: value } : entry
-        ),
-      };
-    });
-  };
-
-  const removeTeacherRow = (courseId, index) => {
-    setTeacherAssignments((prev) => {
-      const current = prev[courseId] || [];
-      return {
-        ...prev,
-        [courseId]: current.filter((_, i) => i !== index),
-      };
-    });
   };
 
   const openEditCourseModal = (course) => {
@@ -1880,31 +1905,6 @@ const SemesterCourseTable = ({
     }
   };
 
-  const saveTeacherAssignment = async (courseId) => {
-    setSavingCourse(true);
-    setCourseError("");
-
-    try {
-      const payload = (teacherAssignments[courseId] || [])
-        .filter((entry) => entry.teacherId)
-        .map((entry) => ({
-          teacherId: entry.teacherId,
-          roleLabel: entry.roleLabel || "Teacher",
-        }));
-
-      await updateCourseTeachers(semesterId, courseId, payload);
-      await fetchCourses();
-      if (onUpdate) onUpdate();
-    } catch (error) {
-      console.error("Failed to update teachers:", error);
-      setCourseError(
-        error?.response?.data?.message || "Failed to update teacher assignments"
-      );
-    } finally {
-      setSavingCourse(false);
-    }
-  };
-
   const setCompulsorySlotCourse = (slotIndex, courseId) => {
     const normalizedCourseId = toIdString(courseId);
     if (!normalizedCourseId) return;
@@ -2007,9 +2007,15 @@ const SemesterCourseTable = ({
 
     const compulsoryCount = toNonNegativeInt(structureDraft.compulsory_count, 0);
     const electiveSlotCount = toNonNegativeInt(structureDraft.elective_slot_count, 0);
+    const enforceCreditTarget = toBooleanFlag(
+      structureDraft.enforce_credit_target,
+      false
+    );
     const totalCredit = Number(totalCreditFromPrevStep) || 0;
-    if (totalCredit <= 0) {
-      setAssignmentError("Total credit is not set. Please set it in the previous step.");
+    if (enforceCreditTarget && totalCredit <= 0) {
+      setAssignmentError(
+        "Total credit is not set. Please set it in the previous step."
+      );
       return;
     }
 
@@ -2038,73 +2044,53 @@ const SemesterCourseTable = ({
     const compulsoryCreditTarget = compTargetResult?.value ?? null;
     const electiveCreditTarget = elecTargetResult?.value ?? null;
     const targetSum = (compulsoryCreditTarget || 0) + (electiveCreditTarget || 0);
-    if (targetSum > totalCredit) {
+    if (enforceCreditTarget && targetSum > totalCredit) {
       setAssignmentError("Compulsory + Elective target credit cannot exceed Total Credit.");
       return;
     }
+    if (
+      enforceCreditTarget &&
+      (compulsoryCreditTarget === null || electiveCreditTarget === null)
+    ) {
+      setAssignmentError(
+        "Compulsory and Elective credit targets are required when Enforce Credit Target is enabled."
+      );
+      return;
+    }
 
-    setAssignmentSaving(true);
     setAssignmentError("");
     setAssignmentNotice("");
     setAssignmentFieldErrors({});
 
-    try {
-      const response = await updateSemesterCourseAssignment(programId, semesterId, {
-        structureOnly: true,
-        compulsory_count: compulsoryCount,
-        elective_slot_count: electiveSlotCount,
-        compulsory_credit_target: compulsoryCreditTarget,
-        elective_credit_target: electiveCreditTarget,
-        credit_target_total: totalCredit,
-        enforce_credit_target: false,
-      });
-      const nextDraft = assignmentToDraft(response?.courseAssignment);
-      setAssignmentDraft(nextDraft);
-      setStructureDraft({
-        compulsory_count: nextDraft.structure.compulsory_count ?? 0,
-        elective_slot_count: nextDraft.structure.elective_slot_count ?? 0,
-        compulsory_credit_target:
-          nextDraft.structure.compulsory_credit_target === null ||
-          nextDraft.structure.compulsory_credit_target === undefined
-            ? ""
-            : String(nextDraft.structure.compulsory_credit_target),
-        elective_credit_target:
-          nextDraft.structure.elective_credit_target === null ||
-          nextDraft.structure.elective_credit_target === undefined
-            ? ""
-            : String(nextDraft.structure.elective_credit_target),
-        credit_target_total:
-          nextDraft.structure.credit_target_total === null ||
-          nextDraft.structure.credit_target_total === undefined
-            ? ""
-            : String(nextDraft.structure.credit_target_total),
-        enforce_credit_target: false,
-      });
-      setAssignmentSource("persisted");
-      const apiWarnings = extractApiWarnings(response);
-      const incompleteReasons = Array.isArray(response?.incompleteReasons)
-        ? response.incompleteReasons
-        : [];
-      if (apiWarnings.length > 0 || (response?.incomplete && incompleteReasons.length > 0)) {
-        const noticeMessages = [
-          ...apiWarnings,
-          ...(response?.incomplete && incompleteReasons.length > 0
-            ? [`Configuration incomplete: ${incompleteReasons.join(" ")}`]
-            : []),
-        ];
-        setAssignmentNotice(noticeMessages.join(" "));
-      } else {
-        setAssignmentNotice("Structure saved successfully.");
-      }
-      if (onUpdate) onUpdate();
-    } catch (error) {
-      console.error("Failed to save structure:", error);
-      const apiError = error?.response?.data;
-      setAssignmentError(apiError?.error || "Failed to save structure");
-      setAssignmentFieldErrors(mapFieldErrors(apiError?.details));
-    } finally {
-      setAssignmentSaving(false);
-    }
+    setAssignmentDraft((prev) =>
+      sanitizeDraft({
+        ...prev,
+        structure: {
+          ...prev?.structure,
+          compulsory_count: compulsoryCount,
+          elective_slot_count: electiveSlotCount,
+          compulsory_credit_target: compulsoryCreditTarget,
+          elective_credit_target: electiveCreditTarget,
+          credit_target_total: totalCredit > 0 ? totalCredit : null,
+          enforce_credit_target: enforceCreditTarget,
+        },
+      })
+    );
+    setStructureDraft((prev) => ({
+      ...prev,
+      compulsory_count: compulsoryCount,
+      elective_slot_count: electiveSlotCount,
+      compulsory_credit_target:
+        compulsoryCreditTarget === null ? "" : String(compulsoryCreditTarget),
+      elective_credit_target:
+        electiveCreditTarget === null ? "" : String(electiveCreditTarget),
+      credit_target_total: totalCredit > 0 ? String(totalCredit) : "",
+      enforce_credit_target: enforceCreditTarget,
+    }));
+    setAssignmentSource("draft");
+    setAssignmentNotice(
+      "Structure applied to draft. Fill all slots and use final Save Structure to persist."
+    );
   };
 
   const updateElectiveBlockField = (blockIndex, field, value) => {
@@ -2268,13 +2254,72 @@ const SemesterCourseTable = ({
     }
 
     if (structureDirty) {
-      setAssignmentError("Save structure first before saving assignment.");
+      setAssignmentError("Apply structure first before final save.");
       return;
     }
 
     if (localAssignmentWarnings.length > 0) {
       setAssignmentError("Resolve assignment validation issues before saving.");
       return;
+    }
+
+    const enforceCreditTarget = Boolean(
+      sanitizeDraft(assignmentDraft)?.structure?.enforce_credit_target
+    );
+    const totalCredit = Number(totalCreditFromPrevStep) || 0;
+    if (enforceCreditTarget) {
+      if (totalCredit <= 0) {
+        setAssignmentError("Total credit is not set. Please set it in the previous step.");
+        return;
+      }
+
+      if (
+        creditTargetStatus.compulsory_credit_target === null ||
+        creditTargetStatus.elective_credit_target === null ||
+        creditTargetStatus.totalTargetDerived === null
+      ) {
+        setAssignmentError(
+          "Compulsory, elective, and total credit targets are required when Enforce Credit Target is enabled."
+        );
+        return;
+      }
+
+      if (creditTargetStatus.totalSelectedCredits > totalCredit) {
+        setAssignmentError(
+          `Selected credits (${creditTargetStatus.totalSelectedCredits}) cannot exceed total credit (${totalCredit}).`
+        );
+        return;
+      }
+
+      if (
+        creditTargetStatus.compulsoryCredits !==
+        creditTargetStatus.compulsory_credit_target
+      ) {
+        setAssignmentError(
+          `Compulsory credits must equal target (${creditTargetStatus.compulsoryCredits} != ${creditTargetStatus.compulsory_credit_target}).`
+        );
+        return;
+      }
+
+      if (
+        creditTargetStatus.electiveContributedCredits !==
+        creditTargetStatus.elective_credit_target
+      ) {
+        setAssignmentError(
+          `Elective contributed credits must equal target (${creditTargetStatus.electiveContributedCredits} != ${creditTargetStatus.elective_credit_target}).`
+        );
+        return;
+      }
+
+      if (
+        creditTargetStatus.totalSelectedCredits !==
+        creditTargetStatus.totalTargetDerived
+      ) {
+        setAssignmentError(
+          `Total selected credits must equal target (${creditTargetStatus.totalSelectedCredits} != ${creditTargetStatus.totalTargetDerived}).`
+        );
+        return;
+      }
     }
 
     setAssignmentSaving(true);
@@ -2284,7 +2329,6 @@ const SemesterCourseTable = ({
 
     try {
       const normalizedDraft = sanitizeDraft(assignmentDraft);
-      const totalCredit = Number(totalCreditFromPrevStep) || 0;
       const compulsoryCourseIds = (normalizedDraft.compulsorySlots || [])
         .map((slot) => toIdString(slot.courseId))
         .filter(Boolean);
@@ -2304,8 +2348,14 @@ const SemesterCourseTable = ({
         elective_slot_count: normalizedDraft.structure.elective_slot_count,
         compulsory_credit_target: normalizedDraft.structure.compulsory_credit_target,
         elective_credit_target: normalizedDraft.structure.elective_credit_target,
-        credit_target_total: totalCredit > 0 ? totalCredit : normalizedDraft.structure.credit_target_total,
-        enforce_credit_target: false,
+        credit_target_total:
+          totalCredit > 0
+            ? totalCredit
+            : normalizedDraft.structure.credit_target_total,
+        enforce_credit_target: Boolean(
+          normalizedDraft.structure.enforce_credit_target
+        ),
+        finalizeStructure: true,
         compulsoryCourseIds,
         electiveConfig: {
           mode: ELECTIVE_MODE_BASKET,
@@ -2335,7 +2385,7 @@ const SemesterCourseTable = ({
           nextDraft.structure.credit_target_total === undefined
             ? ""
             : String(nextDraft.structure.credit_target_total),
-        enforce_credit_target: false,
+        enforce_credit_target: Boolean(nextDraft.structure.enforce_credit_target),
       });
       setAssignmentSource("persisted");
       const apiWarnings = extractApiWarnings(response);
@@ -2377,11 +2427,6 @@ const SemesterCourseTable = ({
     return `Any 1 of ${optionCount}`;
   };
 
-  const totalCourseCredits = useMemo(
-    () => sortedCourses.reduce((sum, course) => sum + sumCourseCredits(course), 0),
-    [sortedCourses]
-  );
-
   const normalizedDraft = useMemo(() => sanitizeDraft(assignmentDraft), [assignmentDraft]);
   const normalizedAssignment = assignmentPayload;
   const structureCreditValidation = useMemo(() => {
@@ -2408,8 +2453,13 @@ const SemesterCourseTable = ({
     structureDraft.compulsory_credit_target,
     structureDraft.elective_credit_target,
   ]);
+  const enforceCreditTargetEnabled = toBooleanFlag(
+    structureDraft.enforce_credit_target,
+    false
+  );
   const structureCreditInvalid =
-    structureCreditValidation.totalMissing || structureCreditValidation.overLimit;
+    enforceCreditTargetEnabled &&
+    (structureCreditValidation.totalMissing || structureCreditValidation.overLimit);
   const compulsoryIdSet = useMemo(
     () =>
       new Set(
@@ -2423,7 +2473,7 @@ const SemesterCourseTable = ({
   const requiredElectiveSlots = normalizedAssignment.elective_slot_count || 0;
 	  const selectedCompulsoryCount =
 	    normalizedAssignment.compulsoryCourseIds?.length || 0;
-	  const structureDirty =
+  const structureDirty =
 	    toNonNegativeInt(structureDraft.compulsory_count, 0) !== requiredCompulsory ||
 	    toNonNegativeInt(structureDraft.elective_slot_count, 0) !== requiredElectiveSlots ||
 	    (String(structureDraft.compulsory_credit_target || "").trim() === ""
@@ -2441,7 +2491,9 @@ const SemesterCourseTable = ({
 	    (String(structureDraft.credit_target_total || "").trim() === ""
 	      ? null
 	      : toNonNegativeInt(String(structureDraft.credit_target_total || "").trim(), null)) !==
-	      (normalizedAssignment.credit_target_total ?? null);
+	      (normalizedAssignment.credit_target_total ?? null) ||
+      toBooleanFlag(structureDraft.enforce_credit_target, false) !==
+        Boolean(normalizedAssignment.enforce_credit_target);
   const disableSaveAssignment =
     assignmentSaving ||
     assignmentLoading ||
@@ -2457,8 +2509,7 @@ const SemesterCourseTable = ({
     assignmentLoading ||
     !assignmentSource ||
     assignmentSource === "empty" ||
-    structureDirty ||
-    structureCreditInvalid;
+    structureDirty;
 
   const electiveUsageByCourseId = useMemo(() => {
     const usage = new Map();
@@ -2475,12 +2526,12 @@ const SemesterCourseTable = ({
   const pickerTitle = "Existing Course";
   const pickerSubtitle =
     coursePicker?.kind === "elective"
-      ? "Select an existing course to add as a candidate. Courses used in compulsory slots or other elective blocks are not eligible."
-      : "Select an existing course for this compulsory slot. Courses used in elective blocks or other compulsory slots are not eligible.";
+      ? "Select an existing course from Course Management catalog to add as a candidate. Courses used in compulsory slots or other elective blocks are not eligible."
+      : "Select an existing course from Course Management catalog for this compulsory slot. Courses used in elective blocks or other compulsory slots are not eligible.";
 
   const pickerEligibleCourses = useMemo(() => {
     if (!coursePicker) return [];
-    const allCourses = Array.isArray(sortedCourses) ? sortedCourses : [];
+    const allCourses = Array.isArray(allCoursePool) ? allCoursePool : [];
 
     if (coursePicker.kind === "compulsory") {
       const slotIndex = Number(coursePicker.slotIndex) || 0;
@@ -2515,7 +2566,7 @@ const SemesterCourseTable = ({
     });
   }, [
     coursePicker,
-    sortedCourses,
+    allCoursePool,
     normalizedDraft.compulsorySlots,
     normalizedDraft.electiveBlocks,
     compulsoryIdSet,
@@ -2525,7 +2576,10 @@ const SemesterCourseTable = ({
   const handlePickerSelect = (course) => {
     if (!coursePicker) return;
     const courseId = toIdString(course?._id);
-    if (!courseId) return;
+    if (!courseId) {
+      setCoursePickerError("Please select a valid course.");
+      return;
+    }
 
     if (import.meta?.env?.DEV) {
       console.debug("[ca][click-source]", {
@@ -2536,16 +2590,34 @@ const SemesterCourseTable = ({
     }
 
     if (coursePicker.kind === "compulsory") {
+      if (electiveUsageByCourseId.has(courseId)) {
+        setCoursePickerError(
+          "Course already used in an elective block. Remove it there first."
+        );
+        return;
+      }
       setCompulsorySlotCourse(coursePicker.slotIndex, courseId);
     } else {
+      const reason = getElectiveCandidateDisableReason({
+        courseId,
+        basketIndex: Number(coursePicker.blockIndex) || 0,
+        compulsorySet: compulsoryIdSet,
+        usageMap: buildElectiveUsageMap(normalizedDraft.electiveBlocks || []),
+      });
+      if (reason) {
+        setCoursePickerError(`Cannot add this course: ${reason}.`);
+        return;
+      }
       addElectiveOption(coursePicker.blockIndex, courseId);
     }
+    setCoursePickerError("");
     setCoursePicker(null);
   };
 
   useEffect(() => {
     if (selectionLocked && coursePicker) {
       setCoursePicker(null);
+      setCoursePickerError("");
     }
   }, [selectionLocked, coursePicker]);
 
@@ -2616,6 +2688,12 @@ const SemesterCourseTable = ({
             </div>
 
             <div className="space-y-4 px-4 py-4">
+              {addPanelError ? (
+                <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                  {addPanelError}
+                </div>
+              ) : null}
+
               {addMode === "existing" ? (
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -3123,236 +3201,18 @@ const SemesterCourseTable = ({
         </div>
       )}
 
-      {/* Course Pool section hidden in Course Assignment context (client request). */}
-      {!hideCoursePool && (
-        <>
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
-            <div>
-              <h3 className="text-base font-semibold text-gray-900">{semesterLabel}</h3>
-              <p className="text-xs text-gray-500">
-                Course Pool Credits:{" "}
-                <span className="font-semibold text-gray-700">{totalCourseCredits}</span>
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setPendingAssignTarget(null);
-                  setCoursePicker(null);
-                  openAddPanel("new");
-                }}
-                className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-100"
-              >
-                <Plus size={14} />
-                Add New Course
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setPendingAssignTarget(null);
-                  setCoursePicker(null);
-                  openAddPanel("existing");
-                }}
-                className="inline-flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
-              >
-                <Plus size={14} />
-                Add Existing Course
-              </button>
-              <button
-                type="button"
-                onClick={fetchData}
-                className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600 hover:bg-gray-50"
-              >
-                <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-                Refresh
-              </button>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 text-xs uppercase text-gray-500">
-                <tr>
-                  <th className="px-3 py-2 text-left">Type</th>
-                  <th className="px-3 py-2 text-left">Course Name</th>
-                  <th className="px-3 py-2 text-left">Code</th>
-                  <th className="px-3 py-2 text-left">Teachers</th>
-                  <th className="px-1 py-2 text-center">L</th>
-                  <th className="px-1 py-2 text-center">T</th>
-                  <th className="px-1 py-2 text-center">P</th>
-                  <th className="px-1 py-2 text-center">C</th>
-                  <th className="px-3 py-2 text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {sortedCourses.map((course) => (
-                  <tr key={course._id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 text-sm capitalize text-gray-700">
-                      {safeDisplay(course.courseType)}
-                    </td>
-                    <td className="px-3 py-2 text-sm text-gray-900">
-                      {safeDisplay(course.title)}
-                    </td>
-                    <td className="px-3 py-2 text-sm font-mono text-gray-600">
-                      {safeDisplay(course.courseCode)}
-                    </td>
-                    <td className="px-3 py-2 text-sm text-gray-700">
-                      <div className="flex min-w-[280px] flex-col gap-2">
-                        {(teacherAssignments[course._id] || []).length === 0 ? (
-                          <p className="text-[11px] text-gray-400">No teachers assigned</p>
-                        ) : (
-                          (teacherAssignments[course._id] || []).map((assignment, index) => {
-                            const assignmentTeacherId = toIdString(assignment?.teacherId);
-                            return (
-                              <div
-                                key={`${course._id}-teacher-${index}`}
-                                className="grid grid-cols-1 gap-2 rounded border border-gray-200 bg-gray-50 p-2 md:grid-cols-[minmax(0,1fr)_150px_auto]"
-                              >
-                                <select
-                                  value={assignmentTeacherId}
-                                  onChange={(event) =>
-                                    updateTeacherRow(
-                                      course._id,
-                                      index,
-                                      "teacherId",
-                                      event.target.value
-                                    )
-                                  }
-                                  className="w-full rounded border border-gray-300 bg-white px-2 py-1.5 text-xs"
-                                >
-                                  <option value="">Select teacher</option>
-                                  {teacherOptions.map((option) => (
-                                    <option
-                                      key={`${course._id}-teacher-option-${option.id}`}
-                                      value={option.id}
-                                    >
-                                      {option.label}
-                                    </option>
-                                  ))}
-                                </select>
-                                <select
-                                  value={assignment?.roleLabel || "Teacher"}
-                                  onChange={(event) =>
-                                    updateTeacherRow(
-                                      course._id,
-                                      index,
-                                      "roleLabel",
-                                      event.target.value
-                                    )
-                                  }
-                                  className="w-full rounded border border-gray-300 bg-white px-2 py-1.5 text-xs"
-                                >
-                                  {roleOptions.map((role) => (
-                                    <option key={`${course._id}-teacher-role-${role}`} value={role}>
-                                      {role}
-                                    </option>
-                                  ))}
-                                </select>
-                                <button
-                                  type="button"
-                                  onClick={() => removeTeacherRow(course._id, index)}
-                                  className="rounded border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100"
-                                >
-                                  Remove
-                                </button>
-                                {assignmentTeacherId ? (
-                                  <div className="md:col-span-3 text-[11px] text-gray-500">
-                                    {teacherLabelMap.get(assignmentTeacherId) ||
-                                      safeDisplay(assignmentTeacherId)}
-                                  </div>
-                                ) : null}
-                              </div>
-                            );
-                          })
-                        )}
-                        <div className="flex flex-wrap items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => addTeacherRow(course._id)}
-                            className="rounded border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                          >
-                            {(teacherAssignments[course._id] || []).length > 0
-                              ? "Change Teacher"
-                              : "Assign Teacher"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => saveTeacherAssignment(course._id)}
-                            disabled={savingCourse}
-                            className="rounded bg-blue-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                          >
-                            Save
-                          </button>
-                        </div>
-                        {teacherLoadError ? (
-                          <p className="text-[11px] text-amber-700">{teacherLoadError}</p>
-                        ) : null}
-                      </div>
-                    </td>
-                    <td className="px-1 py-2 text-center text-sm text-gray-500">
-                      {course.creditPoints?.lecture || 0}
-                    </td>
-                    <td className="px-1 py-2 text-center text-sm text-gray-500">
-                      {course.creditPoints?.tutorial || 0}
-                    </td>
-                    <td className="px-1 py-2 text-center text-sm text-gray-500">
-                      {course.creditPoints?.practical || 0}
-                    </td>
-                    <td className="px-1 py-2 text-center text-sm font-semibold text-gray-900">
-                      {sumCourseCredits(course)}
-                    </td>
-                    <td className="px-3 py-2 text-center">
-                      <button
-                        type="button"
-                        onClick={() => openEditCourseModal(course)}
-                        disabled={savingCourse}
-                        className="mr-2 p-1 text-gray-400 hover:text-blue-600"
-                        title="Edit assignment"
-                      >
-                        <Edit3 size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveCourse(course._id)}
-                        disabled={savingCourse}
-                        className="p-1 text-gray-400 hover:text-red-600"
-                        title="Remove course"
-                      >
-                        <X size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-
-                {!sortedCourses.length && (
-                  <tr>
-                    <td
-                      colSpan={9}
-                      className="px-4 py-6 text-center text-sm text-gray-400"
-                    >
-                      No courses linked to this semester yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
-
       <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-base font-semibold text-gray-900">
-              Course Assignment (Admin Structure Flow)
+              Course Assignment (Slot Draft Builder)
             </h3>
             <p className="text-xs text-gray-500">
-              Define structure first, then configure exactly C compulsory courses and E elective blocks.
+              Apply slot structure in draft, fill all required slots, then final save once.
             </p>
             {assignmentSource === "empty" && (
               <p className="mt-1 text-xs text-amber-700">
-                Save structure to start selecting compulsory and elective courses.
+                Apply structure to start selecting compulsory and elective courses.
               </p>
             )}
             {assignmentSource && (
@@ -3369,7 +3229,7 @@ const SemesterCourseTable = ({
             className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
             <Save size={14} />
-            {assignmentSaving ? "Saving..." : "Save Assignment"}
+            {assignmentSaving ? "Saving..." : "Save Structure"}
           </button>
         </div>
 
@@ -3451,34 +3311,53 @@ const SemesterCourseTable = ({
 	              </div>
 	            </div>
 	          </div>
+          <label className="mt-3 inline-flex items-center gap-2 text-xs font-medium text-gray-700">
+            <input
+              type="checkbox"
+              checked={Boolean(structureDraft.enforce_credit_target)}
+              onChange={(event) =>
+                updateStructureDraftField(
+                  "enforce_credit_target",
+                  event.target.checked
+                )
+              }
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            Enforce Credit Target
+          </label>
 	          <div className="mt-2 space-y-1 text-xs">
 	            <div className="text-gray-600">
 	              Target Sum: {structureCreditValidation.sumTargets} / Total Credit:{" "}
 	              {structureCreditValidation.totalMissing ? "-" : structureCreditValidation.total}
 	            </div>
-	            {structureCreditValidation.totalMissing && (
+	            {enforceCreditTargetEnabled && structureCreditValidation.totalMissing && (
 	              <div className="text-amber-700">
 	                Total credit not set in previous step.
 	              </div>
 	            )}
-	            {structureCreditValidation.overLimit && (
+	            {enforceCreditTargetEnabled && structureCreditValidation.overLimit && (
 	              <div className="text-red-700">
 	                Compulsory + Elective target credit cannot exceed Total Credit.
 	              </div>
 	            )}
+            {!enforceCreditTargetEnabled && (
+              <div className="text-gray-500">
+                Credit targets are informational only; slot count rules still apply.
+              </div>
+            )}
 	          </div>
 	          <div className="mt-3 flex flex-wrap items-center gap-3">
 	            <button
 	              type="button"
-	              onClick={saveStructure}
-	              disabled={assignmentSaving || !programId || structureCreditInvalid}
-	              className="rounded bg-gray-900 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
-	            >
-	              {assignmentSaving ? "Saving..." : "Save Structure"}
-	            </button>
+              onClick={saveStructure}
+              disabled={assignmentSaving || !programId || structureCreditInvalid}
+              className="rounded bg-gray-900 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
+            >
+              Apply Structure
+            </button>
             {structureDirty && (
               <span className="text-xs text-amber-700">
-                Structure changed. Save structure before saving assignment.
+                Structure changed. Apply structure before final save.
               </span>
             )}
           </div>
@@ -3681,6 +3560,7 @@ const SemesterCourseTable = ({
                                     slotIndex,
                                   });
                                 }
+                                setCoursePickerError("");
                                 setCoursePicker({ kind: "compulsory", slotIndex });
                               }}
                               className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
@@ -3814,6 +3694,18 @@ const SemesterCourseTable = ({
                                         </span>
                                         <button
                                           type="button"
+                                          onClick={() => {
+                                            if (!course) return;
+                                            openEditCourseModal(course);
+                                          }}
+                                          disabled={!course}
+                                          className="text-gray-400 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                          title="Edit candidate"
+                                        >
+                                          <Edit3 size={14} />
+                                        </button>
+                                        <button
+                                          type="button"
                                           onClick={() => removeElectiveOption(blockIndex, normalizedId)}
                                           className="text-gray-400 hover:text-red-600"
                                           title="Remove candidate"
@@ -3839,6 +3731,7 @@ const SemesterCourseTable = ({
                                     blockIndex,
                                   });
                                 }
+                                setCoursePickerError("");
                                 setCoursePicker({ kind: "elective", blockIndex });
                               }}
                               className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
@@ -3971,7 +3864,12 @@ const SemesterCourseTable = ({
         title={pickerTitle}
         subtitle={pickerSubtitle}
         courses={pickerEligibleCourses}
-        onClose={() => setCoursePicker(null)}
+        errorMessage={coursePickerError}
+        onClearError={() => setCoursePickerError("")}
+        onClose={() => {
+          setCoursePicker(null);
+          setCoursePickerError("");
+        }}
         onSelect={handlePickerSelect}
       />
     </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Users,
   Search,
@@ -36,6 +36,7 @@ import {
   MODE_OF_DELIVERY,
   normalizeModeOfDeliveryValue
 } from '../constants/modeOfDelivery';
+import { getPeriodLabel } from '../utils/periodLabel';
 
 const DEFAULT_PERSONAL_PROFILE = {
   fullName: '',
@@ -257,9 +258,12 @@ const STUDENT_MODE_OPTIONS = [
 
 const currentYearString = () => String(new Date().getFullYear());
 
+const VALID_USER_SECTIONS = ['student', 'teacher', 'executive'];
+
 const UserManagement = () => {
   const navigate = useNavigate();
   const { userId: routeUserId = '' } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -283,10 +287,14 @@ const UserManagement = () => {
     rollNumber: '',
     enrollmentNumber: '',
     programId: '',
+    batchId: '',
     admissionYear: currentYearString(),
     sessionCode: 'SP'
   });
-  const [activeUserSection, setActiveUserSection] = useState('student');
+  const [activeUserSection, setActiveUserSection] = useState(() => {
+    const sectionFromUrl = searchParams.get('section');
+    return VALID_USER_SECTIONS.includes(sectionFromUrl) ? sectionFromUrl : 'student';
+  });
   const [studentModeSelection, setStudentModeSelection] = useState(MODE_OF_DELIVERY.REGULAR);
   const [studentModeFilter, setStudentModeFilter] = useState('');
   const [createContext, setCreateContext] = useState({
@@ -326,17 +334,36 @@ const UserManagement = () => {
   const [detailSaveError, setDetailSaveError] = useState('');
   const [detailSaveSuccess, setDetailSaveSuccess] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
-  const [detailTab, setDetailTab] = useState('personal');
+  const [detailTab, setDetailTab] = useState(() => {
+    const tabFromUrl = searchParams.get('tab');
+    return ['personal', 'academic', 'security'].includes(tabFromUrl) ? tabFromUrl : 'personal';
+  });
   const [detailForm, setDetailForm] = useState(null);
   const [detailBaseline, setDetailBaseline] = useState('');
   const [profilePrograms, setProfilePrograms] = useState([]);
   const [profileBatches, setProfileBatches] = useState([]);
+  const [createBatches, setCreateBatches] = useState([]);
+  const [createBatchesLoading, setCreateBatchesLoading] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordCopied, setPasswordCopied] = useState(false);
   const [resetModal, setResetModal] = useState({ open: false, mode: 'manual' });
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState('');
   const [resetResult, setResetResult] = useState(null);
+
+  // Sync activeUserSection & detailTab to URL so tabs persist on refresh
+  useEffect(() => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('section', activeUserSection);
+      if (selectedUserId) {
+        next.set('tab', detailTab);
+      } else {
+        next.delete('tab');
+      }
+      return next;
+    }, { replace: true });
+  }, [activeUserSection, detailTab, selectedUserId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const roleOptionsByKey = useMemo(
     () =>
@@ -564,6 +591,33 @@ const UserManagement = () => {
       .catch(() => setProfileBatches([]));
   }, [showDetailDrawer, detailForm?.academicProfile?.programId]);
 
+  useEffect(() => {
+    if (!showUserModal || isEditMode || selectedCreateAccessRole !== 'student') return;
+    if (!formData.programId) {
+      setCreateBatches([]);
+      return;
+    }
+
+    let cancelled = false;
+    setCreateBatchesLoading(true);
+    getBatchesDropdown(formData.programId)
+      .then((data) => {
+        if (cancelled) return;
+        setCreateBatches(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCreateBatches([]);
+      })
+      .finally(() => {
+        if (!cancelled) setCreateBatchesLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showUserModal, isEditMode, selectedCreateAccessRole, formData.programId]);
+
   const resetUserForm = ({
     preferredAccessRole = 'student',
     roleKey = '',
@@ -592,9 +646,11 @@ const UserManagement = () => {
       rollNumber: '',
       enrollmentNumber: '',
       programId: '',
+      batchId: '',
       admissionYear: currentYearString(),
       sessionCode: 'SP'
     });
+    setCreateBatches([]);
     setFormError('');
     setEditingUserId(null);
     setIsEditMode(false);
@@ -690,6 +746,7 @@ const UserManagement = () => {
       rollNumber: user.studentInfo?.rollNumber || '',
       enrollmentNumber: user.studentInfo?.enrollmentNumber || '',
       programId: user.studentInfo?.program?._id || '',
+      batchId: user.studentInfo?.batch?._id || '',
       admissionYear: currentYearString(),
       sessionCode: 'SP'
     });
@@ -710,14 +767,19 @@ const UserManagement = () => {
         if (value === 'online') {
           next.studentMode = MODE_OF_DELIVERY.ONLINE;
           next.rollNumber = '';
+          next.batchId = '';
         } else if (prev.studentMode === MODE_OF_DELIVERY.ONLINE) {
           next.studentMode = MODE_OF_DELIVERY.REGULAR;
           next.programId = '';
+          next.batchId = '';
           next.enrollmentNumber = '';
         }
       }
       if (field === 'studentMode') {
         next.studentType = value === MODE_OF_DELIVERY.ONLINE ? 'online' : 'regular';
+      }
+      if (field === 'programId' && value !== prev.programId) {
+        next.batchId = '';
       }
       return next;
     });
@@ -766,8 +828,16 @@ const UserManagement = () => {
               throw new Error('Session Code must be AU or SP for online student enrollment');
             }
           }
-          if (formData.studentType !== 'online' && !formData.rollNumber.trim()) {
-            throw new Error('Roll Number is required for student accounts');
+          if (formData.studentType !== 'online') {
+            if (!formData.programId) {
+              throw new Error('Program is required for student accounts');
+            }
+            if (!formData.batchId) {
+              throw new Error('Batch is required for student accounts');
+            }
+            if (!formData.rollNumber.trim()) {
+              throw new Error('Roll Number is required for student accounts');
+            }
           }
         }
       }
@@ -804,9 +874,10 @@ const UserManagement = () => {
           studentType: mappedAccessRole === 'student' ? formData.studentType : undefined,
           modeOfDelivery: mappedAccessRole === 'student' ? normalizedStudentMode : undefined,
           mode: mappedAccessRole === 'student' ? normalizedStudentMode : undefined,
-          programId:
-            mappedAccessRole === 'student' && formData.studentType === 'online'
-              ? formData.programId || undefined
+          programId: mappedAccessRole === 'student' ? formData.programId || undefined : undefined,
+          batchId:
+            mappedAccessRole === 'student' && formData.studentType !== 'online'
+              ? formData.batchId || undefined
               : undefined,
           admissionYear:
             mappedAccessRole === 'student' &&
@@ -1787,8 +1858,9 @@ const UserManagement = () => {
 
       {showUserModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg rounded-lg bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+          <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-lg bg-white shadow-xl">
+            <div className="shrink-0 border-b border-gray-200 px-5 py-4">
+              <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">{isEditMode ? 'Edit User' : 'Add User'}</h2>
               <button
                 onClick={closeUserModal}
@@ -1797,9 +1869,11 @@ const UserManagement = () => {
               >
                 <X className="h-5 w-5" />
               </button>
+              </div>
             </div>
 
-            <form onSubmit={handleSubmitUser} className="space-y-4 px-6 py-5">
+            <form onSubmit={handleSubmitUser} className="flex min-h-0 flex-1 flex-col">
+              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4">
               {formError && (
                 <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                   {formError}
@@ -1971,6 +2045,40 @@ const UserManagement = () => {
                   ) : (
                     <div className="space-y-3">
                       <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">Program *</label>
+                        <select
+                          value={formData.programId}
+                          onChange={(e) => handleFormChange('programId', e.target.value)}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                          disabled={formSubmitting}
+                        >
+                          <option value="">Select program</option>
+                          {profilePrograms.map((program) => (
+                            <option key={program._id} value={program._id}>
+                              {program.name} ({program.code})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">Batch *</label>
+                        <select
+                          value={formData.batchId}
+                          onChange={(e) => handleFormChange('batchId', e.target.value)}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none disabled:bg-gray-50"
+                          disabled={formSubmitting || !formData.programId || createBatchesLoading}
+                        >
+                          <option value="">
+                            {createBatchesLoading ? 'Loading batches...' : 'Select batch'}
+                          </option>
+                          {createBatches.map((batch) => (
+                            <option key={batch._id} value={batch._id}>
+                              {batch.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
                         <label className="mb-1 block text-sm font-medium text-gray-700">
                           Student Mode *
                         </label>
@@ -2010,8 +2118,10 @@ const UserManagement = () => {
                   disabled={formSubmitting}
                 />
               </div>
+              </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="shrink-0 border-t border-gray-200 bg-white px-5 py-3">
+                <div className="flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={closeUserModal}
@@ -2032,6 +2142,7 @@ const UserManagement = () => {
                 >
                   {formSubmitting ? 'Saving...' : isEditMode ? 'Update User' : 'Create User'}
                 </button>
+                </div>
               </div>
             </form>
           </div>
@@ -2527,7 +2638,7 @@ const UserManagement = () => {
                               />
                             </div>
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">Semester</label>
+                              <label className="mb-1 block text-sm font-medium text-gray-700">{getPeriodLabel(profilePrograms.find(p => p._id === detailForm.academicProfile.programId)?.periodType)}</label>
                               <input
                                 type="number"
                                 value={detailForm.academicProfile.semester}

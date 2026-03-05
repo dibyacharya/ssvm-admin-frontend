@@ -11,6 +11,7 @@ import {
 } from "../services/program.service";
 import { getBatchesDropdown } from "../services/batch.service";
 import { getModeOfDeliveryLabel } from "../constants/modeOfDelivery";
+import { getPeriodLabel } from "../utils/periodLabel";
 
 export const ENROLLMENT_STUDENT_FIELDS = Object.freeze([
   "name",
@@ -474,7 +475,7 @@ const EnrollmentStudentDetail = () => {
           </div>
 
           <div>
-            <label className="text-xs font-medium uppercase tracking-wide text-gray-500">Semester</label>
+            <label className="text-xs font-medium uppercase tracking-wide text-gray-500">{getPeriodLabel(selectedProgram?.periodType)}</label>
             {editMode ? (
               <input
                 type="number"

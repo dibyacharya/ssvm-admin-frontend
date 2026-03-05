@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import { getCoursesById, updateCourse } from '../services/courses.service';
+import { getPeriodLabel } from '../utils/periodLabel';
 
 const EditCourse = () => {
   const { codeid } = useParams();
@@ -15,6 +16,8 @@ const EditCourse = () => {
     (courseData.creditPoints?.tutorial || 0) +
     (courseData.creditPoints?.practical || 0)
   ) : 0;
+
+  const periodLabel = getPeriodLabel(courseData?.semester?.batch?.program?.periodType);
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -345,7 +348,7 @@ const EditCourse = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Mid Semester Exam Date</label>
+            <label className="block text-sm font-medium mb-1">Mid {periodLabel} Exam Date</label>
             <input
               type="date"
               value={courseData.courseSchedule?.midSemesterExamDate ? new Date(courseData.courseSchedule.midSemesterExamDate).toISOString().split('T')[0] : ''}
@@ -360,7 +363,7 @@ const EditCourse = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">End Semester Exam Date</label>
+            <label className="block text-sm font-medium mb-1">End {periodLabel} Exam Date</label>
             <input
               type="date"
               value={courseData.courseSchedule?.endSemesterExamDate ? new Date(courseData.courseSchedule.endSemesterExamDate).toISOString().split('T')[0] : ''}

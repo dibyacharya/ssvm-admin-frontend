@@ -135,7 +135,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
   const activeSemester = semesters.find((s) => getSemesterId(s) === toIdString(activeTab));
 
   const handleContinue = () => {
-    dispatch({ type: 'MARK_COMPLETE', step: 4 });
+    dispatch({ type: 'MARK_COMPLETE', step: 3 });
     goNext();
   };
 

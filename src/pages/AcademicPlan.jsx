@@ -19,6 +19,7 @@ import {
   safeCredits
 } from '../utils/nullSafety';
 import SemesterManager from '../components/academic/SemesterManager';
+import { getPeriodLabel } from '../utils/periodLabel';
 
 const isDevMode = Boolean(import.meta?.env?.DEV);
 
@@ -473,7 +474,7 @@ const AcademicPlan = () => {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-gray-50">
-                        <th className="text-left px-3 py-2 font-medium text-gray-600">Semester</th>
+                        <th className="text-left px-3 py-2 font-medium text-gray-600">{getPeriodLabel(academicPlan?.program?.periodType || selectedProgramData?.periodType)}</th>
                         <th className="text-center px-3 py-2 font-medium text-gray-600">Admin-Set Credits</th>
                         <th className="text-center px-3 py-2 font-medium text-gray-600">Courses Sum</th>
                       </tr>

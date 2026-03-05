@@ -67,3 +67,34 @@ export const updateSemesterPlan = async (id, semesterPlan) => {
   });
   return response.data;
 };
+
+export const scheduleVirtualClasses = async (id, options = {}) => {
+  const response = await api.post(
+    `/semesters/${id}/timetable/schedule-classes`,
+    options
+  );
+  return response.data;
+};
+
+export const getScheduledMeetings = async (id) => {
+  const response = await api.get(
+    `/semesters/${id}/timetable/scheduled-meetings`
+  );
+  return response.data;
+};
+
+export const downloadTimetableTemplate = async (id) => {
+  const response = await api.get(`/semesters/${id}/timetable/template`, {
+    responseType: "blob",
+  });
+  return response;
+};
+
+export const parseTimetableUpload = async (id, file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await api.post(`/semesters/${id}/timetable/upload`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+};

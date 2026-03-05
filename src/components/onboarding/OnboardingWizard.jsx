@@ -4,15 +4,13 @@ import { AlertTriangle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import WizardStepper from './WizardStepper';
 import StepProgramSetup from './StepProgramSetup';
-import StepBatchSetup from './StepBatchSetup';
 import StepSemesterSetup from './StepSemesterSetup';
 import StepCourseAssignment from './StepCourseAssignment';
 import StepReviewComplete from './StepReviewComplete';
 import { getPeriodLabel } from '../../utils/periodLabel';
 import { getProgramById } from '../../services/program.service';
-import { getBatchById } from '../../services/batch.service';
 
-const MAX_STEP = 5;
+const MAX_STEP = 4;
 const WIZARD_STORAGE_KEY = 'programWizardState';
 
 const toIdString = (value) => (value == null ? '' : String(value));
@@ -62,7 +60,7 @@ const clampStep = (step) => {
 };
 
 const hasMappedCourses = (wizardState) => {
-  if (wizardState?.completedSteps?.has?.(4)) {
+  if (wizardState?.completedSteps?.has?.(3)) {
     return true;
   }
   return Object.values(wizardState?.coursesBySemester || {}).some(
@@ -73,20 +71,16 @@ const hasMappedCourses = (wizardState) => {
 const canNavigateToStep = (targetStep, wizardState) => {
   const nextStep = clampStep(targetStep);
   const hasProgram = Boolean(toIdString(wizardState?.programId));
-  const hasBatch = Boolean(toIdString(wizardState?.batchId));
   const hasSemesters = Array.isArray(wizardState?.semesters) && wizardState.semesters.length > 0;
   const hasCourses = hasMappedCourses(wizardState);
 
   if (nextStep >= 2 && !hasProgram) {
     return { allowed: false, message: 'Please complete Program setup' };
   }
-  if (nextStep >= 3 && !hasBatch) {
-    return { allowed: false, message: 'Please complete Batch setup' };
-  }
-  if (nextStep >= 4 && !hasSemesters) {
+  if (nextStep >= 3 && !hasSemesters) {
     return { allowed: false, message: 'Please add and save at least one period/semester' };
   }
-  if (nextStep >= 5 && !hasCourses) {
+  if (nextStep >= 4 && !hasCourses) {
     return { allowed: false, message: 'Please complete Courses mapping' };
   }
 
@@ -111,7 +105,6 @@ const toHydratedState = (rawState, initialState) => {
     direction: 1,
     programMode: base.programMode === 'existing' ? 'existing' : (base.programMode || initialState.programMode),
     programId: toIdString(base.programId) || null,
-    batchId: toIdString(base.batchId) || null,
     semesters: normalizeSemesters(base.semesters),
     coursesBySemester: normalizeCoursesBySemester(base.coursesBySemester),
     completedSteps: normalizeCompletedSteps(base.completedSteps),
@@ -121,14 +114,12 @@ const toHydratedState = (rawState, initialState) => {
 };
 
 const buildPersistableState = (wizardState) => ({
-  version: 1,
+  version: 2,
   updatedAt: new Date().toISOString(),
   currentStep: clampStep(wizardState.currentStep),
   programMode: wizardState.programMode || 'create',
   programId: toIdString(wizardState.programId) || null,
   programData: wizardState.programData || null,
-  batchId: toIdString(wizardState.batchId) || null,
-  batchData: wizardState.batchData || null,
   semesters: normalizeSemesters(wizardState.semesters),
   coursesBySemester: normalizeCoursesBySemester(wizardState.coursesBySemester),
   completedSteps: Array.from(normalizeCompletedSteps(wizardState.completedSteps)),
@@ -138,13 +129,12 @@ const buildPersistableState = (wizardState) => ({
 
 const readWizardStateFromUrl = (search) => {
   const params = new URLSearchParams(search || '');
-  const hasKnownParams = ['step', 'programId', 'batchId', 'mode'].some((key) => params.has(key));
+  const hasKnownParams = ['step', 'programId', 'mode'].some((key) => params.has(key));
   if (!hasKnownParams) return null;
 
   const parsed = {};
   if (params.has('step')) parsed.currentStep = clampStep(params.get('step'));
   if (params.has('programId')) parsed.programId = toIdString(params.get('programId')) || null;
-  if (params.has('batchId')) parsed.batchId = toIdString(params.get('batchId')) || null;
   if (params.has('mode')) parsed.programMode = params.get('mode') === 'existing' ? 'existing' : 'create';
 
   return parsed;
@@ -163,8 +153,8 @@ const writeWizardStateToUrl = ({ state, location, navigate, clear = false }) => 
     if (toIdString(state.programId)) params.set('programId', toIdString(state.programId));
     else params.delete('programId');
 
-    if (toIdString(state.batchId)) params.set('batchId', toIdString(state.batchId));
-    else params.delete('batchId');
+    // Clean up legacy batchId param if present
+    params.delete('batchId');
 
     params.set('mode', state.programMode === 'existing' ? 'existing' : 'create');
   }
@@ -212,8 +202,6 @@ const initialState = {
   programMode: 'create',
   programId: null,
   programData: null,
-  batchId: null,
-  batchData: null,
   semesters: [],
   coursesBySemester: {},
   completedSteps: new Set(),
@@ -254,8 +242,6 @@ function reducer(state, action) {
           programId: nextProgramId,
           programData: action.programData,
           programMode: action.programMode || state.programMode,
-          batchId: null,
-          batchData: null,
           semesters: [],
           coursesBySemester: {},
           returnToReview: false,
@@ -273,17 +259,6 @@ function reducer(state, action) {
         completedSteps: new Set([...state.completedSteps, 1]),
       };
     }
-    case 'SET_BATCH':
-      return {
-        ...state,
-        batchId: action.batchId,
-        batchData: action.batchData,
-        semesters: [],
-        coursesBySemester: {},
-        returnToReview: false,
-        finalSubmitted: false,
-        completedSteps: new Set([1, 2]),
-      };
     case 'ADD_SEMESTER':
       return {
         ...state,
@@ -432,27 +407,12 @@ const OnboardingWizard = () => {
         programMode: nextState.programMode || 'create',
         programId: null,
         programData: null,
-        batchId: null,
-        batchData: null,
         semesters: [],
         coursesBySemester: {},
         completedSteps: new Set(),
         returnToReview: false,
         finalSubmitted: false,
         currentStep: 1,
-      };
-    };
-
-    const resetFromBatch = () => {
-      nextState = {
-        ...nextState,
-        batchId: null,
-        batchData: null,
-        semesters: [],
-        coursesBySemester: {},
-        completedSteps: new Set([...nextState.completedSteps].filter((step) => step <= 1)),
-        returnToReview: false,
-        finalSubmitted: false,
       };
     };
 
@@ -473,46 +433,8 @@ const OnboardingWizard = () => {
       }
     }
 
-    const persistedBatchId = toIdString(nextState.batchId);
-    if (persistedBatchId) {
-      if (!toIdString(nextState.programId)) {
-        resetFromBatch();
-      } else {
-        try {
-          const response = await getBatchById(persistedBatchId);
-          const batch = response?.batch || response;
-          const resolvedBatchId = toIdString(batch?._id);
-          if (!resolvedBatchId) {
-            throw new Error('Batch not found');
-          }
-
-          const batchProgramId = toIdString(batch?.program?._id || batch?.program);
-          if (batchProgramId && batchProgramId !== toIdString(nextState.programId)) {
-            resetFromBatch();
-            notices.push('Saved batch does not belong to selected program. Please select a batch again.');
-          } else {
-            nextState.batchId = resolvedBatchId;
-            nextState.batchData = batch;
-            nextState.completedSteps.add(2);
-          }
-        } catch {
-          resetFromBatch();
-          notices.push('Saved batch was not found. Please select a batch again.');
-        }
-      }
-    }
-
     if (!toIdString(nextState.programId)) {
       resetFromProgram();
-    } else if (!toIdString(nextState.batchId)) {
-      nextState = {
-        ...nextState,
-        semesters: [],
-        coursesBySemester: {},
-        completedSteps: new Set([...nextState.completedSteps].filter((step) => step <= 2)),
-        returnToReview: false,
-        finalSubmitted: false,
-      };
     }
 
     const maxValidStep = getLastValidStep(nextState);
@@ -559,7 +481,6 @@ const OnboardingWizard = () => {
     return (
       state.currentStep === 1 &&
       !toIdString(state.programId) &&
-      !toIdString(state.batchId) &&
       state.semesters.length === 0 &&
       Object.keys(state.coursesBySemester || {}).length === 0 &&
       state.completedSteps.size === 0 &&
@@ -569,7 +490,6 @@ const OnboardingWizard = () => {
   }, [
     state.currentStep,
     state.programId,
-    state.batchId,
     state.semesters,
     state.coursesBySemester,
     state.completedSteps,
@@ -636,12 +556,10 @@ const OnboardingWizard = () => {
       case 1:
         return <StepProgramSetup {...common} />;
       case 2:
-        return <StepBatchSetup {...common} />;
-      case 3:
         return <StepSemesterSetup {...common} />;
-      case 4:
+      case 3:
         return <StepCourseAssignment {...common} />;
-      case 5:
+      case 4:
         return <StepReviewComplete {...common} />;
       default:
         return null;

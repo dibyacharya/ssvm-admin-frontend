@@ -7,14 +7,19 @@ import {
   RefreshCw,
   X,
   Save,
-  Eye
+  Eye,
+  Plus,
+  GraduationCap
 } from 'lucide-react';
 import {
   getAllBatches,
+  createBatch,
   updateBatch,
   deleteBatch
 } from '../services/batch.service';
 import { getProgramsDropdown } from '../services/program.service';
+import { calculateBatchEndDate, formatMonthYear } from '../utils/dateCalculator';
+import { getPeriodLabel } from '../utils/periodLabel';
 
 const statusColors = {
   upcoming: 'bg-blue-100 text-blue-800',
@@ -56,6 +61,21 @@ const BatchManagement = () => {
     maxStrength: ''
   });
 
+  // --- Create Batch modal state ---
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createSubmitting, setCreateSubmitting] = useState(false);
+  const [createError, setCreateError] = useState(null);
+  const [selectedProgram, setSelectedProgram] = useState(null);
+  const [createFormData, setCreateFormData] = useState({
+    program: '',
+    year: new Date().getFullYear().toString(),
+    name: '',
+    cohort: '',
+    startDate: '',
+    expectedEndDate: '',
+    maxStrength: ''
+  });
+
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -65,6 +85,29 @@ const BatchManagement = () => {
   useEffect(() => {
     fetchBatches();
   }, [currentPage, filterProgram, filterStatus]);
+
+  // Auto-compute batch name and end date when create form inputs change
+  useEffect(() => {
+    if (!showCreateModal || !selectedProgram) return;
+    const { startDate } = createFormData;
+    const updates = {};
+
+    // Auto-name from start date
+    if (startDate) {
+      const autoName = formatMonthYear(startDate);
+      if (autoName) updates.name = autoName;
+    }
+
+    // Auto-compute expected end date
+    if (startDate && selectedProgram.periodType && selectedProgram.totalSemesters) {
+      const endDate = calculateBatchEndDate(startDate, selectedProgram.periodType, selectedProgram.totalSemesters);
+      if (endDate) updates.expectedEndDate = endDate;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      setCreateFormData(prev => ({ ...prev, ...updates }));
+    }
+  }, [createFormData.startDate, selectedProgram, showCreateModal]);
 
   const fetchPrograms = async () => {
     try {
@@ -162,6 +205,64 @@ const BatchManagement = () => {
     }
   };
 
+  // --- Create Batch handlers ---
+  const openCreateModal = () => {
+    setCreateError(null);
+    setSelectedProgram(null);
+    setCreateFormData({
+      program: '',
+      year: new Date().getFullYear().toString(),
+      name: '',
+      cohort: '',
+      startDate: '',
+      expectedEndDate: '',
+      maxStrength: ''
+    });
+    setShowCreateModal(true);
+  };
+
+  const handleCreateInputChange = (e) => {
+    const { name, value } = e.target;
+    setCreateFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleProgramSelect = (e) => {
+    const programId = e.target.value;
+    setCreateFormData(prev => ({ ...prev, program: programId }));
+    const prog = programs.find(p => p._id === programId);
+    setSelectedProgram(prog || null);
+  };
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    if (!createFormData.program || !createFormData.startDate) {
+      setCreateError('Program and Start Date are required.');
+      return;
+    }
+    setCreateSubmitting(true);
+    setCreateError(null);
+    try {
+      const payload = {
+        program: createFormData.program,
+        year: Number(createFormData.year) || new Date().getFullYear(),
+        name: createFormData.name || formatMonthYear(createFormData.startDate) || 'New Batch',
+        startDate: createFormData.startDate,
+      };
+      if (createFormData.expectedEndDate) payload.expectedEndDate = createFormData.expectedEndDate;
+      if (createFormData.maxStrength) payload.maxStrength = Number(createFormData.maxStrength);
+      if (createFormData.cohort) payload.cohort = createFormData.cohort;
+
+      await createBatch(payload);
+      setShowCreateModal(false);
+      await fetchBatches();
+    } catch (err) {
+      const msg = err.response?.data?.error || err.response?.data?.message || 'Failed to create batch.';
+      setCreateError(msg);
+    } finally {
+      setCreateSubmitting(false);
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     try {
@@ -202,7 +303,7 @@ const BatchManagement = () => {
               Batch Management
             </h1>
             <p className="text-gray-600 mt-1">
-              Batch creation is available only in Setup Wizard.
+              Manage batches for your programs.
             </p>
           </div>
           <div className="flex space-x-3">
@@ -212,6 +313,13 @@ const BatchManagement = () => {
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
+            </button>
+            <button
+              onClick={openCreateModal}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Batch
             </button>
           </div>
         </div>
@@ -351,7 +459,7 @@ const BatchManagement = () => {
           <div className="text-center py-12">
             <Layers className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">No Batches Found</h2>
-            <p className="text-gray-600 mb-4">Create batches from Setup Wizard.</p>
+            <p className="text-gray-600 mb-4">Click "Add Batch" to create one.</p>
           </div>
         )}
 
@@ -505,6 +613,154 @@ const BatchManagement = () => {
                 >
                   <Save className="w-4 h-4" />
                   <span>{submitting ? 'Updating...' : 'Update Batch'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create Batch Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Add Batch</h2>
+                <p className="text-sm text-gray-500 mt-1">Create a new batch for a program.</p>
+              </div>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreate} className="p-6 space-y-4">
+              {createError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                  {createError}
+                </div>
+              )}
+
+              {/* Program selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Program *</label>
+                <select
+                  name="program"
+                  value={createFormData.program}
+                  onChange={handleProgramSelect}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select a program...</option>
+                  {programs.map(p => (
+                    <option key={p._id} value={p._id}>{p.name} ({p.code})</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Program info banner */}
+              {selectedProgram && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <GraduationCap className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-semibold text-blue-900">{selectedProgram.name}</span>
+                    {selectedProgram.code && (
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{selectedProgram.code}</span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-blue-800">
+                    <div>Period Type: <span className="font-medium">{getPeriodLabel(selectedProgram.periodType)}</span></div>
+                    <div>Total {getPeriodLabel(selectedProgram.periodType)}s: <span className="font-medium">{selectedProgram.totalSemesters ?? '-'}</span></div>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Year *</label>
+                  <input
+                    type="number"
+                    name="year"
+                    value={createFormData.year}
+                    onChange={handleCreateInputChange}
+                    required
+                    min="2000"
+                    max="2100"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+                  <input
+                    type="date"
+                    name="startDate"
+                    value={createFormData.startDate}
+                    onChange={handleCreateInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Batch Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={createFormData.name}
+                    onChange={handleCreateInputChange}
+                    placeholder="Auto-filled from start date"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-xs text-gray-400 mt-1 block">Auto-computed from start date</span>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Expected End Date</label>
+                  <input
+                    type="date"
+                    name="expectedEndDate"
+                    value={createFormData.expectedEndDate}
+                    onChange={handleCreateInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-xs text-gray-400 mt-1 block">Auto-computed from program duration</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Max Strength</label>
+                <input
+                  type="number"
+                  name="maxStrength"
+                  value={createFormData.maxStrength}
+                  onChange={handleCreateInputChange}
+                  min="0"
+                  placeholder="0 = unlimited"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createSubmitting || !createFormData.program}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-white transition-colors ${
+                    createSubmitting || !createFormData.program ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{createSubmitting ? 'Creating...' : 'Create Batch'}</span>
                 </button>
               </div>
             </form>

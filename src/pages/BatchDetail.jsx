@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Calendar,
@@ -15,6 +15,7 @@ import {
 import { getBatchById, getBatchStudents, updateBatch } from '../services/batch.service';
 import { getProgramById } from '../services/program.service';
 import SemesterManager from '../components/academic/SemesterManager';
+import { getPeriodLabel } from '../utils/periodLabel';
 
 const statusColors = {
   upcoming: 'bg-blue-100 text-blue-800',
@@ -59,8 +60,11 @@ const getStudentDisplayName = (student) => student?.name || student?.user?.name 
 const getStudentPrimaryId = (student) =>
   student?.registrationNumber || student?.enrollmentNumber || '-';
 
+const VALID_BATCH_TABS = ['SEMESTER', 'STUDENT'];
+
 const BatchDetail = () => {
   const { batchId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [batch, setBatch] = useState(null);
   const [program, setProgram] = useState(null);
@@ -86,8 +90,20 @@ const BatchDetail = () => {
     maxStrength: '',
   });
 
-  const [activeBatchTab, setActiveBatchTab] = useState('SEMESTER');
+  const [activeBatchTab, setActiveBatchTab] = useState(() => {
+    const tabFromUrl = searchParams.get('tab');
+    return VALID_BATCH_TABS.includes(tabFromUrl) ? tabFromUrl : 'SEMESTER';
+  });
   const [hasLoadedStudents, setHasLoadedStudents] = useState(false);
+
+  // Sync activeBatchTab to URL so tab persists on refresh
+  useEffect(() => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', activeBatchTab);
+      return next;
+    }, { replace: true });
+  }, [activeBatchTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const applyBatchToForm = (batchData) => {
     setBatchForm({
@@ -468,7 +484,7 @@ const BatchDetail = () => {
             >
               <span className="inline-flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                Semester
+                {getPeriodLabel(program?.periodType)}
               </span>
             </button>
             <button

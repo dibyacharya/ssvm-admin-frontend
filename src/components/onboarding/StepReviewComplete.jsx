@@ -57,7 +57,7 @@ const readTeachers = (course) => {
 };
 
 const StepReviewComplete = ({ state, dispatch, goBack }) => {
-  const { programData, batchData, semesters, coursesBySemester, finalSubmitted } =
+  const { programData, semesters, coursesBySemester, finalSubmitted } =
     state;
   const periodLabel = getPeriodLabel(programData?.periodType);
   const [submitting, setSubmitting] = useState(false);
@@ -95,14 +95,10 @@ const StepReviewComplete = ({ state, dispatch, goBack }) => {
 
   const blockingIssues = [];
   if (!state.programId) blockingIssues.push("Program has not been selected.");
-  if (!state.batchId) blockingIssues.push("Batch has not been selected.");
 
   const warnings = [];
   if (!programData?.name || !programData?.code) {
     warnings.push("Program name/code is incomplete.");
-  }
-  if (!batchData?.startDate) {
-    warnings.push("Batch start date is missing.");
   }
   if (semesters.length === 0) {
     warnings.push(`No ${periodLabel.toLowerCase()}s added yet.`);
@@ -126,7 +122,7 @@ const StepReviewComplete = ({ state, dispatch, goBack }) => {
       await updateProgram(state.programId, {
         isActive: programData?.isActive !== false,
       });
-      dispatch({ type: "MARK_COMPLETE", step: 5 });
+      dispatch({ type: "MARK_COMPLETE", step: 4 });
       dispatch({ type: "SET_FINAL_SUBMITTED", value: true });
     } catch (err) {
       setSubmitError(
@@ -253,36 +249,9 @@ const StepReviewComplete = ({ state, dispatch, goBack }) => {
 
         <section className="bg-white border border-gray-200 rounded-lg p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-gray-900">Batch</h2>
-            <button
-              onClick={() => jumpToEditStep(2)}
-              className="inline-flex items-center text-xs text-blue-600 hover:text-blue-700"
-            >
-              <PencilLine className="w-3.5 h-3.5 mr-1" />
-              Edit
-            </button>
-          </div>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div><span className="text-gray-500">Name:</span> {batchData?.name || "-"}</div>
-            <div><span className="text-gray-500">Year:</span> {batchData?.year ?? "-"}</div>
-            <div><span className="text-gray-500">Start Date:</span> {formatDate(batchData?.startDate)}</div>
-            <div>
-              <span className="text-gray-500">Expected End Date:</span>{" "}
-              {formatDate(batchData?.expectedEndDate)}
-            </div>
-            <div>
-              <span className="text-gray-500">Max Strength:</span>{" "}
-              {batchData?.maxStrength ?? "-"}
-            </div>
-            <div><span className="text-gray-500">Cohort:</span> {batchData?.cohort || "-"}</div>
-          </div>
-        </section>
-
-        <section className="bg-white border border-gray-200 rounded-lg p-5">
-          <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-gray-900">{periodLabel}s</h2>
             <button
-              onClick={() => jumpToEditStep(3)}
+              onClick={() => jumpToEditStep(2)}
               className="inline-flex items-center text-xs text-blue-600 hover:text-blue-700"
             >
               <PencilLine className="w-3.5 h-3.5 mr-1" />
@@ -318,7 +287,7 @@ const StepReviewComplete = ({ state, dispatch, goBack }) => {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-gray-900">Courses</h2>
             <button
-              onClick={() => jumpToEditStep(4)}
+              onClick={() => jumpToEditStep(3)}
               className="inline-flex items-center text-xs text-blue-600 hover:text-blue-700"
             >
               <PencilLine className="w-3.5 h-3.5 mr-1" />

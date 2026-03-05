@@ -120,11 +120,23 @@ export const AuthProvider = ({ children }) => {
       console.error('Login error:', error);
 
       const code = error.response?.data?.code;
+      const backendMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        '';
       if (code === 'USER_NOT_FOUND') {
         return { success: false, error: 'Wrong User ID' };
       }
       if (code === 'INVALID_PASSWORD') {
         return { success: false, error: 'Wrong Password' };
+      }
+      if (code === 'SUPER_ADMIN_ONLY') {
+        return {
+          success: false,
+          error:
+            backendMessage ||
+            'Admin Portal access is restricted to SUPER_ADMIN only.',
+        };
       }
       return { success: false, error: 'Login failed. Please try again.' };
     }

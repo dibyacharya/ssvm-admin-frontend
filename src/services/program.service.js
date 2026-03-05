@@ -65,3 +65,8 @@ export const updateSemesterCourseAssignment = async (
   );
   return response.data;
 };
+
+export const updateCourseAssessmentPlan = async (courseId, payload) => {
+  const response = await api.put(`/courses/${courseId}/assessment-plan`, payload);
+  return response.data;
+};

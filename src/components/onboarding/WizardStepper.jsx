@@ -5,10 +5,9 @@ import { Check } from 'lucide-react';
 const WizardStepper = ({ currentStep, completedSteps, periodLabel, onStepClick }) => {
   const steps = [
     { number: 1, label: 'PROGRAM' },
-    { number: 2, label: 'BATCH' },
-    { number: 3, label: `${(periodLabel || 'SEMESTER').toUpperCase()}S` },
-    { number: 4, label: 'COURSES' },
-    { number: 5, label: 'REVIEW' },
+    { number: 2, label: `${(periodLabel || 'SEMESTER').toUpperCase()}S` },
+    { number: 3, label: 'COURSES' },
+    { number: 4, label: 'REVIEW' },
   ];
   return (
     <div className="sticky top-0 z-10 bg-white border-b border-gray-200 py-6">

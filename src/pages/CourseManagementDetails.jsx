@@ -278,7 +278,7 @@ const CourseManagementDetails = () => {
   const onlineResourcesSectionRef = useRef(null);
   const moocsSectionRef = useRef(null);
 
-  const normalizedUserRole = toRole(user?.role === "Super Admin" ? "admin" : user?.role);
+  const normalizedUserRole = toRole(user?.role);
   const isAdmin = normalizedUserRole === "admin";
   const isTeacher = normalizedUserRole === "teacher";
   const isCoordinator =

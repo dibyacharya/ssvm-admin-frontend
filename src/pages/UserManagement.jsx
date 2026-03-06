@@ -398,13 +398,13 @@ const UserManagement = () => {
         .trim()
         .toLowerCase();
       if (preferred === 'admin') {
-        const nonSuperAdminRole = roleOptions.find((role) => {
+        const nonAdminRole = roleOptions.find((role) => {
           const key = String(role?.key || '').trim().toLowerCase();
           const accessRole = String(role?.accessRole || '').trim().toLowerCase();
-          return accessRole === 'admin' && key && key !== 'super_admin';
+          return accessRole === 'admin' && key && key !== 'admin';
         });
-        if (nonSuperAdminRole?.key) {
-          return String(nonSuperAdminRole.key).toLowerCase();
+        if (nonAdminRole?.key) {
+          return String(nonAdminRole.key).toLowerCase();
         }
       }
       const exact = roleOptions.find((role) => String(role?.key || '').toLowerCase() === preferred);
@@ -805,8 +805,8 @@ const UserManagement = () => {
       const mappedAccessRole = isExecutiveCreate ? 'admin' : getRoleAccessRole(selectedRoleKey);
 
       if (!isEditMode) {
-        if (createContext.flow === 'executive_add' && selectedRoleKey === 'super_admin') {
-          throw new Error('Executive Staff cannot be created with SUPER_ADMIN role.');
+        if (createContext.flow === 'executive_add' && selectedRoleKey === 'admin') {
+          throw new Error('Executive Staff cannot be created with ADMIN role.');
         }
         if (mappedAccessRole === 'teacher' && !formData.employeeId.trim()) {
           throw new Error('Employee ID is required for teacher accounts');
@@ -1227,7 +1227,7 @@ const UserManagement = () => {
 
   const getAccessRoleBadge = (roleTag) => {
     const config = {
-      SUPER_ADMIN: 'bg-red-100 text-red-800',
+      ADMIN: 'bg-red-100 text-red-800',
       DEAN: 'bg-amber-100 text-amber-800',
       ASSOCIATE_DEAN: 'bg-orange-100 text-orange-800',
       PROGRAM_COORDINATOR: 'bg-emerald-100 text-emerald-800',

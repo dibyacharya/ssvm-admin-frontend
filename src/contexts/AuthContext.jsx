@@ -3,7 +3,7 @@ import { authService } from '../services/api';
 
 const AuthContext = createContext();
 const ACCESS_ROLE_TAGS = new Set([
-  'SUPER_ADMIN',
+  'ADMIN',
   'DEAN',
   'ASSOCIATE_DEAN',
   'PROGRAM_COORDINATOR',
@@ -14,9 +14,9 @@ const ACCESS_ROLE_TAGS = new Set([
 ]);
 
 const ACCESS_ROLE_ALIASES = {
-  super_admin: 'SUPER_ADMIN',
-  superadmin: 'SUPER_ADMIN',
-  admin: 'SUPER_ADMIN',
+  super_admin: 'ADMIN',
+  superadmin: 'ADMIN',
+  admin: 'ADMIN',
   dean: 'DEAN',
   associate_dean: 'ASSOCIATE_DEAN',
   assoc_dean: 'ASSOCIATE_DEAN',
@@ -102,10 +102,9 @@ export const AuthProvider = ({ children }) => {
       if (response.data && response.data.user && response.data.token) {
         const { token, user: userData } = response.data;
         
-        // Store token and user data, changing admin role to Super Admin
         const userWithRole = normalizeUserShape({
           ...userData,
-          role: userData.role === 'admin' ? 'Super Admin' : userData.role
+          role: userData.role
         });
         
         localStorage.setItem('token', token);
@@ -130,12 +129,12 @@ export const AuthProvider = ({ children }) => {
       if (code === 'INVALID_PASSWORD') {
         return { success: false, error: 'Wrong Password' };
       }
-      if (code === 'SUPER_ADMIN_ONLY') {
+      if (code === 'ADMIN_ONLY') {
         return {
           success: false,
           error:
             backendMessage ||
-            'Admin Portal access is restricted to SUPER_ADMIN only.',
+            'Admin Portal access is restricted to admin users only.',
         };
       }
       return { success: false, error: 'Login failed. Please try again.' };
@@ -149,10 +148,9 @@ export const AuthProvider = ({ children }) => {
       if (response.data && response.data.user && response.data.token) {
         const { token, user } = response.data;
         
-        // Store token and user data, changing admin role to Super Admin
         const userWithRole = normalizeUserShape({
           ...user,
-          role: user.role === 'admin' ? 'Super Admin' : user.role
+          role: user.role
         });
         
         localStorage.setItem('token', token);
@@ -193,7 +191,7 @@ export const AuthProvider = ({ children }) => {
     const normalizedTarget = normalizeAccessRoleTag(roleTag);
     if (!normalizedTarget) return false;
     const assigned = normalizeAccessRoles(targetUser?.accessRoles);
-    if (assigned.includes('SUPER_ADMIN')) return true;
+    if (assigned.includes('ADMIN')) return true;
     return assigned.includes(normalizedTarget);
   };
 

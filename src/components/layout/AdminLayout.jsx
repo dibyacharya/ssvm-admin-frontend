@@ -50,7 +50,7 @@ const sidebarItems = [
   { id: 'helpdesk', name: 'Helpdesk', icon: MessageSquare, path: '/helpdesk' }
 ];
 const RBAC_VISIBILITY_ROLES = [
-  'SUPER_ADMIN',
+  'ADMIN',
   'DEAN',
   'ASSOCIATE_DEAN',
   'PROGRAM_COORDINATOR',
@@ -84,9 +84,7 @@ const AdminLayout = () => {
   const [probeToast, setProbeToast] = useState(null);
   const [corsBanner, setCorsBanner] = useState(null);
   const searchRef = useRef(null);
-  const isLegacyAdminUser = ['admin', 'super admin'].includes(
-    String(user?.role || '').trim().toLowerCase()
-  );
+  const isLegacyAdminUser = String(user?.role || '').trim().toLowerCase() === 'admin';
   const canViewRbac = Boolean(
     (typeof hasAnyAccessRole === 'function' && hasAnyAccessRole(RBAC_VISIBILITY_ROLES, user)) ||
       isLegacyAdminUser

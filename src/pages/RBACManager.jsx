@@ -22,7 +22,7 @@ import {
 } from '../services/role.service';
 
 const SYSTEM_ROLE_COLOR_MAP = {
-  super_admin: 'bg-red-500',
+  admin: 'bg-red-500',
   dean: 'bg-orange-500',
   associate_dean: 'bg-yellow-500',
   program_coordinator: 'bg-emerald-500',
@@ -33,7 +33,7 @@ const SYSTEM_ROLE_COLOR_MAP = {
 };
 
 const SYSTEM_ROLE_LEVEL_MAP = {
-  super_admin: 6,
+  admin: 6,
   dean: 5,
   associate_dean: 4,
   program_coordinator: 3,
@@ -146,12 +146,11 @@ const getRealRole = (user) => {
   const actual = String(user?.actualRole || '').trim().toLowerCase();
   if (actual) return actual;
   const fromRole = String(user?.role || '').trim().toLowerCase();
-  if (fromRole === 'super admin') return 'admin';
   return fromRole;
 };
 
 const ADMIN_FEATURE_ACCESS_ROLES = [
-  'SUPER_ADMIN',
+  'ADMIN',
   'DEAN',
   'ASSOCIATE_DEAN',
   'PROGRAM_COORDINATOR',

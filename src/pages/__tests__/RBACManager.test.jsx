@@ -26,7 +26,7 @@ describe("RBAC Add Role modal", () => {
     mockUseAuth.mockReturnValue({
       user: {
         role: "admin",
-        accessRoles: ["SUPER_ADMIN"],
+        accessRoles: ["ADMIN"],
       },
       updateUser: vi.fn(),
     });

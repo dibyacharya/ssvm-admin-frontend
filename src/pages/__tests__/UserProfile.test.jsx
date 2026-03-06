@@ -80,7 +80,7 @@ const progressResponse = {
 describe("UserProfile page", () => {
   beforeEach(() => {
     mockUseAuth.mockReturnValue({
-      user: { role: "admin", accessRoles: ["SUPER_ADMIN"], _id: "admin-1" },
+      user: { role: "admin", accessRoles: ["ADMIN"], _id: "admin-1" },
       updateUser: vi.fn(),
     });
     mockGetUserProfile.mockResolvedValue(profileResponse);

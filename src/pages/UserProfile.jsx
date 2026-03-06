@@ -25,7 +25,7 @@ import { getProgramsDropdown } from "../services/program.service";
 import { getBatchesDropdown } from "../services/batch.service";
 
 const ADMIN_ACCESS_ROLE_SET = new Set([
-  "SUPER_ADMIN",
+  "ADMIN",
   "DEAN",
   "ASSOCIATE_DEAN",
   "PROGRAM_COORDINATOR",

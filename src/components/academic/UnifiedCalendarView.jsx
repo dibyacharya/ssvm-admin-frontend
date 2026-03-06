@@ -24,6 +24,7 @@ import {
   getPlanItemsByDate,
   getPlanItemTypeConfig,
   isDateInRange,
+  computeWeekPreview,
 } from '../../utils/timetableUtils';
 
 /* ────────────────────────────────────────────────────────────── */
@@ -71,6 +72,8 @@ const UnifiedCalendarView = ({
   const weeklyOffDaySet = useMemo(() => getWeeklyOffDays(semesterPlan), [semesterPlan]);
 
   // Build a lookup: dateKey → startTime → scheduleEntry
+  // Merges server data (expandedDateSchedule) with local unsaved assignments
+  // (weeklyClassSchedule + dateClassSchedule) so changes appear immediately.
   const scheduleIndex = useMemo(() => {
     const idx = new Map();
     (expandedDateSchedule || []).forEach((entry) => {
@@ -81,8 +84,32 @@ const UnifiedCalendarView = ({
       if (!idx.get(dk).has(timeKey)) idx.get(dk).set(timeKey, []);
       idx.get(dk).get(timeKey).push(entry);
     });
+
+    // Merge local assignments for the current week so they show immediately
+    const localPreview = computeWeekPreview({
+      weekDates,
+      weeklyClassSchedule,
+      dateClassSchedule,
+      semesterPlan,
+      slotTemplates,
+    });
+    localPreview.forEach(({ dateKey, slots }) => {
+      if (!dateKey) return;
+      slots.forEach((slot) => {
+        if (!slot.course) return;
+        const timeKey = `${slot.startTime}-${slot.endTime}`;
+        if (!idx.has(dateKey)) idx.set(dateKey, new Map());
+        // Local entries override server entries for the same date+time
+        idx.get(dateKey).set(timeKey, [{
+          ...slot,
+          type: 'CLASS',
+          date: dateKey,
+        }]);
+      });
+    });
+
     return idx;
-  }, [expandedDateSchedule]);
+  }, [expandedDateSchedule, weekDates, weeklyClassSchedule, dateClassSchedule, semesterPlan, slotTemplates]);
 
   // Filter slot templates to only CLASS slots (show BREAK as dividers)
   const classSlots = useMemo(

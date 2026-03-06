@@ -1220,6 +1220,26 @@ const SemesterManager = ({
       });
 
       await updateSemesterWeeklyTimetable(semesterId, payload);
+
+      // Also persist any date-specific entries so they aren't lost when state
+      // refreshes after save (fetchSemesterTimetable replaces all local state).
+      const dateEntries = entry.dateClassSchedule || [];
+      if (dateEntries.length > 0) {
+        try {
+          const datePayload = sanitizeScheduleRows({
+            rows: dateEntries,
+            isDate: true,
+            semesterRange: entry.semesterRange || {},
+          });
+          if (datePayload.length > 0) {
+            await updateSemesterDateClassSchedule(semesterId, datePayload);
+          }
+        } catch (dateErr) {
+          // Date-save failure should not block the weekly-save success notice
+          console.warn('[Timetable] Date schedule co-save failed:', dateErr.message);
+        }
+      }
+
       setTimetableNoticeBySemester((prev) => ({
         ...prev,
         [semesterId]: 'Weekly class schedule saved successfully.',
@@ -1470,6 +1490,24 @@ const SemesterManager = ({
       });
 
       await updateSemesterDateClassSchedule(semesterId, payload);
+
+      // Also persist any weekly entries so they aren't lost when state refreshes.
+      const weeklyEntries = entry.weeklyClassSchedule || [];
+      if (weeklyEntries.length > 0) {
+        try {
+          const weeklyPayload = sanitizeScheduleRows({
+            rows: weeklyEntries,
+            isDate: false,
+            semesterRange: entry.semesterRange || {},
+          });
+          if (weeklyPayload.length > 0) {
+            await updateSemesterWeeklyTimetable(semesterId, weeklyPayload);
+          }
+        } catch (weeklyErr) {
+          console.warn('[Timetable] Weekly schedule co-save failed:', weeklyErr.message);
+        }
+      }
+
       setTimetableNoticeBySemester((prev) => ({
         ...prev,
         [semesterId]: 'Date-wise class schedule saved successfully.',

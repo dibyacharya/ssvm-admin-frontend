@@ -29,10 +29,14 @@ import {
   updateSemesterWeeklyTimetable,
   updateSemesterSlotTemplates,
   updateSemesterDateClassSchedule,
+  updateSemesterPlan,
   scheduleVirtualClasses,
   downloadTimetableTemplate,
 } from '../../services/semester.services';
 import TimetableUploadModal from './TimetableUploadModal';
+import SlotTemplateEditor from './SlotTemplateEditor';
+import SemesterPlanEditor from './SemesterPlanEditor';
+import UnifiedCalendarView from './UnifiedCalendarView';
 import { getCoursesForSemester, updateCourseTeachers } from '../../services/courses.service';
 import { getTeachers } from '../../services/user.service';
 import { getPeriodLabel } from '../../utils/periodLabel';
@@ -232,6 +236,10 @@ const normalizeScheduleRow = (row = {}, options = {}) => {
     meetingId: normalizedType === 'BREAK' ? null : row?.meetingId || null,
     isVconfScheduled: normalizedType === 'BREAK' ? false : Boolean(row?.isVconfScheduled),
     source: row?.source || options?.source || '',
+    isHoliday: Boolean(row?.isHoliday),
+    isWeeklyOff: Boolean(row?.isWeeklyOff),
+    holidayTitle: String(row?.holidayTitle || '').trim(),
+    planItems: Array.isArray(row?.planItems) ? row.planItems : [],
     courseLabel:
       row?.course?.courseCode || row?.course?.title || row?.course?.name || '',
     teacherLabel:
@@ -324,6 +332,8 @@ const normalizeTimetableResponse = (payload = {}, options = {}) => {
     return acc;
   }, {});
 
+  const semesterPlan = payload?.semesterPlan || { startDate: null, endDate: null, items: [], weeklyOffDays: ['sunday'] };
+
   return {
     weeklyClassSchedule,
     dateClassSchedule,
@@ -331,6 +341,7 @@ const normalizeTimetableResponse = (payload = {}, options = {}) => {
     slotTemplates,
     subjectTeacherMappings,
     subjectTeacherLookup,
+    semesterPlan,
     semesterRange: {
       startDate: semesterStartDate,
       endDate: semesterEndDate,
@@ -345,6 +356,7 @@ const createEmptyTimetableState = (semesterRange = {}) => ({
   slotTemplates: DEFAULT_SLOT_TEMPLATES.map((row, index) => normalizeSlotTemplateRow(row, index)),
   subjectTeacherMappings: [],
   subjectTeacherLookup: {},
+  semesterPlan: { startDate: null, endDate: null, items: [], weeklyOffDays: ['sunday'] },
   semesterRange: {
     startDate: semesterRange?.semesterStartDate || semesterRange?.startDate || '',
     endDate: semesterRange?.semesterEndDate || semesterRange?.endDate || '',
@@ -413,7 +425,6 @@ const SemesterManager = ({
   const [timetableSavingBySemester, setTimetableSavingBySemester] = useState({});
   const [timetableErrorBySemester, setTimetableErrorBySemester] = useState({});
   const [timetableNoticeBySemester, setTimetableNoticeBySemester] = useState({});
-  const [activeTimetablePlanBySemester, setActiveTimetablePlanBySemester] = useState({});
   const [showUploadModal, setShowUploadModal] = useState(null); // semesterId or null
 
   const periodLabel = getPeriodLabel(periodType);
@@ -432,7 +443,7 @@ const SemesterManager = ({
     setTimetableSavingBySemester({});
     setTimetableErrorBySemester({});
     setTimetableNoticeBySemester({});
-    setActiveTimetablePlanBySemester({});
+
     setError(null);
   };
 
@@ -542,7 +553,6 @@ const SemesterManager = ({
       );
       setTimetableErrorBySemester((prev) => filterSemesterMap(prev));
       setTimetableNoticeBySemester((prev) => filterSemesterMap(prev));
-      setActiveTimetablePlanBySemester((prev) => filterSemesterMap(prev));
       setTeacherSelectionByCourse((prev) => filterCourseMap(prev));
       setAssigningByCourse((prev) => filterCourseMap(prev));
 
@@ -704,23 +714,12 @@ const SemesterManager = ({
       ...prev,
       [semesterId]: prev[semesterId] || 'COURSE',
     }));
-    setActiveTimetablePlanBySemester((prev) => ({
-      ...prev,
-      [semesterId]: prev[semesterId] || 'WEEKLY',
-    }));
   };
 
   const handleSemesterTabChange = (semesterId, tabKey) => {
     setActiveDetailTabBySemester((prev) => ({
       ...prev,
       [semesterId]: tabKey,
-    }));
-  };
-
-  const handleTimetablePlanChange = (semesterId, planType) => {
-    setActiveTimetablePlanBySemester((prev) => ({
-      ...prev,
-      [semesterId]: planType,
     }));
   };
 
@@ -1297,9 +1296,8 @@ const SemesterManager = ({
       ...prev,
       [semesterId]: 'Timetable imported successfully!',
     }));
-    // Refresh timetable and switch to date view
+    // Refresh timetable after upload import
     await fetchSemesterTimetable(semesterId);
-    setActiveTimetablePlanBySemester((prev) => ({ ...prev, [semesterId]: 'SEMESTER' }));
   };
 
   const updateDateClassSchedule = (semesterId, rowIndex, field, value) => {
@@ -1491,6 +1489,115 @@ const SemesterManager = ({
     }
   };
 
+  /* ── Semester Plan (Holiday / Event / Exam / Timeline) handlers ── */
+
+  const addPlanItem = (semesterId, item = {}) => {
+    setTimetableBySemester((prev) => {
+      const entry = getTimetableEntry(prev, semesterId);
+      const plan = entry.semesterPlan || { startDate: null, endDate: null, items: [] };
+      const newItem = {
+        type: String(item.type || 'HOLIDAY').toUpperCase(),
+        title: String(item.title || '').trim(),
+        description: String(item.description || '').trim(),
+        date: item.date || '',
+      };
+      return {
+        ...prev,
+        [semesterId]: {
+          ...entry,
+          semesterPlan: { ...plan, items: [...(plan.items || []), newItem] },
+        },
+      };
+    });
+  };
+
+  const updatePlanItem = (semesterId, itemIndex, field, value) => {
+    setTimetableBySemester((prev) => {
+      const entry = getTimetableEntry(prev, semesterId);
+      const plan = entry.semesterPlan || { startDate: null, endDate: null, items: [] };
+      const items = [...(plan.items || [])];
+      if (itemIndex < 0 || itemIndex >= items.length) return prev;
+      items[itemIndex] = { ...items[itemIndex], [field]: value };
+      return {
+        ...prev,
+        [semesterId]: {
+          ...entry,
+          semesterPlan: { ...plan, items },
+        },
+      };
+    });
+  };
+
+  const removePlanItem = (semesterId, itemIndex) => {
+    setTimetableBySemester((prev) => {
+      const entry = getTimetableEntry(prev, semesterId);
+      const plan = entry.semesterPlan || { startDate: null, endDate: null, items: [] };
+      return {
+        ...prev,
+        [semesterId]: {
+          ...entry,
+          semesterPlan: {
+            ...plan,
+            items: (plan.items || []).filter((_, index) => index !== itemIndex),
+          },
+        },
+      };
+    });
+  };
+
+  const updateWeeklyOffDays = (semesterId, days) => {
+    setTimetableBySemester((prev) => {
+      const entry = getTimetableEntry(prev, semesterId);
+      const plan = entry.semesterPlan || { startDate: null, endDate: null, items: [], weeklyOffDays: ['sunday'] };
+      return {
+        ...prev,
+        [semesterId]: {
+          ...entry,
+          semesterPlan: { ...plan, weeklyOffDays: Array.isArray(days) ? days : ['sunday'] },
+        },
+      };
+    });
+  };
+
+  const saveSemesterPlan = async (semesterId) => {
+    const entry = getTimetableEntry(timetableBySemester, semesterId);
+    const plan = entry.semesterPlan || { startDate: null, endDate: null, items: [], weeklyOffDays: ['sunday'] };
+    try {
+      setTimetableSavingBySemester((prev) => ({ ...prev, [`plan:${semesterId}`]: true }));
+      setTimetableErrorBySemester((prev) => ({ ...prev, [semesterId]: '' }));
+
+      const payload = {
+        startDate: entry.semesterRange?.startDate || plan.startDate || null,
+        endDate: entry.semesterRange?.endDate || plan.endDate || null,
+        items: (plan.items || []).map((item) => ({
+          type: String(item.type || 'HOLIDAY').toUpperCase(),
+          title: String(item.title || '').trim(),
+          description: String(item.description || '').trim(),
+          date: item.date || '',
+        })),
+        weeklyOffDays: Array.isArray(plan.weeklyOffDays) ? plan.weeklyOffDays : ['sunday'],
+      };
+
+      await updateSemesterPlan(semesterId, { semesterPlan: payload });
+      setTimetableNoticeBySemester((prev) => ({
+        ...prev,
+        [semesterId]: 'Semester plan saved successfully.',
+      }));
+      await fetchSemesterTimetable(semesterId);
+    } catch (err) {
+      setTimetableErrorBySemester((prev) => ({
+        ...prev,
+        [semesterId]:
+          err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          err?.message ||
+          'Failed to save semester plan.',
+      }));
+    } finally {
+      setTimetableSavingBySemester((prev) => ({ ...prev, [`plan:${semesterId}`]: false }));
+    }
+  };
+
   if (loading && semesters.length === 0) {
     return (
       <div className="space-y-6">
@@ -1581,7 +1688,6 @@ const SemesterManager = ({
         {semesters.map((semester) => {
           const isExpanded = expandedSemesterId === semester._id;
           const activeSemesterTab = activeDetailTabBySemester[semester._id] || 'COURSE';
-          const activeTimetablePlan = activeTimetablePlanBySemester[semester._id] || 'WEEKLY';
           const semesterCourses = coursesBySemester[semester._id] || [];
           const semesterRange = {
             startDate: toInputDate(semester?.startDate),
@@ -1851,31 +1957,7 @@ const SemesterManager = ({
                         <div className="text-sm text-gray-500">Loading timetable...</div>
                       ) : (
                         <>
-                          <div className="inline-flex items-center gap-2 rounded-lg bg-gray-100 p-1">
-                            <button
-                              type="button"
-                              onClick={() => handleTimetablePlanChange(semester._id, 'WEEKLY')}
-                              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                                activeTimetablePlan === 'WEEKLY'
-                                  ? 'bg-white text-blue-700 shadow-sm'
-                                  : 'text-gray-600 hover:text-gray-900'
-                              }`}
-                            >
-                              Weekly Schedule
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleTimetablePlanChange(semester._id, 'SEMESTER')}
-                              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                                activeTimetablePlan === 'SEMESTER'
-                                  ? 'bg-white text-blue-700 shadow-sm'
-                                  : 'text-gray-600 hover:text-gray-900'
-                              }`}
-                            >
-                              {periodLabel} Schedule
-                            </button>
-                          </div>
-
+                          {/* Download / Upload buttons */}
                           <div className="flex items-center gap-2 flex-wrap">
                             <button
                               type="button"
@@ -1895,6 +1977,7 @@ const SemesterManager = ({
                             </button>
                           </div>
 
+                          {/* Date Range */}
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border border-blue-100 bg-blue-50 rounded-lg p-3">
                             <div>
                               <p className="text-[11px] uppercase tracking-wide text-blue-700 font-semibold">
@@ -1918,658 +2001,211 @@ const SemesterManager = ({
                             </div>
                           </div>
 
-                          {activeTimetablePlan === 'WEEKLY' && (
-                            <section className="space-y-3">
-                              <div className="flex items-center justify-between flex-wrap gap-2">
-                                <h4 className="font-semibold text-gray-900">Weekly Class Schedule (Mon–Sun)</h4>
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => saveWeeklyTimetable(semester._id)}
-                                    disabled={timetableSavingBySemester[`weekly:${semester._id}`]}
-                                    className="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                          {/* Slot Template Editor */}
+                          <SlotTemplateEditor
+                            slotTemplates={timetableEntry.slotTemplates || []}
+                            onUpdateTemplate={(index, field, value) =>
+                              updateSlotTemplate(semester._id, index, field, value)
+                            }
+                            onAddTemplate={() => addSlotTemplateRow(semester._id)}
+                            onRemoveTemplate={(index) => removeSlotTemplateRow(semester._id, index)}
+                            onSave={() => saveSlotTemplates(semester._id)}
+                            saving={!!timetableSavingBySemester[`slots:${semester._id}`]}
+                            periodLabel={periodLabel}
+                          />
+
+                          {/* Subject-Teacher Mappings */}
+                          {(timetableEntry.subjectTeacherMappings || []).length > 0 && (
+                            <div className="border border-amber-200 bg-amber-50 rounded-lg p-3">
+                              <p className="text-xs text-amber-800 font-medium mb-2">
+                                Subject → Teacher Mapping (auto-fill when teacher is left blank)
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {(timetableEntry.subjectTeacherMappings || []).map((mapping) => (
+                                  <span
+                                    key={mapping.courseId || mapping.courseCode}
+                                    className="text-xs bg-white border border-amber-200 px-2 py-0.5 rounded"
                                   >
-                                    {timetableSavingBySemester[`weekly:${semester._id}`] ? 'Saving...' : 'Save Weekly Schedule'}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleScheduleVirtualClasses(semester._id)}
-                                    disabled={timetableSavingBySemester[`vconf:${semester._id}`]}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
-                                  >
-                                    <Video className="w-3.5 h-3.5" />
-                                    {timetableSavingBySemester[`vconf:${semester._id}`] ? 'Scheduling...' : 'Schedule Virtual Classes'}
-                                  </button>
-                                </div>
-                              </div>
-
-                              <div className="border border-gray-200 rounded-lg p-3 space-y-3">
-                                <div className="flex items-center justify-between gap-2 flex-wrap">
-                                  <h5 className="text-sm font-medium text-gray-800">Slot Templates</h5>
-                                  <button
-                                    type="button"
-                                    onClick={() => saveSlotTemplates(semester._id)}
-                                    disabled={timetableSavingBySemester[`slots:${semester._id}`]}
-                                    className="px-3 py-1.5 text-xs font-medium bg-gray-800 text-white rounded-md hover:bg-gray-900 disabled:opacity-50"
-                                  >
-                                    {timetableSavingBySemester[`slots:${semester._id}`] ? 'Saving...' : 'Save Templates'}
-                                  </button>
-                                </div>
-
-                                <div className="space-y-2">
-                                  {(timetableEntry.slotTemplates || []).map((template, templateIndex) => (
-                                    <div key={template._id || `slot-template-${templateIndex}`} className="grid grid-cols-1 lg:grid-cols-7 gap-2 items-center">
-                                      <input
-                                        type="text"
-                                        value={template.title || ''}
-                                        onChange={(event) =>
-                                          updateSlotTemplate(semester._id, templateIndex, 'title', event.target.value)
-                                        }
-                                        placeholder={`Slot ${templateIndex + 1}`}
-                                        className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                      />
-                                      <select
-                                        value={template.type || 'CLASS'}
-                                        onChange={(event) =>
-                                          updateSlotTemplate(semester._id, templateIndex, 'type', event.target.value)
-                                        }
-                                        className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                      >
-                                        {SLOT_TYPE_OPTIONS.map((typeOption) => (
-                                          <option key={typeOption} value={typeOption}>
-                                            {typeOption}
-                                          </option>
-                                        ))}
-                                      </select>
-                                      <input
-                                        type="time"
-                                        value={template.startTime || ''}
-                                        onChange={(event) =>
-                                          updateSlotTemplate(semester._id, templateIndex, 'startTime', event.target.value)
-                                        }
-                                        className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                      />
-                                      <input
-                                        type="time"
-                                        value={template.endTime || ''}
-                                        onChange={(event) =>
-                                          updateSlotTemplate(semester._id, templateIndex, 'endTime', event.target.value)
-                                        }
-                                        className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                      />
-                                      {template.type === 'BREAK' ? (
-                                        <input
-                                          type="text"
-                                          value={template.label || ''}
-                                          onChange={(event) =>
-                                            updateSlotTemplate(
-                                              semester._id,
-                                              templateIndex,
-                                              'label',
-                                              event.target.value
-                                            )
-                                          }
-                                          placeholder="Lunch Break"
-                                          className="px-2 py-1.5 border border-amber-300 bg-amber-50 rounded-md text-xs"
-                                        />
-                                      ) : (
-                                        <input
-                                          type="text"
-                                          disabled
-                                          value=""
-                                          placeholder="Label (break only)"
-                                          className="px-2 py-1.5 border border-gray-200 bg-gray-50 rounded-md text-xs"
-                                        />
-                                      )}
-                                      <input
-                                        type="number"
-                                        min="1"
-                                        value={template.order || templateIndex + 1}
-                                        onChange={(event) =>
-                                          updateSlotTemplate(semester._id, templateIndex, 'order', event.target.value)
-                                        }
-                                        className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                      />
-                                      <button
-                                        type="button"
-                                        onClick={() => removeSlotTemplateRow(semester._id, templateIndex)}
-                                        className="inline-flex items-center justify-center px-2 py-1.5 border border-red-200 text-red-600 rounded-md hover:bg-red-50"
-                                        title="Remove slot template"
-                                      >
-                                        <Trash className="w-3.5 h-3.5" />
-                                      </button>
-                                    </div>
-                                  ))}
-                                  {(timetableEntry.slotTemplates || []).length === 0 && (
-                                    <p className="text-xs text-gray-500">No slot templates configured.</p>
-                                  )}
-                                  <button
-                                    type="button"
-                                    onClick={() => addSlotTemplateRow(semester._id)}
-                                    className="inline-flex items-center gap-1 text-xs text-blue-700 hover:text-blue-900 mt-1"
-                                  >
-                                    <PlusCircle className="w-3.5 h-3.5" />
-                                    Add Template
-                                  </button>
-                                </div>
-
-                                <p className="text-[11px] text-gray-500">
-                                  Use templates to quickly add fixed slot timings like the client sample sheet.
-                                </p>
-                              </div>
-
-                              {(timetableEntry.subjectTeacherMappings || []).length > 0 && (
-                                <div className="border border-amber-200 bg-amber-50 rounded-lg p-3">
-                                  <p className="text-xs text-amber-800 font-medium mb-2">
-                                    Subject → Teacher Mapping (auto-fill when teacher is left blank)
-                                  </p>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-1 text-xs text-amber-900">
-                                    {(timetableEntry.subjectTeacherMappings || []).map((mapping) => (
-                                      <p key={`${mapping.courseId}-${mapping.teacherId || 'none'}`}>
-                                        {mapping.courseCode || mapping.courseTitle || 'Course'}: {mapping.teacherName || '-'}
-                                      </p>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              {WEEK_DAYS.map((day) => {
-                                const dayRows = (timetableEntry.weeklyClassSchedule || [])
-                                  .map((row, index) => ({ row, index }))
-                                  .filter((item) => item.row?.dayOfWeek === day.key);
-                                return (
-                                  <div key={day.key} className="border border-gray-200 rounded-lg">
-                                    <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
-                                      <span className="text-sm font-medium text-gray-800">{day.label}</span>
-                                    </div>
-
-                                    <div className="p-3 space-y-2 max-h-56 overflow-y-auto">
-                                      {dayRows.map(({ row: slot, index }) => (
-                                        <div key={`${day.key}-${index}`} className="grid grid-cols-1 lg:grid-cols-9 gap-2 items-center">
-                                          <input
-                                            type="time"
-                                            value={slot.startTime || ''}
-                                            onChange={(event) =>
-                                              updateWeeklyDaySlot(
-                                                semester._id,
-                                                index,
-                                                'startTime',
-                                                event.target.value
-                                              )
-                                            }
-                                            className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                          />
-                                        <input
-                                          type="time"
-                                          value={slot.endTime || ''}
-                                          onChange={(event) =>
-                                            updateWeeklyDaySlot(
-                                              semester._id,
-                                              index,
-                                              'endTime',
-                                              event.target.value
-                                            )
-                                          }
-                                          className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                        />
-                                        <select
-                                          value={slot.type || 'CLASS'}
-                                          onChange={(event) =>
-                                            updateWeeklyDaySlot(
-                                              semester._id,
-                                              index,
-                                              'type',
-                                              event.target.value
-                                            )
-                                          }
-                                          className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                        >
-                                          {SLOT_TYPE_OPTIONS.map((typeOption) => (
-                                            <option key={typeOption} value={typeOption}>
-                                              {typeOption}
-                                            </option>
-                                          ))}
-                                        </select>
-                                        {slot.type === 'BREAK' ? (
-                                          <input
-                                            type="text"
-                                            value={slot.label || ''}
-                                            onChange={(event) =>
-                                              updateWeeklyDaySlot(
-                                                semester._id,
-                                                index,
-                                                'label',
-                                                event.target.value
-                                              )
-                                            }
-                                            placeholder="Lunch Break"
-                                            className="lg:col-span-4 px-2 py-1.5 border border-amber-300 bg-amber-50 rounded-md text-xs"
-                                          />
-                                        ) : (
-                                          <>
-                                            <select
-                                              value={slot.course || ''}
-                                              onChange={(event) =>
-                                                updateWeeklyDaySlot(
-                                                  semester._id,
-                                                  index,
-                                                  'course',
-                                                  event.target.value
-                                                )
-                                              }
-                                              className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                            >
-                                              <option value="">Course</option>
-                                              {semesterCourses.map((course) => (
-                                                <option key={course._id} value={course._id}>
-                                                  {course.courseCode || course.title}
-                                                </option>
-                                              ))}
-                                            </select>
-                                            <select
-                                              value={slot.teacher || ''}
-                                              onChange={(event) =>
-                                                updateWeeklyDaySlot(
-                                                  semester._id,
-                                                  index,
-                                                  'teacher',
-                                                  event.target.value
-                                                )
-                                              }
-                                              className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                            >
-                                              <option value="">Teacher</option>
-                                              {teachers.map((teacher) => (
-                                                <option key={teacher._id} value={teacher._id}>
-                                                  {getTeacherOptionLabel(teacher)}
-                                                </option>
-                                              ))}
-                                            </select>
-                                            <select
-                                              value={slot.mode || 'VIRTUAL'}
-                                              onChange={(event) =>
-                                                updateWeeklyDaySlot(
-                                                  semester._id,
-                                                  index,
-                                                  'mode',
-                                                  event.target.value
-                                                )
-                                              }
-                                              className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                            >
-                                              {CLASS_MODE_OPTIONS.map((modeOption) => (
-                                                <option key={modeOption} value={modeOption}>
-                                                  {modeOption}
-                                                </option>
-                                              ))}
-                                            </select>
-                                            {slot.mode === 'PHYSICAL' ? (
-                                              <>
-                                                <input
-                                                  type="text"
-                                                  value={slot.roomNo || ''}
-                                                  onChange={(event) =>
-                                                    updateWeeklyDaySlot(
-                                                      semester._id,
-                                                      index,
-                                                      'roomNo',
-                                                      event.target.value
-                                                    )
-                                                  }
-                                                  placeholder="Room No"
-                                                  className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                                />
-                                                <input
-                                                  type="text"
-                                                  value={slot.campusNo || ''}
-                                                  onChange={(event) =>
-                                                    updateWeeklyDaySlot(
-                                                      semester._id,
-                                                      index,
-                                                      'campusNo',
-                                                      event.target.value
-                                                    )
-                                                  }
-                                                  placeholder="Campus No"
-                                                  className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                                />
-                                              </>
-                                            ) : slot.isVconfScheduled ? (
-                                              <div className="lg:col-span-2 flex items-center gap-1 px-2 py-1.5 bg-green-50 border border-green-200 rounded-md text-xs text-green-800">
-                                                <CheckCircle className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
-                                                <a
-                                                  href={slot.vconfJoinUrl || '#'}
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  className="truncate hover:underline"
-                                                  title={slot.vconfJoinUrl || ''}
-                                                >
-                                                  {slot.vconfJoinUrl ? 'VConf Scheduled' : 'Scheduled'}
-                                                </a>
-                                              </div>
-                                            ) : (
-                                              <input
-                                                type="text"
-                                                value={slot.virtualLink || ''}
-                                                onChange={(event) =>
-                                                  updateWeeklyDaySlot(
-                                                    semester._id,
-                                                    index,
-                                                    'virtualLink',
-                                                    event.target.value
-                                                  )
-                                                }
-                                                placeholder="Auto-filled on schedule"
-                                                className="lg:col-span-2 px-2 py-1.5 border border-gray-200 bg-gray-50 rounded-md text-xs text-gray-400"
-                                              />
-                                            )}
-                                          </>
-                                        )}
-                                        <button
-                                          type="button"
-                                          onClick={() => removeWeeklySlot(semester._id, index)}
-                                          className="inline-flex items-center justify-center px-2 py-1.5 border border-red-200 text-red-600 rounded-md hover:bg-red-50"
-                                          title="Remove slot"
-                                        >
-                                          <Trash className="w-3.5 h-3.5" />
-                                        </button>
-                                      </div>
-                                    ))}
-
-                                    {!dayRows.length && (
-                                      <p className="text-xs text-gray-500">No slots configured.</p>
-                                    )}
-                                      <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-gray-100 mt-2">
-                                        {(timetableEntry.slotTemplates || []).map((template, templateIndex) => (
-                                          <button
-                                            key={`${day.key}-slot-template-${template._id || templateIndex}`}
-                                            type="button"
-                                            onClick={() => addWeeklySlot(semester._id, day.key, template)}
-                                            className="px-2 py-1 text-[11px] border border-blue-200 text-blue-700 rounded hover:bg-blue-50"
-                                            title={`${template.startTime || '--:--'} - ${template.endTime || '--:--'}`}
-                                          >
-                                            {(template.title || `Slot ${templateIndex + 1}`).trim()}
-                                          </button>
-                                        ))}
-                                        <button
-                                          type="button"
-                                          onClick={() => addWeeklySlot(semester._id, day.key)}
-                                          className="inline-flex items-center gap-1 text-xs text-blue-700 hover:text-blue-900"
-                                        >
-                                          <PlusCircle className="w-3.5 h-3.5" />
-                                          Add Empty Slot
-                                        </button>
-                                      </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </section>
-                          )}
-
-                          {activeTimetablePlan === 'SEMESTER' && (
-                            <section className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <h4 className="font-semibold text-gray-900">Date-wise Overrides</h4>
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => addDateScheduleRow(semester._id)}
-                                    className="inline-flex items-center gap-1 text-xs text-blue-700 hover:text-blue-900"
-                                  >
-                                    <PlusCircle className="w-3.5 h-3.5" />
-                                    Add Date Slot
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => saveDateScheduleData(semester._id)}
-                                    disabled={timetableSavingBySemester[`date:${semester._id}`]}
-                                    className="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
-                                  >
-                                    {timetableSavingBySemester[`date:${semester._id}`] ? 'Saving...' : 'Save Date Overrides'}
-                                  </button>
-                                </div>
-                              </div>
-
-                              <div className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded p-2">
-                                Date overrides replace weekly slots for that date after expansion.
-                              </div>
-
-                              <div className="space-y-2 max-h-72 overflow-y-auto border border-gray-200 rounded-lg p-3">
-                                {(timetableEntry.dateClassSchedule || []).map((item, index) => (
-                                  <div key={item._id || `date-row-${index}`} className="grid grid-cols-1 lg:grid-cols-9 gap-2 items-start border border-gray-100 rounded-md p-2">
-                                    <input
-                                      type="date"
-                                      value={item.date || ''}
-                                      min={timetableEntry?.semesterRange?.startDate || ''}
-                                      max={timetableEntry?.semesterRange?.endDate || ''}
-                                      onChange={(event) =>
-                                        updateDateClassSchedule(semester._id, index, 'date', event.target.value)
-                                      }
-                                      className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                    />
-                                    <input
-                                      type="time"
-                                      value={item.startTime || ''}
-                                      onChange={(event) =>
-                                        updateDateClassSchedule(semester._id, index, 'startTime', event.target.value)
-                                      }
-                                      className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                    />
-                                    <input
-                                      type="time"
-                                      value={item.endTime || ''}
-                                      onChange={(event) =>
-                                        updateDateClassSchedule(semester._id, index, 'endTime', event.target.value)
-                                      }
-                                      className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                    />
-                                    <select
-                                      value={item.type || 'CLASS'}
-                                      onChange={(event) =>
-                                        updateDateClassSchedule(semester._id, index, 'type', event.target.value)
-                                      }
-                                      className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                    >
-                                      {SLOT_TYPE_OPTIONS.map((typeOption) => (
-                                        <option key={typeOption} value={typeOption}>
-                                          {typeOption}
-                                        </option>
-                                      ))}
-                                    </select>
-                                    {item.type === 'BREAK' ? (
-                                      <input
-                                        type="text"
-                                        value={item.label || ''}
-                                        onChange={(event) =>
-                                          updateDateClassSchedule(semester._id, index, 'label', event.target.value)
-                                        }
-                                        placeholder="Lunch Break"
-                                        className="lg:col-span-4 px-2 py-1.5 border border-amber-300 bg-amber-50 rounded-md text-xs"
-                                      />
-                                    ) : (
-                                      <>
-                                        <select
-                                          value={item.course || ''}
-                                          onChange={(event) =>
-                                            updateDateClassSchedule(semester._id, index, 'course', event.target.value)
-                                          }
-                                          className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                        >
-                                          <option value="">Course</option>
-                                          {semesterCourses.map((course) => (
-                                            <option key={course._id} value={course._id}>
-                                              {course.courseCode || course.title}
-                                            </option>
-                                          ))}
-                                        </select>
-                                        <select
-                                          value={item.teacher || ''}
-                                          onChange={(event) =>
-                                            updateDateClassSchedule(semester._id, index, 'teacher', event.target.value)
-                                          }
-                                          className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                        >
-                                          <option value="">Teacher</option>
-                                          {teachers.map((teacher) => (
-                                            <option key={teacher._id} value={teacher._id}>
-                                              {getTeacherOptionLabel(teacher)}
-                                            </option>
-                                          ))}
-                                        </select>
-                                        <select
-                                          value={item.mode || 'VIRTUAL'}
-                                          onChange={(event) =>
-                                            updateDateClassSchedule(semester._id, index, 'mode', event.target.value)
-                                          }
-                                          className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                        >
-                                          {CLASS_MODE_OPTIONS.map((modeOption) => (
-                                            <option key={modeOption} value={modeOption}>
-                                              {modeOption}
-                                            </option>
-                                          ))}
-                                        </select>
-                                        {item.mode === 'PHYSICAL' ? (
-                                          <>
-                                            <input
-                                              type="text"
-                                              value={item.roomNo || ''}
-                                              onChange={(event) =>
-                                                updateDateClassSchedule(semester._id, index, 'roomNo', event.target.value)
-                                              }
-                                              placeholder="Room No"
-                                              className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                            />
-                                            <input
-                                              type="text"
-                                              value={item.campusNo || ''}
-                                              onChange={(event) =>
-                                                updateDateClassSchedule(semester._id, index, 'campusNo', event.target.value)
-                                              }
-                                              placeholder="Campus No"
-                                              className="px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                            />
-                                          </>
-                                        ) : (
-                                          <input
-                                            type="text"
-                                            value={item.virtualLink || ''}
-                                            onChange={(event) =>
-                                              updateDateClassSchedule(
-                                                semester._id,
-                                                index,
-                                                'virtualLink',
-                                                event.target.value
-                                              )
-                                            }
-                                            placeholder="Virtual class link"
-                                            className="lg:col-span-2 px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                          />
-                                        )}
-                                      </>
-                                    )}
-                                    <button
-                                      type="button"
-                                      onClick={() => removeDateScheduleRow(semester._id, index)}
-                                      className="inline-flex items-center justify-center px-2 py-1.5 border border-red-200 text-red-600 rounded-md hover:bg-red-50"
-                                      title="Remove date slot"
-                                    >
-                                      <Trash className="w-3.5 h-3.5" />
-                                    </button>
-                                  </div>
+                                    {mapping.courseCode || mapping.courseTitle} → {mapping.teacherName || mapping.employeeId || 'Unassigned'}
+                                  </span>
                                 ))}
-                                {(timetableEntry.dateClassSchedule || []).length === 0 && (
-                                  <p className="text-xs text-gray-500">No date-wise overrides added yet.</p>
-                                )}
                               </div>
-
-                              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                                <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-                                  <span className="text-sm font-medium text-gray-800">Expanded {periodLabel} Schedule</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => fetchSemesterTimetable(semester._id)}
-                                    className="text-xs px-2 py-1 border border-gray-300 rounded hover:bg-white"
-                                  >
-                                    Refresh View
-                                  </button>
-                                </div>
-                                <div className="overflow-x-auto">
-                                  <table className="min-w-full text-xs">
-                                    <thead className="bg-gray-50 text-gray-600 uppercase">
-                                      <tr>
-                                        <th className="px-2 py-2 text-left">Date</th>
-                                        <th className="px-2 py-2 text-left">Start</th>
-                                        <th className="px-2 py-2 text-left">End</th>
-                                        <th className="px-2 py-2 text-left">Course</th>
-                                        <th className="px-2 py-2 text-left">Teacher</th>
-                                        <th className="px-2 py-2 text-left">Location / Link</th>
-                                        <th className="px-2 py-2 text-left">VConf</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                      {(timetableEntry.expandedDateSchedule || []).map((row, index) => {
-                                        const matchedCourse = semesterCourses.find(
-                                          (course) => String(course?._id || '') === String(row?.course || '')
-                                        );
-                                        const matchedTeacher = teachers.find(
-                                          (teacher) => String(teacher?._id || '') === String(row?.teacher || '')
-                                        );
-                                        return (
-                                          <tr key={`${row.date}-${row.startTime}-${index}`} className="hover:bg-gray-50">
-                                            <td className="px-2 py-2">{formatDate(row.date)}</td>
-                                            <td className="px-2 py-2">{row.startTime || '-'}</td>
-                                            <td className="px-2 py-2">{row.endTime || '-'}</td>
-                                            <td className="px-2 py-2">
-                                              {row.type === 'BREAK'
-                                                ? row.label || 'Lunch Break'
-                                                : row.courseLabel || matchedCourse?.courseCode || matchedCourse?.title || '-'}
-                                            </td>
-                                            <td className="px-2 py-2">
-                                              {row.type === 'BREAK'
-                                                ? '-'
-                                                : row.teacherLabel || getTeacherDisplayName(matchedTeacher) || '-'}
-                                            </td>
-                                            <td className="px-2 py-2">
-                                              {row.type === 'BREAK'
-                                                ? '-'
-                                                : row.mode === 'PHYSICAL'
-                                                ? `Room ${row.roomNo || '-'} | Campus ${row.campusNo || '-'}`
-                                                : row.vconfJoinUrl
-                                                ? <a href={row.vconfJoinUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate block max-w-[200px]" title={row.vconfJoinUrl}>Join Link</a>
-                                                : row.virtualLink || '-'}
-                                            </td>
-                                            <td className="px-2 py-2">
-                                              {row.type === 'BREAK' ? (
-                                                '-'
-                                              ) : row.isVconfScheduled ? (
-                                                <span className="inline-flex items-center gap-1 text-green-700">
-                                                  <CheckCircle className="w-3 h-3" /> Scheduled
-                                                </span>
-                                              ) : row.mode === 'VIRTUAL' ? (
-                                                <span className="text-amber-600">Pending</span>
-                                              ) : (
-                                                '-'
-                                              )}
-                                            </td>
-                                          </tr>
-                                        );
-                                      })}
-                                      {(timetableEntry.expandedDateSchedule || []).length === 0 && (
-                                        <tr>
-                                          <td className="px-2 py-4 text-center text-gray-500" colSpan={7}>
-                                            No expanded semester schedule available.
-                                          </td>
-                                        </tr>
-                                      )}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                          </section>
+                            </div>
                           )}
+
+                          {/* Semester Plan Editor (Holidays / Events / Exams) */}
+                          <SemesterPlanEditor
+                            semesterPlan={timetableEntry.semesterPlan || { startDate: null, endDate: null, items: [] }}
+                            semesterRange={timetableEntry.semesterRange || {}}
+                            onAddItem={(item) => addPlanItem(semester._id, item)}
+                            onUpdateItem={(index, field, value) =>
+                              updatePlanItem(semester._id, index, field, value)
+                            }
+                            onRemoveItem={(index) => removePlanItem(semester._id, index)}
+                            onUpdateWeeklyOffDays={(days) => updateWeeklyOffDays(semester._id, days)}
+                            onSave={() => saveSemesterPlan(semester._id)}
+                            saving={!!timetableSavingBySemester[`plan:${semester._id}`]}
+                            periodLabel={periodLabel}
+                          />
+
+                          {/* Unified Calendar View */}
+                          <UnifiedCalendarView
+                            semesterId={semester._id}
+                            semesterRange={timetableEntry.semesterRange || {}}
+                            slotTemplates={timetableEntry.slotTemplates || []}
+                            expandedDateSchedule={timetableEntry.expandedDateSchedule || []}
+                            semesterPlan={timetableEntry.semesterPlan || { startDate: null, endDate: null, items: [] }}
+                            courses={semesterCourses}
+                            teachers={teachers}
+                            subjectTeacherLookup={timetableEntry.subjectTeacherLookup || {}}
+                            weeklyClassSchedule={timetableEntry.weeklyClassSchedule || []}
+                            dateClassSchedule={timetableEntry.dateClassSchedule || []}
+                            onAssignSlot={(semId, assignment) => {
+                              if (assignment.isRecurring) {
+                                // Save to weeklyClassSchedule
+                                setTimetableBySemester((prev) => {
+                                  const entry = getTimetableEntry(prev, semId);
+                                  const newRow = {
+                                    _id: '',
+                                    type: 'CLASS',
+                                    label: '',
+                                    dayOfWeek: assignment.dayOfWeek,
+                                    date: '',
+                                    startTime: assignment.startTime,
+                                    endTime: assignment.endTime,
+                                    course: assignment.course,
+                                    teacher: assignment.teacher,
+                                    mode: assignment.mode,
+                                    virtualLink: assignment.virtualLink || '',
+                                    roomNo: assignment.roomNo || '',
+                                    campusNo: assignment.campusNo || '',
+                                    vconfRoomId: '',
+                                    vconfJoinUrl: '',
+                                    vconfHostUrl: '',
+                                    meetingId: null,
+                                    isVconfScheduled: false,
+                                    source: 'WEEKLY',
+                                    isHoliday: false,
+                                    holidayTitle: '',
+                                    planItems: [],
+                                    courseLabel: '',
+                                    teacherLabel: '',
+                                  };
+                                  // Remove any existing entry for same dayOfWeek + time
+                                  const filtered = (entry.weeklyClassSchedule || []).filter(
+                                    (r) =>
+                                      !(
+                                        r.dayOfWeek === assignment.dayOfWeek &&
+                                        r.startTime === assignment.startTime &&
+                                        r.endTime === assignment.endTime
+                                      )
+                                  );
+                                  return {
+                                    ...prev,
+                                    [semId]: {
+                                      ...entry,
+                                      weeklyClassSchedule: [...filtered, newRow],
+                                    },
+                                  };
+                                });
+                              } else {
+                                // Save to dateClassSchedule
+                                setTimetableBySemester((prev) => {
+                                  const entry = getTimetableEntry(prev, semId);
+                                  const newRow = {
+                                    _id: '',
+                                    type: 'CLASS',
+                                    label: '',
+                                    dayOfWeek: assignment.dayOfWeek,
+                                    date: assignment.date,
+                                    startTime: assignment.startTime,
+                                    endTime: assignment.endTime,
+                                    course: assignment.course,
+                                    teacher: assignment.teacher,
+                                    mode: assignment.mode,
+                                    virtualLink: assignment.virtualLink || '',
+                                    roomNo: assignment.roomNo || '',
+                                    campusNo: assignment.campusNo || '',
+                                    vconfRoomId: '',
+                                    vconfJoinUrl: '',
+                                    vconfHostUrl: '',
+                                    meetingId: null,
+                                    isVconfScheduled: false,
+                                    source: 'DATE_OVERRIDE',
+                                    isHoliday: false,
+                                    holidayTitle: '',
+                                    planItems: [],
+                                    courseLabel: '',
+                                    teacherLabel: '',
+                                  };
+                                  // Remove existing entry for same date + time
+                                  const filtered = (entry.dateClassSchedule || []).filter(
+                                    (r) =>
+                                      !(
+                                        r.date === assignment.date &&
+                                        r.startTime === assignment.startTime &&
+                                        r.endTime === assignment.endTime
+                                      )
+                                  );
+                                  return {
+                                    ...prev,
+                                    [semId]: {
+                                      ...entry,
+                                      dateClassSchedule: [...filtered, newRow],
+                                    },
+                                  };
+                                });
+                              }
+                            }}
+                            onRemoveSlot={(semId, removal) => {
+                              setTimetableBySemester((prev) => {
+                                const entry = getTimetableEntry(prev, semId);
+                                if (removal.isRecurring) {
+                                  return {
+                                    ...prev,
+                                    [semId]: {
+                                      ...entry,
+                                      weeklyClassSchedule: (entry.weeklyClassSchedule || []).filter(
+                                        (r) =>
+                                          !(
+                                            r.dayOfWeek === removal.dayOfWeek &&
+                                            r.startTime === removal.slotTemplate?.startTime &&
+                                            r.endTime === removal.slotTemplate?.endTime
+                                          )
+                                      ),
+                                    },
+                                  };
+                                } else {
+                                  return {
+                                    ...prev,
+                                    [semId]: {
+                                      ...entry,
+                                      dateClassSchedule: (entry.dateClassSchedule || []).filter(
+                                        (r) =>
+                                          !(
+                                            r.date === removal.date &&
+                                            r.startTime === removal.slotTemplate?.startTime &&
+                                            r.endTime === removal.slotTemplate?.endTime
+                                          )
+                                      ),
+                                    },
+                                  };
+                                }
+                              });
+                            }}
+                            onSaveWeekly={(semId) => saveWeeklyTimetable(semId)}
+                            onSaveDate={(semId) => saveDateScheduleData(semId)}
+                            onScheduleVConf={(semId) => handleScheduleVirtualClasses(semId)}
+                            onRefresh={() => fetchSemesterTimetable(semester._id)}
+                            saving={
+                              !!timetableSavingBySemester[`weekly:${semester._id}`] ||
+                              !!timetableSavingBySemester[`date:${semester._id}`]
+                            }
+                            savingVConf={!!timetableSavingBySemester[`vconf:${semester._id}`]}
+                            periodLabel={periodLabel}
+                          />
                         </>
+
                       )}
                     </div>
                   </div>

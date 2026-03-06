@@ -77,7 +77,7 @@ const UnifiedCalendarView = ({
   const scheduleIndex = useMemo(() => {
     const idx = new Map();
     (expandedDateSchedule || []).forEach((entry) => {
-      const dk = entry.date || formatDateKey(entry.date);
+      const dk = entry.date ? formatDateKey(entry.date) : '';
       if (!dk) return;
       if (!idx.has(dk)) idx.set(dk, new Map());
       const timeKey = `${entry.startTime}-${entry.endTime}`;

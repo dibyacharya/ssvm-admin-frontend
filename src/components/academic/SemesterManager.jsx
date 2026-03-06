@@ -41,6 +41,7 @@ import { getCoursesForSemester, updateCourseTeachers } from '../../services/cour
 import { getTeachers } from '../../services/user.service';
 import { getPeriodLabel } from '../../utils/periodLabel';
 import { calculateEndDate } from '../../utils/dateCalculator';
+import { formatDateKey } from '../../utils/timetableUtils';
 
 const statusColors = {
   active: 'bg-green-100 text-green-800',
@@ -1261,7 +1262,7 @@ const SemesterManager = ({
 
   const handleScheduleVirtualClasses = async (semesterId) => {
     if (!window.confirm(
-      'This will create VConf rooms and Meeting entries for all VIRTUAL class slots in the weekly timetable.\n\nAlready-scheduled classes will be skipped.\n\nProceed?'
+      'This will auto-save your current timetable, then create Meeting entries for all class slots.\n\nAlready-scheduled classes will be skipped.\n\nProceed?'
     )) {
       return;
     }
@@ -1269,6 +1270,32 @@ const SemesterManager = ({
       setTimetableSavingBySemester((prev) => ({ ...prev, [`vconf:${semesterId}`]: true }));
       setTimetableErrorBySemester((prev) => ({ ...prev, [semesterId]: '' }));
       setTimetableNoticeBySemester((prev) => ({ ...prev, [semesterId]: '' }));
+
+      // Auto-save local timetable state to server before scheduling,
+      // so the scheduler reads the latest assignments from DB.
+      const entry = getTimetableEntry(timetableBySemester, semesterId);
+      const weeklyRows = entry.weeklyClassSchedule || [];
+      const dateRows = entry.dateClassSchedule || [];
+      if (weeklyRows.length > 0) {
+        const weeklyPayload = sanitizeScheduleRows({
+          rows: weeklyRows,
+          isDate: false,
+          semesterRange: entry.semesterRange || {},
+        });
+        if (weeklyPayload.length > 0) {
+          await updateSemesterWeeklyTimetable(semesterId, weeklyPayload);
+        }
+      }
+      if (dateRows.length > 0) {
+        const datePayload = sanitizeScheduleRows({
+          rows: dateRows,
+          isDate: true,
+          semesterRange: entry.semesterRange || {},
+        });
+        if (datePayload.length > 0) {
+          await updateSemesterDateClassSchedule(semesterId, datePayload);
+        }
+      }
 
       const result = await scheduleVirtualClasses(semesterId);
       const msg = result?.message || `Created ${result?.summary?.created || 0} classes`;
@@ -2180,7 +2207,7 @@ const SemesterManager = ({
                                   const filtered = (entry.dateClassSchedule || []).filter(
                                     (r) =>
                                       !(
-                                        r.date === assignment.date &&
+                                        formatDateKey(r.date) === formatDateKey(assignment.date) &&
                                         r.startTime === assignment.startTime &&
                                         r.endTime === assignment.endTime
                                       )
@@ -2214,17 +2241,20 @@ const SemesterManager = ({
                                     },
                                   };
                                 } else {
+                                  const dateMatch = (r) =>
+                                    formatDateKey(r.date) === formatDateKey(removal.date) &&
+                                    r.startTime === removal.slotTemplate?.startTime &&
+                                    r.endTime === removal.slotTemplate?.endTime;
                                   return {
                                     ...prev,
                                     [semId]: {
                                       ...entry,
                                       dateClassSchedule: (entry.dateClassSchedule || []).filter(
-                                        (r) =>
-                                          !(
-                                            r.date === removal.date &&
-                                            r.startTime === removal.slotTemplate?.startTime &&
-                                            r.endTime === removal.slotTemplate?.endTime
-                                          )
+                                        (r) => !dateMatch(r)
+                                      ),
+                                      // Also remove from cached server data so entry disappears immediately
+                                      expandedDateSchedule: (entry.expandedDateSchedule || []).filter(
+                                        (r) => !dateMatch(r)
                                       ),
                                     },
                                   };

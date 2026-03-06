@@ -94,7 +94,7 @@ export const getAllStudentCourses = async () => {
 };
 
 export const getCoursesById = async (codeid) => {
-  const response = await api.get(`admin/courses/by-code/${codeid}`);
+  const response = await api.get(`/admin/courses/by-code/${codeid}`);
   return response.data;
 };
 
@@ -104,7 +104,7 @@ export const lookupCourseByCode = async (courseCode) => {
 };
 
 export const updateCourse = async (codeid, courseData) => {
-  const response = await api.put(`admin/courses/update`, courseData);
+  const response = await api.put(`/admin/courses/update`, courseData);
   return response.data;
 };
 

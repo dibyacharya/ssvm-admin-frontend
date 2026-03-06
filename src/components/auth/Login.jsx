@@ -1,7 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Shield, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+// Carousel images
+const carouselImages = [
+  "/image3.jpg",
+  "/image4.jpg",
+  "/image5.jpg"
+];
 
 const Login = () => {
   const { login } = useAuth();
@@ -12,6 +20,23 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Preload images
+  useEffect(() => {
+    carouselImages.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
+
+  // Auto-advance carousel
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % carouselImages.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -47,13 +72,21 @@ const Login = () => {
   return (
     <div className="min-h-screen w-screen flex flex-col lg:flex-row font-sans">
       {/* Left side - Image and Welcome Text */}
-      <div className="relative hidden lg:flex w-full lg:w-1/2 items-end justify-center p-12 bg-gradient-to-r from-green-700 to-green-700 bg-cover bg-center">
-        <img
-          src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop"
-          alt="University Campus"
-          className="absolute inset-0 object-cover w-full h-full opacity-40"
-          onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/1000x1200/111827/ffffff?text=Campus'; }}
-        />
+      <div className="relative hidden lg:flex w-full lg:w-1/2 items-end justify-center p-12 bg-gradient-to-r from-green-700 to-green-700 bg-cover bg-center overflow-hidden">
+        {/* Carousel Images */}
+        {carouselImages.map((image, index) => (
+          <img
+            key={index}
+            src={image}
+            alt={`Carousel ${index + 1}`}
+            className="absolute inset-0 object-cover w-full h-full transition-opacity duration-1000 ease-in-out"
+            style={{
+              opacity: index === currentImageIndex ? 0.4 : 0,
+              zIndex: 0
+            }}
+            onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/1000x1200/111827/ffffff?text=Campus'; }}
+          />
+        ))}
          <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -76,9 +109,14 @@ const Login = () => {
             Welcome to the future of learning with OneCampus.
           </p>
           <div className="mt-2 flex gap-2">
-          <div className="h-4 w-4  bg-white rounded-full"></div>
-          <div className="h-4 w-4  bg-white rounded-full"></div>
-           <div className="h-4 w-8  bg-white rounded-full"></div>
+            {carouselImages.map((_, index) => (
+              <div
+                key={index}
+                className={`h-4 rounded-full bg-white transition-all duration-300 ${
+                  index === currentImageIndex ? "w-8" : "w-4"
+                }`}
+              />
+            ))}
           </div>
         </motion.div>
       </div>
@@ -88,7 +126,7 @@ const Login = () => {
         <div className="w-full max-w-md">
           <div className="text-left mb-10">
             <h1 className="text-4xl font-bold text-gray-800">
-              OneCampus
+              KIITX ADMIN
             </h1>
             <p className="text-gray-500 mt-2">Welcome back! Please sign in to your account.</p>
           </div>
@@ -138,9 +176,9 @@ const Login = () => {
                 >
                   Password
                 </label>
-                <a href="#" className="text-sm text-emerald-600 hover:text-emerald-500">
+                <Link to="/forgot-password" className="text-sm text-emerald-600 hover:text-emerald-500">
                   Forgot password?
-                </a>
+                </Link>
               </div>
               <div className="relative">
                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">

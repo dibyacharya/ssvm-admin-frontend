@@ -126,7 +126,7 @@ const Login = () => {
         <div className="w-full max-w-md">
           <div className="text-left mb-10">
             <h1 className="text-4xl font-bold text-gray-800">
-              KIITX ADMIN
+              KiiT X eLearning Admin
             </h1>
             <p className="text-gray-500 mt-2">Welcome back! Please sign in to your account.</p>
           </div>

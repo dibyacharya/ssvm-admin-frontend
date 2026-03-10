@@ -306,13 +306,15 @@ const StepProgramSetup = ({ state, dispatch, goNext, isEditMode = false }) => {
 
     // Save everything to local wizard state — NO API calls
     const programPayload = buildProgramPayload();
-    const draftProgramId = state.programId || `draft_${Date.now()}`;
+    const draftProgramId = isEditMode
+      ? state.programId
+      : state.programId || `draft_${Date.now()}`;
 
     dispatch({
       type: "SET_PROGRAM",
       programId: draftProgramId,
       programData: { ...programPayload, _id: draftProgramId },
-      programMode: "create",
+      programMode: isEditMode ? "existing" : "create",
     });
     dispatch({ type: "SET_SEMESTERS", semesters: semesterSlots });
     dispatch({ type: "MARK_COMPLETE", step: 1 });

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, FileText } from 'lucide-react';
+import { ArrowLeft, FileText, X } from 'lucide-react';
 import {
   getProgramById,
   getAcademicPlan,
@@ -185,7 +185,11 @@ const ProgramReview = () => {
           };
         });
 
-        const semesterCredit = rows.reduce((sum, row) => sum + (Number(row.credits) || 0), 0);
+        const courseCredits = rows.reduce((sum, row) => sum + (Number(row.credits) || 0), 0);
+        const semesterCredit = courseCredits
+          || toNumberOrNull(semester?.calculatedCredits)
+          || toNumberOrNull(semester?.totalCredits)
+          || 0;
         return {
           semNumber,
           label: semester?.name || `${getPeriodLabel(academicPlan?.program?.periodType || 'semester')} ${semNumber}`,

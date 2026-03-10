@@ -9,7 +9,7 @@ import {
   Check,
   Loader2,
 } from "lucide-react";
-import { createProgram, updateSemesterCourseAssignment } from "../../services/program.service";
+import { createProgram, updateProgram, updateSemesterCourseAssignment } from "../../services/program.service";
 import { createSemester } from "../../services/semester.services";
 import { createCourse } from "../../services/courses.service";
 import { getPeriodLabel } from "../../utils/periodLabel";
@@ -100,13 +100,14 @@ const StepReviewComplete = ({
     dispatch({ type: "SET_STEP", step: 2 });
   };
 
-  /* ── Bulk create everything on Complete Setup ── */
+  /* ── Bulk create/update everything on Complete Setup ── */
   const handleComplete = async () => {
+    const isExisting = state.programMode === "existing" || isEditMode;
     setSubmitting(true);
     setError(null);
-    setSubmitProgress("Creating program...");
+    setSubmitProgress(isExisting ? "Updating program..." : "Creating program...");
     try {
-      // 1. Create program
+      // 1. Create or update program
       const programPayload = {
         name: programData.name,
         code: programData.code,
@@ -126,25 +127,39 @@ const StepReviewComplete = ({
         if (programPayload[key] === undefined) delete programPayload[key];
       });
 
-      const res = await createProgram(programPayload);
-      const createdProgram = res.program || res;
-      const realProgramId = createdProgram._id;
+      let createdProgram;
+      let realProgramId;
+      let createdSemesters;
 
-      // 2. Create semesters
-      setSubmitProgress(`Creating ${periodLabel.toLowerCase()}s...`);
-      const createdSemesters = [];
-      for (let i = 0; i < semesters.length; i++) {
-        const slot = semesters[i];
-        const semPayload = {
-          name: slot.name || `${periodLabel} ${i + 1}`,
-          semNumber: slot.semNumber || i + 1,
-          program: realProgramId,
-        };
-        if (slot.totalCredits) {
-          semPayload.totalCredits = Number(slot.totalCredits);
+      if (isExisting && programId && !String(programId).startsWith("draft_")) {
+        // Edit mode: update existing program, reuse existing semesters
+        const res = await updateProgram(programId, programPayload);
+        createdProgram = res.program || res;
+        realProgramId = createdProgram._id || programId;
+        // Semesters already exist — reuse them
+        createdSemesters = semesters;
+      } else {
+        // Create mode: create new program and semesters
+        const res = await createProgram(programPayload);
+        createdProgram = res.program || res;
+        realProgramId = createdProgram._id;
+
+        // 2. Create semesters
+        setSubmitProgress(`Creating ${periodLabel.toLowerCase()}s...`);
+        createdSemesters = [];
+        for (let i = 0; i < semesters.length; i++) {
+          const slot = semesters[i];
+          const semPayload = {
+            name: slot.name || `${periodLabel} ${i + 1}`,
+            semNumber: slot.semNumber || i + 1,
+            program: realProgramId,
+          };
+          if (slot.totalCredits) {
+            semPayload.totalCredits = Number(slot.totalCredits);
+          }
+          const semRes = await createSemester(semPayload);
+          createdSemesters.push(semRes?.semester || semRes);
         }
-        const semRes = await createSemester(semPayload);
-        createdSemesters.push(semRes?.semester || semRes);
       }
 
       // 3. Build semester ID map (temp → real)
@@ -267,7 +282,7 @@ const StepReviewComplete = ({
         type: "SET_PROGRAM",
         programId: realProgramId,
         programData: createdProgram,
-        programMode: "create",
+        programMode: isExisting ? "existing" : "create",
       });
       dispatch({ type: "SET_SEMESTERS", semesters: createdSemesters });
       dispatch({ type: "MARK_COMPLETE", step: 3 });
@@ -276,7 +291,7 @@ const StepReviewComplete = ({
       setError(
         err?.response?.data?.error ||
         err?.response?.data?.message ||
-        "Failed to create program. Please retry."
+        (isExisting ? "Failed to update program. Please retry." : "Failed to create program. Please retry.")
       );
     } finally {
       setSubmitting(false);
@@ -530,7 +545,7 @@ const StepReviewComplete = ({
             ) : (
               <Check className="w-4 h-4 mr-2" />
             )}
-            {submitting ? "Creating..." : "Complete Setup"}
+            {submitting ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update Program" : "Complete Setup")}
           </button>
           {submitting && submitProgress && (
             <div className="text-[11px] text-gray-400">{submitProgress}</div>

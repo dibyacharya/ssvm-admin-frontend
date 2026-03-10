@@ -163,9 +163,21 @@ const StepProgramSetup = ({ state, dispatch, goNext, isEditMode = false }) => {
     }
   }, [state.programId]);
 
+  /* ── Sync semesters from wizard state after HYDRATE in edit mode ── */
+  useEffect(() => {
+    if (!isEditMode) return;
+    if (state.semesters.length > 0) {
+      setSemesterSlots([...state.semesters]);
+      // Keep refs in sync so auto-redistribution effects don't fire
+      prevCountRef.current = formData.totalSemesters;
+      prevCreditsRef.current = formData.totalCredits;
+      prevPeriodRef.current = formData.periodType;
+    }
+  }, [isEditMode, state.semesters]); // eslint-disable-line react-hooks/exhaustive-deps
+
   /* ── Regenerate slots when totalSemesters changes ── */
   useEffect(() => {
-    if (mode !== "create") return;
+    if (mode !== "create" || isEditMode) return;
     const count = Number(formData.totalSemesters) || 0;
     if (prevCountRef.current === formData.totalSemesters) return;
     prevCountRef.current = formData.totalSemesters;
@@ -179,11 +191,11 @@ const StepProgramSetup = ({ state, dispatch, goNext, isEditMode = false }) => {
     setSemesterSlots((prev) =>
       buildSemesterSlots(formData.periodType, count, total, prev)
     );
-  }, [formData.totalSemesters, formData.periodType, formData.totalCredits, mode]);
+  }, [formData.totalSemesters, formData.periodType, formData.totalCredits, mode, isEditMode]);
 
   /* ── Redistribute credits when totalCredits changes ── */
   useEffect(() => {
-    if (mode !== "create") return;
+    if (mode !== "create" || isEditMode) return;
     if (prevCreditsRef.current === formData.totalCredits) return;
     prevCreditsRef.current = formData.totalCredits;
 
@@ -199,11 +211,11 @@ const StepProgramSetup = ({ state, dispatch, goNext, isEditMode = false }) => {
         totalCredits: base + (i < remainder ? 1 : 0),
       }))
     );
-  }, [formData.totalCredits, mode, semesterSlots.length]);
+  }, [formData.totalCredits, mode, semesterSlots.length, isEditMode]);
 
   /* ── Update slot names when periodType changes ── */
   useEffect(() => {
-    if (mode !== "create") return;
+    if (mode !== "create" || isEditMode) return;
     if (prevPeriodRef.current === formData.periodType) return;
     prevPeriodRef.current = formData.periodType;
 
@@ -211,7 +223,7 @@ const StepProgramSetup = ({ state, dispatch, goNext, isEditMode = false }) => {
     setSemesterSlots((prev) =>
       prev.map((slot, i) => ({ ...slot, name: `${label} ${i + 1}` }))
     );
-  }, [formData.periodType, mode]);
+  }, [formData.periodType, mode, isEditMode]);
 
   const selectedProgram = useMemo(
     () => programs.find((p) => p._id === selectedProgramId),

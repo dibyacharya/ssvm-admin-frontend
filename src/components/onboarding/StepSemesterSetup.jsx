@@ -454,7 +454,7 @@ const StepSemesterSetup = ({ state, dispatch, goNext, goBack }) => {
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className={labelClass}>Mid-Term Exam</label>
+                  <label className={labelClass}>Mid Exam Date</label>
                   <input
                     name="midTermExamDate"
                     type="date"
@@ -464,7 +464,7 @@ const StepSemesterSetup = ({ state, dispatch, goNext, goBack }) => {
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>End-Term Exam</label>
+                  <label className={labelClass}>End Exam Date</label>
                   <input
                     name="endTermExamDate"
                     type="date"
@@ -548,11 +548,11 @@ const StepSemesterSetup = ({ state, dispatch, goNext, goBack }) => {
 
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className={labelClass}>Mid-Term Exam</label>
+            <label className={labelClass}>Mid Exam Date</label>
             <input name="midTermExamDate" type="date" value={formData.midTermExamDate} onChange={handleInputChange} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>End-Term Exam</label>
+            <label className={labelClass}>End Exam Date</label>
             <input name="endTermExamDate" type="date" value={formData.endTermExamDate} onChange={handleInputChange} className={inputClass} />
           </div>
           <div>

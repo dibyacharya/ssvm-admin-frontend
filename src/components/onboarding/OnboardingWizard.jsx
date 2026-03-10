@@ -1,16 +1,16 @@
 import React, { useReducer, useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { AlertTriangle, ArrowLeft } from 'lucide-react';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import WizardStepper from './WizardStepper';
 import StepProgramSetup from './StepProgramSetup';
-import StepSemesterSetup from './StepSemesterSetup';
 import StepCourseAssignment from './StepCourseAssignment';
 import StepReviewComplete from './StepReviewComplete';
 import { getPeriodLabel } from '../../utils/periodLabel';
 import { getProgramById } from '../../services/program.service';
+import { getSemesters } from '../../services/semester.services';
 
-const MAX_STEP = 4;
+const MAX_STEP = 3;
 const WIZARD_STORAGE_KEY = 'programWizardState';
 
 const toIdString = (value) => (value == null ? '' : String(value));
@@ -31,10 +31,21 @@ const normalizeCoursesBySemester = (coursesBySemester) => {
     return {};
   }
   const normalized = {};
-  Object.entries(coursesBySemester).forEach(([semesterId, courses]) => {
+  Object.entries(coursesBySemester).forEach(([semesterId, data]) => {
     const key = toIdString(semesterId);
     if (!key) return;
-    normalized[key] = Array.isArray(courses) ? courses : [];
+    // New format: { structure, compulsorySlots, electiveBlocks }
+    if (data && typeof data === 'object' && !Array.isArray(data) && data.structure) {
+      normalized[key] = data;
+    }
+    // Legacy format: array of course objects
+    else if (Array.isArray(data)) {
+      normalized[key] = data;
+    }
+    // Fallback
+    else {
+      normalized[key] = {};
+    }
   });
   return normalized;
 };
@@ -59,29 +70,18 @@ const clampStep = (step) => {
   return Math.min(MAX_STEP, Math.max(1, Math.trunc(parsed)));
 };
 
-const hasMappedCourses = (wizardState) => {
-  if (wizardState?.completedSteps?.has?.(3)) {
-    return true;
-  }
-  return Object.values(wizardState?.coursesBySemester || {}).some(
-    (courses) => Array.isArray(courses) && courses.length > 0
-  );
-};
-
 const canNavigateToStep = (targetStep, wizardState) => {
   const nextStep = clampStep(targetStep);
-  const hasProgram = Boolean(toIdString(wizardState?.programId));
+  const hasProgram = Boolean(wizardState?.programData?.name);
   const hasSemesters = Array.isArray(wizardState?.semesters) && wizardState.semesters.length > 0;
-  const hasCourses = hasMappedCourses(wizardState);
 
-  if (nextStep >= 2 && !hasProgram) {
+  if (nextStep >= 2 && (!hasProgram || !hasSemesters)) {
+    return { allowed: false, message: 'Please complete Program & Period setup' };
+  }
+
+  // Step 3 just needs program + semesters (step 1 complete). Course assignment is optional.
+  if (nextStep >= 3 && !hasProgram) {
     return { allowed: false, message: 'Please complete Program setup' };
-  }
-  if (nextStep >= 3 && !hasSemesters) {
-    return { allowed: false, message: 'Please add and save at least one period/semester' };
-  }
-  if (nextStep >= 4 && !hasCourses) {
-    return { allowed: false, message: 'Please complete Courses mapping' };
   }
 
   return { allowed: true, message: '' };
@@ -373,12 +373,13 @@ const slideVariants = {
   }),
 };
 
-const OnboardingWizard = () => {
+const OnboardingWizard = ({ editProgramId = null }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [state, dispatch] = useReducer(reducer, initialState);
   const [hydrated, setHydrated] = useState(false);
   const [notice, setNotice] = useState(null);
+  const isEditMode = Boolean(editProgramId);
 
   const showNotice = useCallback((message, tone = 'warning') => {
     if (!message) return;
@@ -418,18 +419,29 @@ const OnboardingWizard = () => {
 
     const persistedProgramId = toIdString(nextState.programId);
     if (persistedProgramId) {
-      try {
-        const response = await getProgramById(persistedProgramId);
-        const program = response?.program || response;
-        if (!toIdString(program?._id)) {
-          throw new Error('Program not found');
+      // Draft programs (created locally, not yet saved to backend) — trust localStorage
+      if (persistedProgramId.startsWith('draft_')) {
+        if (nextState.programData?.name) {
+          nextState.completedSteps.add(1);
+        } else {
+          resetFromProgram();
+          notices.push('Draft program data was lost. Wizard moved to Step 1.');
         }
-        nextState.programId = toIdString(program._id);
-        nextState.programData = program;
-        nextState.completedSteps.add(1);
-      } catch {
-        resetFromProgram();
-        notices.push('Saved program was not found. Wizard moved to Step 1.');
+      } else {
+        // Real program — validate against backend
+        try {
+          const response = await getProgramById(persistedProgramId);
+          const program = response?.program || response;
+          if (!toIdString(program?._id)) {
+            throw new Error('Program not found');
+          }
+          nextState.programId = toIdString(program._id);
+          nextState.programData = program;
+          nextState.completedSteps.add(1);
+        } catch {
+          resetFromProgram();
+          notices.push('Saved program was not found. Wizard moved to Step 1.');
+        }
       }
     }
 
@@ -452,7 +464,56 @@ const OnboardingWizard = () => {
     };
   }, []);
 
+  // Edit mode: load program from API by editProgramId
   useEffect(() => {
+    if (!editProgramId) return;
+    let active = true;
+
+    const loadProgram = async () => {
+      try {
+        const response = await getProgramById(editProgramId);
+        const program = response?.program || response;
+        if (!active || !program?._id) return;
+
+        // Load semesters for this program
+        let existingSems = [];
+        try {
+          const semData = await getSemesters({ program: editProgramId });
+          existingSems = semData?.semesters || semData || [];
+        } catch {
+          // No semesters found
+        }
+
+        dispatch({
+          type: 'HYDRATE',
+          state: {
+            currentStep: 1,
+            programMode: 'existing',
+            programId: program._id,
+            programData: program,
+            semesters: Array.isArray(existingSems) ? existingSems : [],
+            coursesBySemester: {},
+            completedSteps: [1],
+            returnToReview: false,
+            finalSubmitted: false,
+          },
+        });
+        setHydrated(true);
+      } catch {
+        if (active) {
+          showNotice('Failed to load program.', 'error');
+          setHydrated(true);
+        }
+      }
+    };
+
+    loadProgram();
+    return () => { active = false; };
+  }, [editProgramId, showNotice]);
+
+  // Create mode: hydrate from localStorage/URL
+  useEffect(() => {
+    if (editProgramId) return; // skip for edit mode
     let active = true;
 
     const hydrateState = async () => {
@@ -475,7 +536,7 @@ const OnboardingWizard = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [editProgramId]);
 
   const isResetState = useMemo(() => {
     return (
@@ -499,6 +560,8 @@ const OnboardingWizard = () => {
 
   useEffect(() => {
     if (!hydrated) return;
+    // Don't persist to localStorage/URL in edit mode
+    if (isEditMode) return;
 
     if (isResetState) {
       clearWizardStateFromStorage();
@@ -509,7 +572,7 @@ const OnboardingWizard = () => {
     const persistableState = buildPersistableState(state);
     writeWizardStateToStorage(persistableState);
     writeWizardStateToUrl({ state: persistableState, location, navigate });
-  }, [hydrated, isResetState, state, location, navigate]);
+  }, [hydrated, isResetState, isEditMode, state, location, navigate]);
 
   const goNext = useCallback(() => {
     if (state.currentStep < MAX_STEP) {
@@ -551,15 +614,13 @@ const OnboardingWizard = () => {
   );
 
   const renderStep = () => {
-    const common = { state, dispatch, goNext, goBack };
+    const common = { state, dispatch, goNext, goBack, isEditMode };
     switch (state.currentStep) {
       case 1:
         return <StepProgramSetup {...common} />;
       case 2:
-        return <StepSemesterSetup {...common} />;
-      case 3:
         return <StepCourseAssignment {...common} />;
-      case 4:
+      case 3:
         return <StepReviewComplete {...common} />;
       default:
         return null;
@@ -568,6 +629,13 @@ const OnboardingWizard = () => {
 
   return (
     <div className="min-h-full -m-6 bg-gray-50">
+      <div className="px-6 pt-6">
+        <Link to="/programs" className="flex items-center text-gray-600 hover:text-gray-900">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Programs
+        </Link>
+      </div>
+
       <WizardStepper
         currentStep={state.currentStep}
         completedSteps={state.completedSteps}

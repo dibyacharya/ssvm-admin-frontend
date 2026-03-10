@@ -951,7 +951,7 @@ const SemesterManager = ({
     }));
   };
 
-  const handleAssignTeacher = async (semesterId, course, selectedTeacherId = '') => {
+  const handleAssignTeacher = async (semesterId, course, selectedTeacherId = '', roleLabel = 'Teacher') => {
     const selectionKey = `${semesterId}:${course._id}`;
     const teacherId = selectedTeacherId || teacherSelectionByCourse[selectionKey];
     if (!teacherId) {
@@ -962,21 +962,37 @@ const SemesterManager = ({
       return;
     }
 
+    // Build new list: keep existing teachers + add new one (skip duplicates)
+    const existingTeachers = Array.isArray(course.assignedTeachers)
+      ? course.assignedTeachers
+          .map((t) => ({
+            teacherId: String(getTeacherId(t)),
+            roleLabel: t?.roleLabel || 'Teacher',
+          }))
+          .filter((t) => t.teacherId)
+      : [];
+    const alreadyExists = existingTeachers.some((t) => t.teacherId === String(teacherId));
+    if (alreadyExists) {
+      setCourseErrorsBySemester((prev) => ({
+        ...prev,
+        [semesterId]: 'This teacher is already assigned to this course.',
+      }));
+      return;
+    }
+    const updatedTeachers = [...existingTeachers, { teacherId, roleLabel }];
+
     try {
       setAssigningByCourse((prev) => ({ ...prev, [selectionKey]: true }));
       setCourseErrorsBySemester((prev) => ({ ...prev, [semesterId]: '' }));
 
-      await updateCourseTeachers(semesterId, course._id, [
-        {
-          teacherId,
-          roleLabel: 'Teacher',
-        },
-      ]);
+      await updateCourseTeachers(semesterId, course._id, updatedTeachers);
 
       await fetchSemesterCourses(semesterId);
       if (Object.prototype.hasOwnProperty.call(timetableBySemester, semesterId)) {
         await fetchSemesterTimetable(semesterId);
       }
+      // Reset dropdown selection
+      handleTeacherSelection(semesterId, course._id, '');
       setCourseErrorsBySemester((prev) => ({
         ...prev,
         [semesterId]: 'Teacher assignment updated successfully.',
@@ -988,6 +1004,44 @@ const SemesterManager = ({
           err?.response?.data?.error ||
           err?.response?.data?.message ||
           'Failed to assign teacher.',
+      }));
+    } finally {
+      setAssigningByCourse((prev) => ({ ...prev, [selectionKey]: false }));
+    }
+  };
+
+  const handleRemoveTeacher = async (semesterId, course, removeTeacherId) => {
+    const selectionKey = `${semesterId}:${course._id}`;
+    const existingTeachers = Array.isArray(course.assignedTeachers)
+      ? course.assignedTeachers
+          .map((t) => ({
+            teacherId: String(getTeacherId(t)),
+            roleLabel: t?.roleLabel || 'Teacher',
+          }))
+          .filter((t) => t.teacherId)
+      : [];
+    const updatedTeachers = existingTeachers.filter(
+      (t) => t.teacherId !== String(removeTeacherId)
+    );
+
+    try {
+      setAssigningByCourse((prev) => ({ ...prev, [selectionKey]: true }));
+      setCourseErrorsBySemester((prev) => ({ ...prev, [semesterId]: '' }));
+
+      await updateCourseTeachers(semesterId, course._id, updatedTeachers);
+
+      await fetchSemesterCourses(semesterId);
+      setCourseErrorsBySemester((prev) => ({
+        ...prev,
+        [semesterId]: 'Teacher removed successfully.',
+      }));
+    } catch (err) {
+      setCourseErrorsBySemester((prev) => ({
+        ...prev,
+        [semesterId]:
+          err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          'Failed to remove teacher.',
       }));
     } finally {
       setAssigningByCourse((prev) => ({ ...prev, [selectionKey]: false }));
@@ -1689,13 +1743,6 @@ const SemesterManager = ({
             </div>
           </div>
           <div className="flex space-x-3">
-            <button
-              onClick={fetchSemesters}
-              className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>Refresh</span>
-            </button>
             {allowSemesterCreation && (
               <button
                 onClick={() => setShowCreateForm(true)}
@@ -1899,16 +1946,15 @@ const SemesterManager = ({
                         <div className="text-sm text-gray-500">Loading courses...</div>
                       ) : (
                         <div className="border border-gray-200 rounded-lg overflow-hidden">
-                          <div className="max-h-80 overflow-auto">
+                          <div className="overflow-auto">
                             <table className="min-w-full text-sm">
                               <thead className="bg-gray-50 text-xs uppercase text-gray-500 sticky top-0">
                                 <tr>
-                                  <th className="px-3 py-2 text-left">Sl No</th>
+                                  <th className="px-3 py-2 text-left w-12">Sl No</th>
                                   <th className="px-3 py-2 text-left">Course</th>
                                   <th className="px-3 py-2 text-left">Course Code</th>
-                                  <th className="px-3 py-2 text-left">Credit</th>
-                                  <th className="px-3 py-2 text-left">Employee ID</th>
-                                  <th className="px-3 py-2 text-left">Teacher</th>
+                                  <th className="px-3 py-2 text-left w-16">Credit</th>
+                                  <th className="px-3 py-2 text-left">Teachers</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-100">
@@ -1918,71 +1964,88 @@ const SemesterManager = ({
                                     ? course.assignedTeachers
                                     : [];
                                   const hasAssignedTeacher = assignedTeachers.length > 0;
-                                  const assignedTeacherLabel = hasAssignedTeacher
-                                    ? assignedTeachers
-                                        .map((teacher) => getTeacherDisplayName(teacher))
-                                        .filter(Boolean)
-                                        .join(', ')
-                                    : 'Not assigned';
-                                  const primaryAssignedTeacher = hasAssignedTeacher
-                                    ? assignedTeachers[0]
-                                    : null;
-                                  const matchedTeacher = primaryAssignedTeacher
-                                    ? teachers.find(
-                                        (teacher) =>
-                                          String(getTeacherId(teacher)) ===
-                                          String(getTeacherId(primaryAssignedTeacher))
-                                      )
-                                    : null;
-                                  const assignedEmployeeId =
-                                    getTeacherEmployeeId(primaryAssignedTeacher) ||
-                                    getTeacherEmployeeId(matchedTeacher) ||
-                                    '—';
 
                                   return (
-                                    <tr key={course._id} className="hover:bg-gray-50">
+                                    <tr key={course._id} className="hover:bg-gray-50 align-top">
                                       <td className="px-3 py-2 text-gray-600">{index + 1}</td>
                                       <td className="px-3 py-2 text-gray-900 font-medium">{course.title || '-'}</td>
                                       <td className="px-3 py-2 font-mono text-gray-700">{course.courseCode || '-'}</td>
                                       <td className="px-3 py-2 text-gray-700">{sumCourseCredits(course)}</td>
-                                      <td className="px-3 py-2 text-gray-700">{assignedEmployeeId}</td>
                                       <td className="px-3 py-2">
-                                        <div className="flex flex-col gap-1">
-                                          <select
-                                            value={teacherSelectionByCourse[selectionKey] || ''}
-                                            onChange={(event) => {
-                                              const nextTeacherId = event.target.value;
-                                              handleTeacherSelection(
-                                                semester._id,
-                                                course._id,
-                                                nextTeacherId
-                                              );
-                                              if (!nextTeacherId) return;
-                                              handleAssignTeacher(
-                                                semester._id,
-                                                course,
-                                                nextTeacherId
-                                              );
-                                            }}
-                                            className="min-w-[220px] px-2 py-1.5 border border-gray-300 rounded-md text-xs"
-                                            disabled={teachersLoading || assigningByCourse[selectionKey]}
-                                          >
-                                            <option value="">
-                                              {hasAssignedTeacher ? 'Change Teacher' : 'Assign Teacher'}
-                                            </option>
-                                            {teachers.map((teacher) => (
-                                              <option key={teacher._id} value={teacher._id}>
-                                                {getTeacherOptionLabel(teacher)}
-                                              </option>
-                                            ))}
-                                          </select>
-                                          {assigningByCourse[selectionKey] && (
-                                            <span className="text-[11px] text-blue-700">Saving teacher assignment...</span>
+                                        <div className="flex flex-col gap-2">
+                                          {/* Assigned teachers list */}
+                                          {hasAssignedTeacher && (
+                                            <div className="flex flex-col gap-1.5">
+                                              {assignedTeachers.map((teacher, tIdx) => {
+                                                const tId = String(getTeacherId(teacher));
+                                                const matchedT = teachers.find(
+                                                  (t) => String(t._id) === tId
+                                                );
+                                                const empId = getTeacherEmployeeId(teacher) || getTeacherEmployeeId(matchedT) || '';
+                                                return (
+                                                  <div
+                                                    key={`${course._id}-teacher-${tIdx}`}
+                                                    className="flex items-center gap-2 rounded-md bg-blue-50 border border-blue-200 px-2 py-1.5"
+                                                  >
+                                                    <div className="flex-1 min-w-0">
+                                                      <div className="text-xs font-medium text-gray-900 truncate">
+                                                        {getTeacherDisplayName(teacher) || 'Unknown'}
+                                                        {empId ? <span className="text-gray-500 font-normal ml-1">({empId})</span> : null}
+                                                      </div>
+                                                      <div className="text-[10px] text-blue-600">
+                                                        {teacher?.roleLabel || 'Teacher'}
+                                                      </div>
+                                                    </div>
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => handleRemoveTeacher(semester._id, course, tId)}
+                                                      disabled={assigningByCourse[selectionKey]}
+                                                      className="flex-shrink-0 p-0.5 text-gray-400 hover:text-red-600 disabled:opacity-50"
+                                                      title="Remove teacher"
+                                                    >
+                                                      <X size={14} />
+                                                    </button>
+                                                  </div>
+                                                );
+                                              })}
+                                            </div>
                                           )}
-                                          {!assigningByCourse[selectionKey] && hasAssignedTeacher && (
-                                            <span className="text-[11px] text-gray-500 truncate">
-                                              {assignedTeacherLabel}
-                                            </span>
+
+                                          {/* Add teacher dropdown */}
+                                          <div className="flex items-center gap-1.5">
+                                            <select
+                                              value={teacherSelectionByCourse[selectionKey] || ''}
+                                              onChange={(event) => {
+                                                const nextTeacherId = event.target.value;
+                                                handleTeacherSelection(
+                                                  semester._id,
+                                                  course._id,
+                                                  nextTeacherId
+                                                );
+                                                if (!nextTeacherId) return;
+                                                handleAssignTeacher(
+                                                  semester._id,
+                                                  course,
+                                                  nextTeacherId
+                                                );
+                                              }}
+                                              className="flex-1 min-w-[180px] px-2 py-1.5 border border-gray-300 rounded-md text-xs"
+                                              disabled={teachersLoading || assigningByCourse[selectionKey]}
+                                            >
+                                              <option value="">+ Add Teacher</option>
+                                              {teachers.map((teacher) => (
+                                                <option key={teacher._id} value={teacher._id}>
+                                                  {getTeacherOptionLabel(teacher)}
+                                                </option>
+                                              ))}
+                                            </select>
+                                          </div>
+
+                                          {assigningByCourse[selectionKey] && (
+                                            <span className="text-[11px] text-blue-700">Saving...</span>
+                                          )}
+                                          {!hasAssignedTeacher && !assigningByCourse[selectionKey] && (
+                                            <span className="text-[10px] text-gray-400 italic">No teacher assigned</span>
                                           )}
                                         </div>
                                       </td>
@@ -1992,7 +2055,7 @@ const SemesterManager = ({
 
                                 {!semesterCourses.length && (
                                   <tr>
-                                    <td className="px-3 py-6 text-center text-sm text-gray-500" colSpan={6}>
+                                    <td className="px-3 py-6 text-center text-sm text-gray-500" colSpan={5}>
                                       No courses available for this {periodLabel.toLowerCase()}.
                                     </td>
                                   </tr>
@@ -2264,7 +2327,6 @@ const SemesterManager = ({
                             onSaveWeekly={(semId) => saveWeeklyTimetable(semId)}
                             onSaveDate={(semId) => saveDateScheduleData(semId)}
                             onScheduleVConf={(semId) => handleScheduleVirtualClasses(semId)}
-                            onRefresh={() => fetchSemesterTimetable(semester._id)}
                             saving={
                               !!timetableSavingBySemester[`weekly:${semester._id}`] ||
                               !!timetableSavingBySemester[`date:${semester._id}`]
@@ -2379,7 +2441,7 @@ const SemesterManager = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mid-Term Exam Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mid Exam Date</label>
                 <input
                   type="date"
                   name="midTermExamDate"
@@ -2390,7 +2452,7 @@ const SemesterManager = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End-Term Exam Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Exam Date</label>
                 <input
                   type="date"
                   name="endTermExamDate"
@@ -2508,7 +2570,7 @@ const SemesterManager = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mid-Term Exam Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mid Exam Date</label>
                 <input
                   type="date"
                   name="midTermExamDate"
@@ -2519,7 +2581,7 @@ const SemesterManager = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End-Term Exam Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Exam Date</label>
                 <input
                   type="date"
                   name="endTermExamDate"

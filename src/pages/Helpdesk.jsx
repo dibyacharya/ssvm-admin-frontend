@@ -746,14 +746,6 @@ export default function Helpdesk() {
         >
           <div className="px-3 py-2 border-b border-gray-200 flex items-center justify-between">
             <p className="text-xs font-semibold text-gray-700">Tickets</p>
-            <button
-              type="button"
-              onClick={() => fetchTickets({ keepLoading: true })}
-              className="inline-flex items-center gap-1 text-xs text-blue-700 hover:text-blue-900"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
-              Refresh
-            </button>
           </div>
 
           <div className="flex-1 overflow-y-auto">

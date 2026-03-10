@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GitBranch, RefreshCw } from 'lucide-react';
+import { GitBranch } from 'lucide-react';
 import { getProgramsDropdown } from '../services/program.service';
 import { getBatchesDropdown, getBatchGanttData } from '../services/batch.service';
 import GanttTimeline from '../components/gantt/GanttTimeline';
@@ -81,12 +81,6 @@ const GanttChart = () => {
     }
   };
 
-  const handleRefresh = () => {
-    if (selectedBatch) {
-      fetchGanttData(selectedBatch);
-    }
-  };
-
   // Timeline boundaries
   const timelineStart = ganttData ? new Date(ganttData.batch.startDate) : null;
   const timelineEnd = ganttData ? new Date(ganttData.batch.expectedEndDate) : null;
@@ -116,16 +110,6 @@ const GanttChart = () => {
             <p className="text-sm text-gray-500">Visualize batch schedule with semesters, courses, and exams</p>
           </div>
         </div>
-        {selectedBatch && (
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700 disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
-        )}
       </div>
 
       {/* Cascading Selectors */}
@@ -248,7 +232,7 @@ const GanttChart = () => {
                       {semester.midTermExamDate && (
                         <GanttExamMarker
                           date={semester.midTermExamDate}
-                          label="Mid-Term Exam"
+                          label="Mid Exam"
                           timelineStart={timelineStart}
                           timelineEnd={timelineEnd}
                         />
@@ -256,7 +240,7 @@ const GanttChart = () => {
                       {semester.endTermExamDate && (
                         <GanttExamMarker
                           date={semester.endTermExamDate}
-                          label="End-Term Exam"
+                          label="End Exam"
                           timelineStart={timelineStart}
                           timelineEnd={timelineEnd}
                         />

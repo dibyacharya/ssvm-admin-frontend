@@ -18,6 +18,7 @@ import AcademicPlan from './pages/AcademicPlan';
 import GanttChart from './pages/GanttChart';
 import BatchDetail from './pages/BatchDetail';
 import ProgramOnboarding from './pages/ProgramOnboarding';
+import BatchOnboarding from './pages/BatchOnboarding';
 import CohortList from './pages/CohortList';
 import EnrollmentStudentDetail from './pages/EnrollmentStudentDetail';
 import CourseManagementDetails from './pages/CourseManagementDetails';
@@ -136,11 +137,14 @@ function App() {
               <Route path="course-management" element={<Navigate to="/courses" replace />} />
               <Route path="course-management/:courseId" element={<CourseManagementDetails />} />
               <Route path="programs" element={<ProgramManagement />} />
-              <Route path="programs/:programId" element={<ProgramReview />} />
+              <Route path="programs/new" element={<ProgramOnboarding />} />
+              <Route path="programs/:programId" element={<ProgramOnboarding />} />
               <Route path="programs/:programId/review" element={<ProgramReview />} />
               <Route path="batches" element={<BatchManagement />} />
+              <Route path="batches/new" element={<BatchOnboarding />} />
+              <Route path="batches/:batchId/edit" element={<BatchOnboarding />} />
               <Route path="schedule" element={<Navigate to="/batches" replace />} />
-              <Route path="onboarding" element={<ProgramOnboarding />} />
+              <Route path="onboarding" element={<Navigate to="/programs/new" replace />} />
               <Route path="academic-plan" element={<AcademicPlan />} />
               <Route path="gantt" element={<GanttChart />} />
               <Route path="batch-detail/:batchId" element={<BatchDetail />} />

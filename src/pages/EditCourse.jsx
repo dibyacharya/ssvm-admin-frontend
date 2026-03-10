@@ -348,7 +348,7 @@ const EditCourse = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Mid {periodLabel} Exam Date</label>
+            <label className="block text-sm font-medium mb-1">Mid Exam Date</label>
             <input
               type="date"
               value={courseData.courseSchedule?.midSemesterExamDate ? new Date(courseData.courseSchedule.midSemesterExamDate).toISOString().split('T')[0] : ''}
@@ -363,7 +363,7 @@ const EditCourse = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">End {periodLabel} Exam Date</label>
+            <label className="block text-sm font-medium mb-1">End Exam Date</label>
             <input
               type="date"
               value={courseData.courseSchedule?.endSemesterExamDate ? new Date(courseData.courseSchedule.endSemesterExamDate).toISOString().split('T')[0] : ''}

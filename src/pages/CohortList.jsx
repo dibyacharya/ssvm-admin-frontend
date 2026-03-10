@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, Users, Eye } from 'lucide-react';
+import { Users, Eye } from 'lucide-react';
 import { getCohortList } from '../services/cohort.service';
 import { getProgramStreams, getProgramsDropdown } from '../services/program.service';
 import { getBatchesDropdown } from '../services/batch.service';
@@ -282,13 +282,6 @@ const CohortList = () => {
           </h1>
           <p className="text-sm text-gray-600">Enroll students into batches and manage their enrollment assignments.</p>
         </div>
-        <button
-          onClick={fetchCohortList}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-        >
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </button>
       </div>
 
       <form onSubmit={applyFilters} className="bg-white border border-gray-200 rounded-lg p-4">

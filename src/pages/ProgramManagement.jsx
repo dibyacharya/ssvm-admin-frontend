@@ -4,8 +4,8 @@ import {
   GraduationCap,
   Search,
   Trash2,
-  RefreshCw,
-  Eye,
+  Plus,
+  Edit,
 } from 'lucide-react';
 import {
   getAllPrograms,
@@ -15,6 +15,7 @@ import {
   getModeOfDeliveryLabel,
   normalizeModeOfDeliveryValue,
 } from '../constants/modeOfDelivery';
+import { getPeriodLabel } from '../utils/periodLabel';
 
 const ProgramManagement = () => {
   const navigate = useNavigate();
@@ -22,7 +23,6 @@ const ProgramManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterDepartment, setFilterDepartment] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterSchool, setFilterSchool] = useState('all');
   const [filterMode, setFilterMode] = useState('all');
@@ -36,8 +36,10 @@ const ProgramManagement = () => {
       setLoading(true);
       setError(null);
       const params = { page: currentPage, limit: itemsPerPage };
-      if (filterDepartment !== 'all') params.department = filterDepartment;
-      if (filterStatus !== 'all') params.isActive = filterStatus === 'active';
+      // Default: show only active programs (hides draft/wizard-in-progress)
+      // When user selects "all" or "inactive", respect that choice
+      if (filterStatus === 'all') params.isActive = true;
+      else if (filterStatus !== 'all') params.isActive = filterStatus === 'active';
       if (filterSchool !== 'all') params.school = filterSchool;
       if (filterMode !== 'all') params.modeOfDelivery = filterMode;
 
@@ -55,7 +57,7 @@ const ProgramManagement = () => {
   useEffect(() => {
     fetchPrograms();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, filterDepartment, filterStatus, filterSchool, filterMode]);
+  }, [currentPage, filterStatus, filterSchool, filterMode]);
 
   const filteredPrograms = useMemo(
     () =>
@@ -65,11 +67,6 @@ const ProgramManagement = () => {
           program.code?.toLowerCase().includes(searchTerm.toLowerCase())
       ),
     [programs, searchTerm]
-  );
-
-  const departments = useMemo(
-    () => [...new Set(programs.map((program) => program.department).filter(Boolean))],
-    [programs]
   );
 
   const schools = useMemo(
@@ -92,6 +89,11 @@ const ProgramManagement = () => {
   const totalPages = pagination?.pages || 1;
 
   const openProgramDetail = (programId) => {
+    if (!programId) return;
+    navigate(`/programs/${programId}/review`);
+  };
+
+  const openProgramEdit = (programId) => {
     if (!programId) return;
     navigate(`/programs/${programId}`);
   };
@@ -133,15 +135,17 @@ const ProgramManagement = () => {
               <GraduationCap className="w-8 h-8 text-blue-600 mr-3" />
               Program Management
             </h1>
-            <p className="text-gray-600 mt-1">Programs only. Create new programs via Setup Wizard.</p>
+            <p className="text-gray-600 mt-1">Manage all academic programs.</p>
           </div>
-          <button
-            onClick={fetchPrograms}
-            className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/programs/new')}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Program
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4">
@@ -155,21 +159,6 @@ const ProgramManagement = () => {
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
-          <select
-            value={filterDepartment}
-            onChange={(e) => {
-              setFilterDepartment(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="all">All Departments</option>
-            {departments.map((department) => (
-              <option key={department} value={department}>
-                {department}
-              </option>
-            ))}
-          </select>
           <select
             value={filterStatus}
             onChange={(e) => {
@@ -232,9 +221,9 @@ const ProgramManagement = () => {
           <div className="px-6 py-3 bg-gray-50 grid grid-cols-8 gap-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
             <div>Code</div>
             <div className="col-span-2">Name</div>
-            <div>Department</div>
             <div>School</div>
             <div>Mode</div>
+            <div>Periods</div>
             <div>Status</div>
             <div>Actions</div>
           </div>
@@ -260,9 +249,13 @@ const ProgramManagement = () => {
                   <div className="text-xs text-gray-500 truncate">{program.description}</div>
                 )}
               </div>
-              <div className="text-sm text-gray-600">{program.department || '-'}</div>
               <div className="text-sm text-gray-600">{program.school || '-'}</div>
               <div className="text-sm text-gray-600">{getModeOfDeliveryLabel(program.modeOfDelivery)}</div>
+              <div className="text-sm text-gray-600">
+                {program.totalSemesters
+                  ? `${program.totalSemesters} ${getPeriodLabel(program.periodType).toLowerCase()}s`
+                  : '-'}
+              </div>
               <div>
                 <span
                   className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
@@ -278,11 +271,11 @@ const ProgramManagement = () => {
                 role="presentation"
               >
                 <button
-                  onClick={() => openProgramDetail(program._id)}
-                  className="p-1 text-gray-400 hover:text-green-600"
-                  title="View Details"
+                  onClick={() => openProgramEdit(program._id)}
+                  className="p-1 text-gray-400 hover:text-blue-600"
+                  title="Edit Program"
                 >
-                  <Eye className="w-4 h-4" />
+                  <Edit className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleDelete(program)}
@@ -300,12 +293,13 @@ const ProgramManagement = () => {
           <div className="text-center py-12">
             <GraduationCap className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">No Programs Found</h2>
-            <p className="text-gray-600 mb-4">Create programs from Setup Wizard.</p>
+            <p className="text-gray-600 mb-4">Get started by creating your first program.</p>
             <button
-              onClick={() => navigate('/onboarding')}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              onClick={() => navigate('/programs/new')}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
-              Open Setup Wizard
+              <Plus className="w-4 h-4 mr-2" />
+              Add Program
             </button>
           </div>
         )}

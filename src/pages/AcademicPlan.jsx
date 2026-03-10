@@ -3,7 +3,6 @@ import {
   BookOpen,
   GraduationCap,
   Calendar,
-  RefreshCw,
   Plus,
   ChevronDown,
   ChevronRight
@@ -127,11 +126,6 @@ const AcademicPlan = () => {
     setShowSemesterManager(!!batchId);
   };
 
-  const handleRefresh = () => {
-    if (selectedProgram) {
-      handleProgramSelect(selectedProgram);
-    }
-  };
 
   const safePrograms = Array.isArray(programs) ? programs : [];
   const safeBatches = Array.isArray(batches) ? batches : [];
@@ -336,15 +330,6 @@ const AcademicPlan = () => {
               </h1>
               <p className="text-gray-600 mt-1">View and manage the academic plan for a program</p>
             </div>
-            {selectedProgram && (
-              <button
-                onClick={handleRefresh}
-                className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
-              </button>
-            )}
           </div>
 
           {/* Program + Batch Selectors */}
@@ -574,11 +559,11 @@ const AcademicPlan = () => {
                     <span className="text-gray-900 font-medium">{formatDate(semester.endDate)}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Mid-Term Exam:</span>{' '}
+                    <span className="text-gray-500">Mid Exam:</span>{' '}
                     <span className="text-gray-900 font-medium">{formatDate(semester.midTermExamDate)}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">End-Term Exam:</span>{' '}
+                    <span className="text-gray-500">End Exam:</span>{' '}
                     <span className="text-gray-900 font-medium">{formatDate(semester.endTermExamDate)}</span>
                   </div>
                 </div>

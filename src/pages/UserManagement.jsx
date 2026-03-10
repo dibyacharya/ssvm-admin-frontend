@@ -16,7 +16,6 @@ import {
   KeyRound,
   AlertTriangle,
   Upload,
-  Eye
 } from 'lucide-react';
 import {
   listUsers,
@@ -1778,16 +1777,6 @@ const UserManagement = () => {
                       </div>
 
                       <div className="flex items-center space-x-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/users/${user._id}/profile`);
-                          }}
-                          className="p-1 text-gray-400 hover:text-blue-600"
-                          title="View Profile"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

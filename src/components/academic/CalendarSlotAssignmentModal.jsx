@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, RefreshCw } from 'lucide-react';
+import { X } from 'lucide-react';
 import { getDayLabel, formatDateDisplay, formatDateKey } from '../../utils/timetableUtils';
 
 const CLASS_MODE_OPTIONS = ['VIRTUAL', 'PHYSICAL'];

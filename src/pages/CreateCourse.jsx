@@ -440,7 +440,7 @@ const CreateCourse = () => {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mid {periodLabel} Exam Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mid Exam Date</label>
               <input
                 type="date"
                 value={formData.courseSchedule.midSemesterExamDate}
@@ -450,7 +450,7 @@ const CreateCourse = () => {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">End {periodLabel} Exam Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">End Exam Date</label>
               <input
                 type="date"
                 value={formData.courseSchedule.endSemesterExamDate}

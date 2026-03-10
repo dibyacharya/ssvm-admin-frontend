@@ -1045,6 +1045,23 @@ const SemesterCourseTable = ({
       .sort((left, right) => left.label.localeCompare(right.label));
   }, [teachers]);
 
+  // Resolve teacher label from teacherOptions by ID
+  const resolveTeacherLabel = (teacherId) => {
+    if (!teacherId) return "Unknown";
+    const option = teacherOptions.find((opt) => opt.id === toIdString(teacherId));
+    return option ? option.label : toIdString(teacherId);
+  };
+
+  // Get teacher badges for a course (for display in course cards)
+  const getTeacherBadges = (courseId) => {
+    const assignments = teacherAssignments[toIdString(courseId)];
+    if (!Array.isArray(assignments) || assignments.length === 0) return null;
+    return assignments.map((entry) => ({
+      label: resolveTeacherLabel(entry.teacherId),
+      role: entry.roleLabel || "Teacher",
+    }));
+  };
+
   const fetchTeachers = async ({ silent = false } = {}) => {
     if (!silent) setTeachersLoading(true);
     setTeacherLoadError("");
@@ -3530,19 +3547,41 @@ const SemesterCourseTable = ({
                           </div>
 
                           {courseId ? (
-                            <div className="mt-2 flex items-center justify-between gap-2">
-                              <div className="min-w-0">
-                                <div className="text-sm font-medium text-gray-900">
-                                  {safeDisplay(course?.courseCode) || courseId}
+                            <>
+                              <div className="mt-2 flex items-center justify-between gap-2">
+                                <div className="min-w-0">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {safeDisplay(course?.courseCode) || courseId}
+                                  </div>
+                                  <div className="truncate text-xs text-gray-500">
+                                    {safeDisplay(course?.title)}
+                                  </div>
                                 </div>
-                                <div className="truncate text-xs text-gray-500">
-                                  {safeDisplay(course?.title)}
+                                <div className="text-xs text-gray-400">
+                                  {course ? sumCourseCredits(course) : 0} cr
                                 </div>
                               </div>
-                              <div className="text-xs text-gray-400">
-                                {course ? sumCourseCredits(course) : 0} cr
-                              </div>
-                            </div>
+                              {(() => {
+                                const badges = getTeacherBadges(courseId);
+                                if (!badges) return (
+                                  <div className="mt-1 text-[10px] text-gray-400 italic">No teacher assigned</div>
+                                );
+                                return (
+                                  <div className="mt-1 flex flex-wrap gap-1">
+                                    {badges.map((badge, badgeIdx) => (
+                                      <span
+                                        key={`comp-teacher-${slotIndex}-${badgeIdx}`}
+                                        className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-700"
+                                        title={badge.role}
+                                      >
+                                        <span className="font-medium">{badge.label}</span>
+                                        <span className="text-indigo-400">({badge.role})</span>
+                                      </span>
+                                    ))}
+                                  </div>
+                                );
+                              })()}
+                            </>
                           ) : (
                             <div className="mt-2 text-xs text-gray-400">
                               No course selected.
@@ -3678,41 +3717,63 @@ const SemesterCourseTable = ({
                                   return (
                                     <div
                                       key={`${block.blockId}-${normalizedId}`}
-                                      className="flex items-center justify-between gap-2 rounded border border-gray-200 bg-white px-2 py-2 text-xs"
+                                      className="rounded border border-gray-200 bg-white px-2 py-2 text-xs"
                                     >
-                                      <div className="min-w-0">
-                                        <div className="font-medium text-gray-900">
-                                          {safeDisplay(course?.courseCode) || normalizedId}
+                                      <div className="flex items-center justify-between gap-2">
+                                        <div className="min-w-0">
+                                          <div className="font-medium text-gray-900">
+                                            {safeDisplay(course?.courseCode) || normalizedId}
+                                          </div>
+                                          <div className="truncate text-[11px] text-gray-500">
+                                            {safeDisplay(course?.title)}
+                                          </div>
                                         </div>
-                                        <div className="truncate text-[11px] text-gray-500">
-                                          {safeDisplay(course?.title)}
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-[10px] text-gray-400">
+                                            {course ? sumCourseCredits(course) : 0} cr
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              if (!course) return;
+                                              openEditCourseModal(course);
+                                            }}
+                                            disabled={!course}
+                                            className="text-gray-400 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                            title="Edit candidate"
+                                          >
+                                            <Edit3 size={14} />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => removeElectiveOption(blockIndex, normalizedId)}
+                                            className="text-gray-400 hover:text-red-600"
+                                            title="Remove candidate"
+                                          >
+                                            <X size={14} />
+                                          </button>
                                         </div>
                                       </div>
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-[10px] text-gray-400">
-                                          {course ? sumCourseCredits(course) : 0} cr
-                                        </span>
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            if (!course) return;
-                                            openEditCourseModal(course);
-                                          }}
-                                          disabled={!course}
-                                          className="text-gray-400 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
-                                          title="Edit candidate"
-                                        >
-                                          <Edit3 size={14} />
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => removeElectiveOption(blockIndex, normalizedId)}
-                                          className="text-gray-400 hover:text-red-600"
-                                          title="Remove candidate"
-                                        >
-                                          <X size={14} />
-                                        </button>
-                                      </div>
+                                      {(() => {
+                                        const badges = getTeacherBadges(normalizedId);
+                                        if (!badges) return (
+                                          <div className="mt-1 text-[10px] text-gray-400 italic">No teacher assigned</div>
+                                        );
+                                        return (
+                                          <div className="mt-1 flex flex-wrap gap-1">
+                                            {badges.map((badge, badgeIdx) => (
+                                              <span
+                                                key={`elec-teacher-${blockIndex}-${normalizedId}-${badgeIdx}`}
+                                                className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-700"
+                                                title={badge.role}
+                                              >
+                                                <span className="font-medium">{badge.label}</span>
+                                                <span className="text-indigo-400">({badge.role})</span>
+                                              </span>
+                                            ))}
+                                          </div>
+                                        );
+                                      })()}
                                     </div>
                                   );
                                 })}

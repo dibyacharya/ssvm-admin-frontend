@@ -24,29 +24,18 @@ import {
   Loader2,
   ChevronDown,
   ChevronRight,
-  ClipboardList,
   GitBranch,
-  Eye,
-  Wand2
+  Eye
 } from 'lucide-react';
 
 const sidebarItems = [
   { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/dashboard' },
   { id: 'rbac', name: 'Roles & Permissions', icon: Shield, path: '/rbac' },
   { id: 'users', name: 'User Management', icon: Users, path: '/users' },
-  {
-    id: 'program-management',
-    name: 'Program Management',
-    icon: GraduationCap,
-    type: 'group',
-    children: [
-      { id: 'onboarding', name: 'Setup Wizard', icon: Wand2, path: '/onboarding' },
-      { id: 'programs', name: 'Programs', icon: ClipboardList, path: '/programs' },
-      { id: 'batches', name: 'Batches', icon: Layers, path: '/batches' },
-      { id: 'gantt', name: 'Gantt Chart', icon: GitBranch, path: '/gantt' },
-    ]
-  },
+  { id: 'programs', name: 'Program Management', icon: GraduationCap, path: '/programs' },
+  { id: 'batches', name: 'Batch Management', icon: Layers, path: '/batches' },
   { id: 'courses', name: 'Course Management', icon: BookOpen, path: '/courses/list' },
+  { id: 'gantt', name: 'Gantt Chart', icon: GitBranch, path: '/gantt' },
   { id: 'helpdesk', name: 'Helpdesk', icon: MessageSquare, path: '/helpdesk' }
 ];
 const RBAC_VISIBILITY_ROLES = [
@@ -267,7 +256,10 @@ const AdminLayout = () => {
   };
 
   const isActiveRoute = (path) => {
-    return location.pathname === path;
+    if (location.pathname === path) return true;
+    // Also match sub-paths (e.g., /programs/new should highlight /programs)
+    if (path !== '/dashboard' && location.pathname.startsWith(path + '/')) return true;
+    return false;
   };
 
   return (

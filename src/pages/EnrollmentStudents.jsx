@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Users, CheckCircle, XCircle } from 'lucide-react';
+import { Users, CheckCircle, XCircle } from 'lucide-react';
 import { getEnrollmentStudents, updateEnrollmentStudentBatch } from '../services/enrollment.service';
 import { getAllBatches } from '../services/batch.service';
 
@@ -139,13 +139,6 @@ const EnrollmentStudents = () => {
             View enrolled students and assign or change their batch.
           </p>
         </div>
-        <button
-          onClick={fetchStudents}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-        >
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </button>
       </div>
 
       <form onSubmit={applyFilters} className="bg-white border border-gray-200 rounded-lg p-4">

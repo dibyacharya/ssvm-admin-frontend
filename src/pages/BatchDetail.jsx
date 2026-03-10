@@ -4,15 +4,12 @@ import {
   ArrowLeft,
   Calendar,
   Layers,
-  RefreshCw,
-  Save,
   Search,
   User,
   Users,
   X,
-  Edit3,
 } from 'lucide-react';
-import { getBatchById, getBatchStudents, updateBatch } from '../services/batch.service';
+import { getBatchById, getBatchStudents } from '../services/batch.service';
 import { getProgramById } from '../services/program.service';
 import SemesterManager from '../components/academic/SemesterManager';
 import { getPeriodLabel } from '../utils/periodLabel';
@@ -77,19 +74,6 @@ const BatchDetail = () => {
   const [studentSearch, setStudentSearch] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
 
-  const [isEditingBatch, setIsEditingBatch] = useState(false);
-  const [batchSubmitting, setBatchSubmitting] = useState(false);
-  const [batchFormError, setBatchFormError] = useState('');
-  const [batchForm, setBatchForm] = useState({
-    program: '',
-    year: '',
-    name: '',
-    cohort: '',
-    startDate: '',
-    expectedEndDate: '',
-    maxStrength: '',
-  });
-
   const [activeBatchTab, setActiveBatchTab] = useState(() => {
     const tabFromUrl = searchParams.get('tab');
     return VALID_BATCH_TABS.includes(tabFromUrl) ? tabFromUrl : 'SEMESTER';
@@ -105,21 +89,6 @@ const BatchDetail = () => {
     }, { replace: true });
   }, [activeBatchTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const applyBatchToForm = (batchData) => {
-    setBatchForm({
-      program: batchData?.program?._id || batchData?.program || '',
-      year: batchData?.year ? String(batchData.year) : '',
-      name: batchData?.name || '',
-      cohort: batchData?.cohort || '',
-      startDate: toInputDate(batchData?.startDate),
-      expectedEndDate: toInputDate(batchData?.expectedEndDate),
-      maxStrength:
-        batchData?.maxStrength !== undefined && batchData?.maxStrength !== null
-          ? String(batchData.maxStrength)
-          : '',
-    });
-  };
-
   const fetchBatchData = async () => {
     try {
       setLoading(true);
@@ -127,7 +96,6 @@ const BatchDetail = () => {
 
       const batchData = await getBatchById(batchId);
       setBatch(batchData);
-      applyBatchToForm(batchData);
 
       const programId = batchData?.program?._id || batchData?.program;
       if (programId) {
@@ -161,36 +129,6 @@ const BatchDetail = () => {
       setStudents([]);
     } finally {
       setStudentsLoading(false);
-    }
-  };
-
-  const handleBatchFormChange = (event) => {
-    const { name, value } = event.target;
-    setBatchForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleBatchUpdate = async (event) => {
-    event.preventDefault();
-    try {
-      setBatchSubmitting(true);
-      setBatchFormError('');
-
-      await updateBatch(batchId, {
-        name: batchForm.name,
-        cohort: batchForm.cohort,
-        startDate: batchForm.startDate,
-        expectedEndDate: batchForm.expectedEndDate,
-        maxStrength: batchForm.maxStrength ? Number(batchForm.maxStrength) : 0,
-      });
-
-      await fetchBatchData();
-      setIsEditingBatch(false);
-    } catch (err) {
-      setBatchFormError(
-        err?.response?.data?.error || err?.response?.data?.message || 'Failed to update batch.'
-      );
-    } finally {
-      setBatchSubmitting(false);
     }
   };
 
@@ -314,41 +252,11 @@ const BatchDetail = () => {
                 {displayStatus}
               </span>
             </div>
-            {batchFormError && <p className="text-sm text-red-600 mt-2">{batchFormError}</p>}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {!isEditingBatch ? (
-              <button
-                onClick={() => {
-                  applyBatchToForm(batch);
-                  setBatchFormError('');
-                  setIsEditingBatch(true);
-                }}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Edit3 className="w-4 h-4 mr-2" />
-                Edit
-              </button>
-            ) : null}
-
-            <button
-              onClick={() => {
-                fetchBatchData();
-                if (hasLoadedStudents || activeBatchTab === 'STUDENT') {
-                  fetchBatchStudents();
-                }
-              }}
-              className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </button>
-          </div>
         </div>
 
-        {!isEditingBatch ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
             <div className="flex items-center text-gray-600">
               <Calendar className="w-5 h-5 mr-2 text-gray-400" />
               <span className="text-sm">
@@ -360,114 +268,6 @@ const BatchDetail = () => {
               <span className="text-sm">Year: {batch.year || '-'}</span>
             </div>
           </div>
-        ) : (
-          <form onSubmit={handleBatchUpdate} className="mt-5 border border-gray-200 rounded-lg p-4 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Program</label>
-                <input
-                  type="text"
-                  value={programName}
-                  disabled
-                  className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
-                <input
-                  type="text"
-                  value={batchForm.year}
-                  disabled
-                  className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-500"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Batch Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={batchForm.name}
-                  onChange={handleBatchFormChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cohort Mapping</label>
-                <input
-                  type="text"
-                  name="cohort"
-                  value={batchForm.cohort}
-                  onChange={handleBatchFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
-                <input
-                  type="date"
-                  name="startDate"
-                  value={batchForm.startDate}
-                  onChange={handleBatchFormChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
-                <input
-                  type="date"
-                  name="expectedEndDate"
-                  value={batchForm.expectedEndDate}
-                  onChange={handleBatchFormChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Max Strength</label>
-                <input
-                  type="number"
-                  name="maxStrength"
-                  value={batchForm.maxStrength}
-                  onChange={handleBatchFormChange}
-                  min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsEditingBatch(false);
-                  applyBatchToForm(batch);
-                  setBatchFormError('');
-                }}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={batchSubmitting}
-                className={`flex items-center px-4 py-2 text-white rounded-md ${
-                  batchSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {batchSubmitting ? 'Saving...' : 'Save Batch'}
-              </button>
-            </div>
-          </form>
-        )}
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">

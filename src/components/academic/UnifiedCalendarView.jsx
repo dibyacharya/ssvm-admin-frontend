@@ -6,7 +6,6 @@ import {
   Plus,
   Video,
   MapPin,
-  RefreshCw,
   Save,
   CheckCircle,
 } from 'lucide-react';
@@ -47,7 +46,6 @@ const UnifiedCalendarView = ({
   onSaveWeekly,
   onSaveDate,
   onScheduleVConf,
-  onRefresh,
   saving = false,
   savingVConf = false,
   periodLabel = 'Semester',
@@ -224,14 +222,6 @@ const UnifiedCalendarView = ({
           </h4>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onRefresh}
-            className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
-            title="Refresh"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-          </button>
           <button
             type="button"
             onClick={() => onSaveWeekly && onSaveWeekly(semesterId)}

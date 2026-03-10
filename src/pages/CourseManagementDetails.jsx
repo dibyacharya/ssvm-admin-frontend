@@ -13,6 +13,7 @@ import {
   uploadCourseModulePdf,
   uploadCourseModulePresentation,
   addCourseModuleVideo,
+  uploadCourseModuleVideo,
   addCourseModuleLink,
   deleteCourseModulePdf,
   deleteCourseModulePresentation,
@@ -65,8 +66,9 @@ const materialCategoryConfig = [
     type: "video",
     label: "Videos",
     isFile: false,
-    accept: "",
-    helper: "Add a video URL (YouTube/Drive/etc.).",
+    supportsBoth: true,
+    accept: ".mp4,.webm,.mov,.avi,.mkv,.ogg,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,video/ogg",
+    helper: "Upload a video file or add a video URL.",
   },
   {
     type: "link",
@@ -252,6 +254,7 @@ const CourseManagementDetails = () => {
     video: { title: "", file: null, url: "" },
     link: { title: "", file: null, url: "" },
   });
+  const [videoInputMode, setVideoInputMode] = useState("file"); // "file" | "url"
   const [editingMaterialId, setEditingMaterialId] = useState("");
   const [editingMaterialDraft, setEditingMaterialDraft] = useState({
     title: "",
@@ -1153,6 +1156,10 @@ const CourseManagementDetails = () => {
       if (!file) return "Select a file before adding this material.";
       return "";
     }
+    if (type === "video" && videoInputMode === "file") {
+      if (!file) return "Select a video file before adding.";
+      return "";
+    }
     const normalizedUrl = (url || "").toString().trim();
     if (!normalizedUrl) return "URL is required.";
     if (!/^https?:\/\/\S+/i.test(normalizedUrl)) {
@@ -1195,10 +1202,17 @@ const CourseManagementDetails = () => {
           file: draft.file,
         });
       } else if (type === "video") {
-        await addCourseModuleVideo(courseId, moduleId, {
-          title: draft.title,
-          url: draft.url,
-        });
+        if (videoInputMode === "file" && draft.file) {
+          await uploadCourseModuleVideo(courseId, moduleId, {
+            title: draft.title,
+            file: draft.file,
+          });
+        } else {
+          await addCourseModuleVideo(courseId, moduleId, {
+            title: draft.title,
+            url: draft.url,
+          });
+        }
       } else if (type === "link") {
         await addCourseModuleLink(courseId, moduleId, {
           title: draft.title,
@@ -2429,50 +2443,85 @@ const CourseManagementDetails = () => {
                       </div>
 
                       {canManageMaterials && (
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
-                          <input
-                            value={draft.title || ""}
-                            onChange={(e) =>
-                              setMaterialDraftField(category.type, "title", e.target.value)
-                            }
-                            placeholder={`${category.label.slice(0, -1)} title`}
-                            className="md:col-span-4 border border-gray-300 rounded px-2 py-2 text-sm"
-                          />
-                          {category.isFile ? (
-                            <input
-                              type="file"
-                              accept={category.accept}
-                              onChange={(e) =>
-                                setMaterialDraftField(
-                                  category.type,
-                                  "file",
-                                  e.target.files?.[0] || null
-                                )
-                              }
-                              className="md:col-span-6 border border-gray-300 rounded px-2 py-2 text-sm"
-                            />
-                          ) : (
-                            <input
-                              value={draft.url || ""}
-                              onChange={(e) =>
-                                setMaterialDraftField(category.type, "url", e.target.value)
-                              }
-                              placeholder={
-                                category.type === "video"
-                                  ? "https://youtube.com/..."
-                                  : "https://example.com/resource"
-                              }
-                              className="md:col-span-6 border border-gray-300 rounded px-2 py-2 text-sm"
-                            />
+                        <div className="space-y-2">
+                          {/* Video toggle: Upload File / Add URL */}
+                          {category.supportsBoth && (
+                            <div className="flex gap-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setVideoInputMode("file");
+                                  setMaterialDraftField(category.type, "url", "");
+                                }}
+                                className={`rounded px-3 py-1 text-xs font-medium ${
+                                  videoInputMode === "file"
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                }`}
+                              >
+                                Upload File
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setVideoInputMode("url");
+                                  setMaterialDraftField(category.type, "file", null);
+                                }}
+                                className={`rounded px-3 py-1 text-xs font-medium ${
+                                  videoInputMode === "url"
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                }`}
+                              >
+                                Add URL
+                              </button>
+                            </div>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => handleAddMaterialItem(category.type)}
-                            disabled={materialSaving}
-                            className="md:col-span-2 rounded bg-blue-600 text-white text-sm px-3 py-2 hover:bg-blue-700 disabled:opacity-50"
-                          >
-                            {materialSaving ? "Saving..." : "Add"}
-                          </button>
+                          <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
+                            <input
+                              value={draft.title || ""}
+                              onChange={(e) =>
+                                setMaterialDraftField(category.type, "title", e.target.value)
+                              }
+                              placeholder={`${category.label.slice(0, -1)} title`}
+                              className="md:col-span-4 border border-gray-300 rounded px-2 py-2 text-sm"
+                            />
+                            {category.isFile || (category.supportsBoth && videoInputMode === "file") ? (
+                              <input
+                                type="file"
+                                accept={category.accept}
+                                onChange={(e) =>
+                                  setMaterialDraftField(
+                                    category.type,
+                                    "file",
+                                    e.target.files?.[0] || null
+                                  )
+                                }
+                                className="md:col-span-6 border border-gray-300 rounded px-2 py-2 text-sm"
+                              />
+                            ) : (
+                              <input
+                                value={draft.url || ""}
+                                onChange={(e) =>
+                                  setMaterialDraftField(category.type, "url", e.target.value)
+                                }
+                                placeholder={
+                                  category.type === "video"
+                                    ? "https://youtube.com/..."
+                                    : "https://example.com/resource"
+                                }
+                                className="md:col-span-6 border border-gray-300 rounded px-2 py-2 text-sm"
+                              />
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleAddMaterialItem(category.type)}
+                              disabled={materialSaving}
+                              className="md:col-span-2 rounded bg-blue-600 text-white text-sm px-3 py-2 hover:bg-blue-700 disabled:opacity-50"
+                            >
+                              {materialSaving ? "Saving..." : "Add"}
+                            </button>
+                          </div>
                         </div>
                       )}
 
@@ -2494,11 +2543,11 @@ const CourseManagementDetails = () => {
                                       {item.title || "-"}
                                     </p>
                                     <p className="text-xs text-gray-500">
-                                      {category.isFile
+                                      {category.isFile || (category.supportsBoth && item.sizeBytes > 0)
                                         ? `${formatBytes(item.sizeBytes)} | ${formatMaterialDate(
-                                            item.createdAt
+                                            item.uploadedAt || item.createdAt
                                           )}`
-                                        : formatMaterialDate(item.createdAt)}
+                                        : formatMaterialDate(item.uploadedAt || item.createdAt)}
                                     </p>
                                     <div className="flex items-center gap-2">
                                       {viewUrl && (

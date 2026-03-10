@@ -245,6 +245,18 @@ export const addCourseModuleVideo = async (courseId, moduleId, payload = {}) => 
   return response.data;
 };
 
+export const uploadCourseModuleVideo = async (courseId, moduleId, payload = {}) => {
+  const formData = new FormData();
+  if (payload?.title) formData.append("title", payload.title);
+  if (payload?.file) formData.append("file", payload.file);
+  const response = await api.post(
+    `/admin/courses/${courseId}/modules/${moduleId}/videos`,
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } }
+  );
+  return response.data;
+};
+
 export const deleteCourseModulePdf = async (courseId, moduleId, pdfId) => {
   const response = await api.delete(
     `/admin/courses/${courseId}/modules/${moduleId}/pdfs/${pdfId}`

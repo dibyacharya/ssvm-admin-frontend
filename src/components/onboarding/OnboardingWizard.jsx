@@ -7,7 +7,7 @@ import StepProgramSetup from './StepProgramSetup';
 import StepCourseAssignment from './StepCourseAssignment';
 import StepReviewComplete from './StepReviewComplete';
 import { getPeriodLabel } from '../../utils/periodLabel';
-import { getProgramById } from '../../services/program.service';
+import { getProgramById, getSemesterCourseAssignment } from '../../services/program.service';
 import { getSemesters } from '../../services/semester.services';
 
 const MAX_STEP = 3;
@@ -484,6 +484,90 @@ const OnboardingWizard = ({ editProgramId = null }) => {
           // No semesters found
         }
 
+        // Load saved course assignments for each semester
+        const loadedCoursesBySemester = {};
+        const semList = Array.isArray(existingSems) ? existingSems : [];
+        await Promise.all(
+          semList.map(async (sem) => {
+            const semId = getSemesterId(sem);
+            if (!semId) return;
+            try {
+              const caData = await getSemesterCourseAssignment(program._id, semId);
+              if (!caData?.success) return;
+              const ca = caData.courseAssignment || {};
+              const st = caData.structure || {};
+
+              // Build compulsory slots from compulsoryCourseIds
+              const compIds = Array.isArray(ca.compulsoryCourseIds) ? ca.compulsoryCourseIds : [];
+              const availPool = Array.isArray(caData.availableCourses) ? caData.availableCourses : [];
+              const poolMap = {};
+              availPool.forEach((c) => { if (c?._id) poolMap[String(c._id)] = c; });
+
+              const compSlots = compIds.map((cid, idx) => {
+                const cObj = poolMap[String(cid?._id || cid)] || null;
+                return {
+                  slotIndex: idx,
+                  course: cObj ? {
+                    _id: String(cObj._id),
+                    courseCode: cObj.courseCode || cObj.code || '',
+                    title: cObj.nameOfCourse || cObj.title || cObj.name || '',
+                    credits: cObj.courseCredits ?? cObj.credits ?? 0,
+                  } : null,
+                };
+              });
+              // Pad to compulsory_count if needed
+              const compCount = st.compulsory_count || compSlots.length;
+              while (compSlots.length < compCount) {
+                compSlots.push({ slotIndex: compSlots.length, course: null });
+              }
+
+              // Build elective blocks from electiveConfig.baskets
+              const baskets = ca.electiveConfig?.baskets || ca.electiveBaskets || [];
+              const electiveBlocks = baskets.map((b, bIdx) => {
+                const optionIds = b.optionCourseIds || b.options || [];
+                const options = optionIds.map((oid) => {
+                  const c = poolMap[String(oid?._id || oid)];
+                  return c ? {
+                    _id: String(c._id),
+                    courseCode: c.courseCode || c.code || '',
+                    title: c.nameOfCourse || c.title || c.name || '',
+                    credits: c.courseCredits ?? c.credits ?? 0,
+                  } : null;
+                }).filter(Boolean);
+                return {
+                  blockIndex: bIdx,
+                  rule: b.ruleType || b.rule || 'ANY_ONE',
+                  pickN: b.pickCount || b.pickN || 1,
+                  options,
+                };
+              });
+              // Pad to elective_slot_count if needed
+              const elecCount = st.elective_slot_count || electiveBlocks.length;
+              while (electiveBlocks.length < elecCount) {
+                electiveBlocks.push({ blockIndex: electiveBlocks.length, rule: 'ANY_ONE', pickN: 1, options: [] });
+              }
+
+              const hasContent = compSlots.length > 0 || electiveBlocks.length > 0 || compCount > 0;
+              if (hasContent) {
+                loadedCoursesBySemester[semId] = {
+                  structure: {
+                    compulsory_count: st.compulsory_count ?? 0,
+                    compulsory_credit_target: ca.compulsory_credit_target ?? 0,
+                    elective_slot_count: st.elective_slot_count ?? 0,
+                    elective_credit_target: ca.elective_credit_target ?? 0,
+                    enforce_credit_target: Boolean(st.enforce_credit_target),
+                  },
+                  structureApplied: true,
+                  compulsorySlots: compSlots,
+                  electiveBlocks,
+                };
+              }
+            } catch {
+              // Semester has no course assignment yet — skip
+            }
+          })
+        );
+
         dispatch({
           type: 'HYDRATE',
           state: {
@@ -491,8 +575,8 @@ const OnboardingWizard = ({ editProgramId = null }) => {
             programMode: 'existing',
             programId: program._id,
             programData: program,
-            semesters: Array.isArray(existingSems) ? existingSems : [],
-            coursesBySemester: {},
+            semesters: semList,
+            coursesBySemester: loadedCoursesBySemester,
             completedSteps: [1],
             returnToReview: false,
             finalSubmitted: false,

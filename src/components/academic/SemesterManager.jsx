@@ -618,15 +618,13 @@ const SemesterManager = ({
       });
 
       setCoursesBySemester((prev) => ({ ...prev, [semesterId]: sorted }));
+      // Keep dropdown at "+ Add Teacher" placeholder (don't pre-select assigned teacher)
       setTeacherSelectionByCourse((prev) => {
         const next = { ...prev };
         sorted.forEach((course) => {
           const key = `${semesterId}:${course._id}`;
-          const firstAssigned = Array.isArray(course?.assignedTeachers)
-            ? course.assignedTeachers[0]
-            : null;
           if (!next[key]) {
-            next[key] = getTeacherId(firstAssigned);
+            next[key] = '';
           }
         });
         return next;
@@ -1953,7 +1951,10 @@ const SemesterManager = ({
                                   <th className="px-3 py-2 text-left w-12">Sl No</th>
                                   <th className="px-3 py-2 text-left">Course</th>
                                   <th className="px-3 py-2 text-left">Course Code</th>
-                                  <th className="px-3 py-2 text-left w-16">Credit</th>
+                                  <th className="px-2 py-2 text-center w-10">L</th>
+                                  <th className="px-2 py-2 text-center w-10">T</th>
+                                  <th className="px-2 py-2 text-center w-10">P</th>
+                                  <th className="px-2 py-2 text-center w-10">C</th>
                                   <th className="px-3 py-2 text-left">Teachers</th>
                                 </tr>
                               </thead>
@@ -1970,7 +1971,10 @@ const SemesterManager = ({
                                       <td className="px-3 py-2 text-gray-600">{index + 1}</td>
                                       <td className="px-3 py-2 text-gray-900 font-medium">{course.title || '-'}</td>
                                       <td className="px-3 py-2 font-mono text-gray-700">{course.courseCode || '-'}</td>
-                                      <td className="px-3 py-2 text-gray-700">{sumCourseCredits(course)}</td>
+                                      <td className="px-2 py-2 text-center text-gray-700">{Number(course?.creditPoints?.lecture) || 0}</td>
+                                      <td className="px-2 py-2 text-center text-gray-700">{Number(course?.creditPoints?.tutorial) || 0}</td>
+                                      <td className="px-2 py-2 text-center text-gray-700">{Number(course?.creditPoints?.practical) || 0}</td>
+                                      <td className="px-2 py-2 text-center font-semibold text-gray-900">{sumCourseCredits(course)}</td>
                                       <td className="px-3 py-2">
                                         <div className="flex flex-col gap-2">
                                           {/* Assigned teachers list */}
@@ -1990,10 +1994,12 @@ const SemesterManager = ({
                                                     <div className="flex-1 min-w-0">
                                                       <div className="text-xs font-medium text-gray-900 truncate">
                                                         {getTeacherDisplayName(teacher) || 'Unknown'}
-                                                        {empId ? <span className="text-gray-500 font-normal ml-1">({empId})</span> : null}
                                                       </div>
-                                                      <div className="text-[10px] text-blue-600">
-                                                        {teacher?.roleLabel || 'Teacher'}
+                                                      <div className="flex items-center gap-2 text-[10px]">
+                                                        {empId && (
+                                                          <span className="text-gray-500 font-mono">ID: {empId}</span>
+                                                        )}
+                                                        <span className="text-blue-600">{teacher?.roleLabel || 'Teacher'}</span>
                                                       </div>
                                                     </div>
                                                     <button

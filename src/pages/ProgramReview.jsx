@@ -27,6 +27,12 @@ const flattenSemesterCourses = (courses) => {
   return Object.values(courses).flat().filter(Boolean);
 };
 
+const ASSESSMENT_DEFAULTS = {
+  theory:    { ca: '30', midTerm: '20', endTerm: '50' },
+  practical: { ca: '60', midTerm: '0',  endTerm: '40' },
+  project:   { ca: '60', midTerm: '0',  endTerm: '40' },
+};
+
 const ProgramReview = () => {
   const { programId } = useParams();
   const [program, setProgram] = useState(null);
@@ -177,6 +183,10 @@ const ProgramReview = () => {
             serial: rowIndex + 1,
             title: course?.title || '-',
             courseCode: course?.courseCode || '-',
+            courseType: course?.courseType || 'theory',
+            lecture: toNumberOrNull(course?.creditPoints?.lecture) ?? 0,
+            tutorial: toNumberOrNull(course?.creditPoints?.tutorial) ?? 0,
+            practical: toNumberOrNull(course?.creditPoints?.practical) ?? 0,
             ca,
             midTerm,
             endTerm,
@@ -241,11 +251,26 @@ const ProgramReview = () => {
     selectedSemester.rows.forEach((row) => {
       const rowKey = getAssessmentRowKey(row);
       if (!rowKey) return;
-      nextDraft[rowKey] = {
-        ca: toAssessmentInputValue(row.ca),
-        midTerm: toAssessmentInputValue(row.midTerm),
-        endTerm: toAssessmentInputValue(row.endTerm),
-      };
+
+      const caVal = toAssessmentInputValue(row.ca);
+      const midVal = toAssessmentInputValue(row.midTerm);
+      const endVal = toAssessmentInputValue(row.endTerm);
+
+      // Auto-fill from courseType defaults when all three values are empty
+      if (caVal === '' && midVal === '' && endVal === '') {
+        const defaults = ASSESSMENT_DEFAULTS[row.courseType] || ASSESSMENT_DEFAULTS.theory;
+        nextDraft[rowKey] = {
+          ca: defaults.ca,
+          midTerm: defaults.midTerm,
+          endTerm: defaults.endTerm,
+        };
+      } else {
+        nextDraft[rowKey] = {
+          ca: caVal,
+          midTerm: midVal,
+          endTerm: endVal,
+        };
+      }
     });
 
     setAssessmentDraftByRow(nextDraft);
@@ -529,10 +554,15 @@ const ProgramReview = () => {
                         <th rowSpan={2} className="px-3 py-2 text-left">Sl.No</th>
                         <th rowSpan={2} className="px-3 py-2 text-left">Course Name</th>
                         <th rowSpan={2} className="px-3 py-2 text-left">Course Code</th>
+                        <th colSpan={4} className="px-3 py-2 text-center">LTPC</th>
                         <th colSpan={4} className="px-3 py-2 text-center">Assessment Plan</th>
                         <th rowSpan={2} className="px-3 py-2 text-center">Action</th>
                       </tr>
                       <tr className="bg-white border-b border-gray-200 text-gray-600">
+                        <th className="px-3 py-2 text-center">L</th>
+                        <th className="px-3 py-2 text-center">T</th>
+                        <th className="px-3 py-2 text-center">P</th>
+                        <th className="px-3 py-2 text-center">C</th>
                         <th className="px-3 py-2 text-center">CA</th>
                         <th className="px-3 py-2 text-center">Mid Exam</th>
                         <th className="px-3 py-2 text-center">End Exam</th>
@@ -555,6 +585,10 @@ const ProgramReview = () => {
                             <td className="px-3 py-2 text-gray-700">{row.serial}</td>
                             <td className="px-3 py-2 text-gray-900">{row.title}</td>
                             <td className="px-3 py-2 font-mono text-gray-700">{row.courseCode}</td>
+                            <td className="px-3 py-2 text-center text-gray-700">{row.lecture}</td>
+                            <td className="px-3 py-2 text-center text-gray-700">{row.tutorial}</td>
+                            <td className="px-3 py-2 text-center text-gray-700">{row.practical}</td>
+                            <td className="px-3 py-2 text-center font-semibold text-gray-900">{row.credits}</td>
                             <td className="px-3 py-2 text-center">
                               <input
                                 type="number"
@@ -623,7 +657,7 @@ const ProgramReview = () => {
                       })}
                       {selectedSemester.rows.length === 0 && (
                         <tr>
-                          <td colSpan={8} className="px-3 py-6 text-center text-gray-500">
+                          <td colSpan={12} className="px-3 py-6 text-center text-gray-500">
                             No courses available for this {pLabelLower}.
                           </td>
                         </tr>

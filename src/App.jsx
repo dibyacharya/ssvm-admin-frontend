@@ -27,6 +27,9 @@ import UserProfile from './pages/UserProfile';
 import RBACManager from './pages/RBACManager';
 import Helpdesk from './pages/Helpdesk';
 import HelpdeskErrorBoundary from './components/common/HelpdeskErrorBoundary';
+import CourseAmendments from './pages/CourseAmendments';
+import CourseAmendmentForm from './pages/CourseAmendmentForm';
+import CourseAmendmentDetail from './pages/CourseAmendmentDetail';
 import { Analytics, Certificates, Forums, Settings } from './pages/PlaceholderComponents';
 
 // Protected Route Component
@@ -148,6 +151,10 @@ function App() {
               <Route path="academic-plan" element={<AcademicPlan />} />
               <Route path="gantt" element={<GanttChart />} />
               <Route path="batch-detail/:batchId" element={<BatchDetail />} />
+              <Route path="course-amendments" element={<CourseAmendments />} />
+              <Route path="course-amendments/new" element={<CourseAmendmentForm />} />
+              <Route path="course-amendments/:id/edit" element={<CourseAmendmentForm />} />
+              <Route path="course-amendments/:id" element={<CourseAmendmentDetail />} />
               <Route path="migration" element={<MigrationDashboard />} />
               <Route path="enrollment" element={<Navigate to="/cohorts" replace />} />
               <Route path="cohorts" element={<CohortList />} />

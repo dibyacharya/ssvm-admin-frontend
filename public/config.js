@@ -1,5 +1,5 @@
 window.RUNTIME_CONFIG = {
-  BACKEND_URL: "https://lmsbackend.bluehill-eb07d9c6.centralindia.azurecontainerapps.io",
+  BACKEND_URL: "http://localhost:5000",
   DEBUG_AUTH: true
 };
 console.info("[config.js] RUNTIME_CONFIG:", window.RUNTIME_CONFIG);

@@ -512,6 +512,7 @@ const OnboardingWizard = ({ editProgramId = null }) => {
                     courseCode: cObj.courseCode || cObj.code || '',
                     title: cObj.nameOfCourse || cObj.title || cObj.name || '',
                     credits: cObj.courseCredits ?? cObj.credits ?? 0,
+                    creditPoints: cObj.creditPoints || null,
                   } : null,
                 };
               });
@@ -532,6 +533,7 @@ const OnboardingWizard = ({ editProgramId = null }) => {
                     courseCode: c.courseCode || c.code || '',
                     title: c.nameOfCourse || c.title || c.name || '',
                     credits: c.courseCredits ?? c.credits ?? 0,
+                    creditPoints: c.creditPoints || null,
                   } : null;
                 }).filter(Boolean);
                 return {

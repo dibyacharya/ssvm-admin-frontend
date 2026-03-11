@@ -50,10 +50,11 @@ export const CourseManagement = () => {
     try {
       const data = await getAllSemester();
       const list = Array.isArray(data) ? data : data.semesters || [];
-      // Deduplicate by _id in case backend returns overlapping results
+      // Deduplicate by _id and filter out orphaned semesters (no valid batch)
       const seen = new Set();
       const unique = list.filter(s => {
         if (!s._id || seen.has(s._id)) return false;
+        if (!s.batch) return false;
         seen.add(s._id);
         return true;
       });

@@ -4,13 +4,16 @@ import {
   ArrowLeft,
   Calendar,
   Layers,
+  Plus,
   Search,
   User,
   Users,
   X,
+  FileText,
 } from 'lucide-react';
 import { getBatchById, getBatchStudents } from '../services/batch.service';
 import { getProgramById } from '../services/program.service';
+import { getAmendmentsByBatch } from '../services/courseAmendment.service';
 import SemesterManager from '../components/academic/SemesterManager';
 import { getPeriodLabel } from '../utils/periodLabel';
 
@@ -57,7 +60,7 @@ const getStudentDisplayName = (student) => student?.name || student?.user?.name 
 const getStudentPrimaryId = (student) =>
   student?.registrationNumber || student?.enrollmentNumber || '-';
 
-const VALID_BATCH_TABS = ['SEMESTER', 'STUDENT'];
+const VALID_BATCH_TABS = ['SEMESTER', 'STUDENT', 'AMENDMENTS'];
 
 const BatchDetail = () => {
   const { batchId } = useParams();
@@ -79,6 +82,10 @@ const BatchDetail = () => {
     return VALID_BATCH_TABS.includes(tabFromUrl) ? tabFromUrl : 'SEMESTER';
   });
   const [hasLoadedStudents, setHasLoadedStudents] = useState(false);
+
+  const [amendments, setAmendments] = useState([]);
+  const [amendmentsLoading, setAmendmentsLoading] = useState(false);
+  const [hasLoadedAmendments, setHasLoadedAmendments] = useState(false);
 
   // Sync activeBatchTab to URL so tab persists on refresh
   useEffect(() => {
@@ -132,11 +139,27 @@ const BatchDetail = () => {
     }
   };
 
+  const fetchAmendments = async () => {
+    try {
+      setAmendmentsLoading(true);
+      const res = await getAmendmentsByBatch(batchId);
+      setAmendments(res.amendments || []);
+    } catch {
+      setAmendments([]);
+    } finally {
+      setAmendmentsLoading(false);
+    }
+  };
+
   const handleBatchTabChange = (tabKey) => {
     setActiveBatchTab(tabKey);
     if (tabKey === 'STUDENT' && !hasLoadedStudents) {
       setHasLoadedStudents(true);
       fetchBatchStudents();
+    }
+    if (tabKey === 'AMENDMENTS' && !hasLoadedAmendments) {
+      setHasLoadedAmendments(true);
+      fetchAmendments();
     }
   };
 
@@ -301,6 +324,20 @@ const BatchDetail = () => {
                 Student
               </span>
             </button>
+            <button
+              type="button"
+              onClick={() => handleBatchTabChange('AMENDMENTS')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeBatchTab === 'AMENDMENTS'
+                  ? 'bg-white text-blue-700 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <span className="inline-flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Amendments
+              </span>
+            </button>
           </div>
         </div>
 
@@ -378,6 +415,86 @@ const BatchDetail = () => {
                           </td>
                           <td className="px-4 py-3 text-gray-700">
                             {(student.program?.name || '-') + (student.stream ? ` / ${student.stream}` : '')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {(hasLoadedAmendments || activeBatchTab === 'AMENDMENTS') && (
+            <div className={activeBatchTab === 'AMENDMENTS' ? 'space-y-4' : 'hidden'}>
+              <div className="flex items-center justify-between">
+                <h3 className="text-md font-semibold text-gray-900">Course Amendments</h3>
+                <a
+                  href="/course-amendments/new"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  New Amendment
+                </a>
+              </div>
+              {amendmentsLoading && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
+                  <span className="ml-2 text-sm text-gray-500">Loading amendments...</span>
+                </div>
+              )}
+              {!amendmentsLoading && amendments.length === 0 && (
+                <div className="text-center py-8 text-gray-400 text-sm">
+                  No amendments found for this batch.
+                </div>
+              )}
+              {!amendmentsLoading && amendments.length > 0 && (
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Batch Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Changes</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {amendments.map((amd) => (
+                        <tr
+                          key={amd._id}
+                          className="hover:bg-gray-50 cursor-pointer"
+                          onClick={() => window.location.href = `/course-amendments/${amd._id}`}
+                        >
+                          <td className="px-4 py-3 text-sm font-mono text-blue-600">{amd.amendmentId || '-'}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">{amd.title || '-'}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                              amd.status === 'FULLY_APPLIED' ? 'bg-green-100 text-green-800' :
+                              amd.status === 'APPROVED' ? 'bg-blue-100 text-blue-800' :
+                              amd.status === 'PENDING_APPROVAL' ? 'bg-yellow-100 text-yellow-800' :
+                              amd.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {amd.status?.replace(/_/g, ' ') || '-'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                              amd.batchStatus === 'APPLIED' ? 'bg-green-100 text-green-800' :
+                              amd.batchStatus === 'REVERTED' ? 'bg-purple-100 text-purple-800' :
+                              'bg-gray-100 text-gray-600'
+                            }`}>
+                              {amd.batchStatus || 'Not Applied'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500">
+                            {amd.changes?.length || 0} change{(amd.changes?.length || 0) !== 1 ? 's' : ''}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500">
+                            {amd.createdAt ? formatDate(amd.createdAt) : '-'}
                           </td>
                         </tr>
                       ))}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronRight, ChevronLeft, Search, X, BookOpen,
-  AlertTriangle, Loader2, Save, Check, Edit3,
+  AlertTriangle, Loader2, Check, Edit3,
 } from 'lucide-react';
 import { getAllCourses } from '../../services/courses.service';
 import { getPeriodLabel } from '../../utils/periodLabel';
@@ -31,6 +31,13 @@ const toIdString = (v) => (v == null ? '' : String(v));
 const getSemId = (sem) => toIdString(sem?._id || sem?.id || sem?.tempId || '');
 const toNum = (v, fb = 0) => { const n = Number(v); return Number.isFinite(n) && n >= 0 ? n : fb; };
 
+const getCourseCredits = (course) => {
+  if (!course) return 0;
+  if (course.credits != null && course.credits !== '') return toNum(course.credits);
+  const cp = course.creditPoints || {};
+  return toNum(cp.totalCredits) || (toNum(cp.lecture) + toNum(cp.tutorial) + toNum(cp.practical));
+};
+
 /* ── Component ── */
 const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
   const { semesters, coursesBySemester, programData } = state;
@@ -44,7 +51,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
   const [coursePicker, setCoursePicker] = useState(null);
   const [pickerSearch, setPickerSearch] = useState('');
   const [pickerTab, setPickerTab] = useState('existing');
-  const [newCourse, setNewCourse] = useState({ courseCode: '', title: '', credits: '' });
+  const [newCourse, setNewCourse] = useState({ courseCode: '', title: '', lecture: '', tutorial: '', practical: '' });
   const [saveFlash, setSaveFlash] = useState(null);
   // Edit course inline: { kind: 'compulsory', slotIndex, course } or { kind: 'elective', blockIndex, courseId, course }
   const [editingCourse, setEditingCourse] = useState(null);
@@ -110,6 +117,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
       semesterId: semId,
       courses: {
         structure: { ...d.structure },
+        structureApplied: true,
         compulsorySlots: [...(d.compulsorySlots || [])],
         electiveBlocks: [...(d.electiveBlocks || [])],
       },
@@ -238,11 +246,17 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
 
   const handleCreateDraftCourse = () => {
     if (!newCourse.courseCode.trim() || !newCourse.title.trim()) return;
+    const lecture = Number(newCourse.lecture) || 0;
+    const tutorial = Number(newCourse.tutorial) || 0;
+    const practical = Number(newCourse.practical) || 0;
     const draftCourse = {
       _id: `draft_course_${Date.now()}`,
       courseCode: newCourse.courseCode.trim(),
       title: newCourse.title.trim(),
-      credits: Number(newCourse.credits) || 0,
+      lecture,
+      tutorial,
+      practical,
+      credits: lecture + tutorial + practical,
       isDraft: true,
     };
     if (coursePicker?.kind === 'compulsory') {
@@ -251,12 +265,13 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
     } else if (coursePicker?.kind === 'elective') {
       addElectiveOption(coursePicker.blockIndex, draftCourse);
     }
-    setNewCourse({ courseCode: '', title: '', credits: '' });
+    setNewCourse({ courseCode: '', title: '', lecture: '', tutorial: '', practical: '' });
     setPickerTab('existing');
   };
 
   /* ── Edit Course (inline) ── */
   const openEditCourse = (kind, index, course) => {
+    const cp = course.creditPoints || {};
     setEditingCourse({
       kind, // 'compulsory' or 'elective'
       slotIndex: kind === 'compulsory' ? index : undefined,
@@ -264,16 +279,24 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
       courseId: kind === 'elective' ? toIdString(course._id || course.id) : undefined,
       courseCode: course.courseCode || course.code || '',
       title: course.title || course.name || '',
-      credits: course.credits ?? '',
+      lecture: course.lecture ?? cp.lecture ?? '',
+      tutorial: course.tutorial ?? cp.tutorial ?? '',
+      practical: course.practical ?? cp.practical ?? '',
     });
   };
 
   const saveEditCourse = () => {
     if (!editingCourse) return;
+    const lecture = Number(editingCourse.lecture) || 0;
+    const tutorial = Number(editingCourse.tutorial) || 0;
+    const practical = Number(editingCourse.practical) || 0;
     const updated = {
       courseCode: editingCourse.courseCode.trim(),
       title: editingCourse.title.trim(),
-      credits: Number(editingCourse.credits) || 0,
+      lecture,
+      tutorial,
+      practical,
+      credits: lecture + tutorial + practical,
     };
     if (!updated.courseCode || !updated.title) return;
 
@@ -306,28 +329,29 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
     setEditingCourse(null);
   };
 
-  /* ── Save Course Structure ── */
-  const saveCourseStructure = () => {
-    const s = draft.structure;
-    if (!toNum(s.compulsory_count)) {
-      setSaveFlash({ type: 'error', message: 'Compulsory count is required.' });
-      setTimeout(() => setSaveFlash(null), 3000);
+  /* ── Auto-save current tab to wizard state on draft changes ── */
+  const prevDraftsRef = useRef(null);
+  useEffect(() => {
+    if (!activeTab) return;
+    const d = drafts[activeTab];
+    if (!d?.structureApplied) return;
+    // Skip initial mount
+    if (prevDraftsRef.current === null) {
+      prevDraftsRef.current = drafts;
       return;
     }
-    if (s.enforce_credit_target && !toNum(s.compulsory_credit_target)) {
-      setSaveFlash({ type: 'error', message: 'Compulsory credit target is required when Enforce Credit Target is enabled.' });
-      setTimeout(() => setSaveFlash(null), 3000);
-      return;
-    }
-    saveTabToWizard(activeTab, draft);
-    setSaveFlash({ type: 'success', message: 'Course structure saved!' });
-    setTimeout(() => setSaveFlash(null), 2000);
-  };
+    const timer = setTimeout(() => {
+      saveTabToWizard(activeTab, d);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [drafts, activeTab, saveTabToWizard]);
 
   /* ── Continue ── */
   const handleContinue = () => {
-    // Auto-save current tab
-    saveTabToWizard(activeTab, drafts[activeTab]);
+    // Save ALL semester tabs to wizard state (not just the active one)
+    Object.entries(drafts).forEach(([semId, d]) => {
+      saveTabToWizard(semId, d);
+    });
     dispatch({ type: 'MARK_COMPLETE', step: 2 });
     goNext();
   };
@@ -338,7 +362,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
   const elecSlotCount = toNum(structure.elective_slot_count);
   const configuredElec = (draft.electiveBlocks || []).filter((b) => (b.options || []).length > 0).length;
   const compCredits = (draft.compulsorySlots || []).reduce(
-    (sum, s) => sum + (s.course ? toNum(s.course.credits) : 0), 0
+    (sum, s) => sum + (s.course ? getCourseCredits(s.course) : 0), 0
   );
   const semTotalCredits = semesters.find((s) => getSemId(s) === activeTab)?.totalCredits;
 
@@ -609,7 +633,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                               </div>
                             </div>
                             <div className="text-xs text-gray-400 flex-shrink-0">
-                              {slot.course.credits || 0} cr
+                              {getCourseCredits(slot.course)} cr
                               {slot.course.isDraft && <span className="ml-1 text-amber-600">(draft)</span>}
                             </div>
                           </div>
@@ -693,7 +717,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <span className="text-[10px] text-gray-400">
-                                          {course.credits || 0} cr
+                                          {getCourseCredits(course)} cr
                                           {course.isDraft && <span className="text-amber-600"> (draft)</span>}
                                         </span>
                                         <button type="button"
@@ -729,16 +753,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
             </div>
           )}
 
-          {/* ── Save Course Structure (BOTTOM) ── */}
-          {draft.structureApplied && (
-            <div className="flex justify-end">
-              <button type="button" onClick={saveCourseStructure}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition">
-                <Save className="w-4 h-4" />
-                Save Course Plan
-              </button>
-            </div>
-          )}
+          {/* Draft auto-saves — no manual save button needed */}
         </motion.div>
       </AnimatePresence>
 
@@ -824,7 +839,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                               <span className="mx-2 text-gray-300">—</span>
                               <span className="text-gray-700">{course.title || course.name}</span>
                             </div>
-                            <span className="text-xs text-gray-400 flex-shrink-0">{course.credits || 0} cr</span>
+                            <span className="text-xs text-gray-400 flex-shrink-0">{getCourseCredits(course)} cr</span>
                           </button>
                         );
                       })}
@@ -851,11 +866,33 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                       className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Credits</label>
-                    <input type="number" min="0" value={newCourse.credits}
-                      onChange={(e) => setNewCourse((p) => ({ ...p, credits: e.target.value }))}
-                      placeholder="0"
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Credit Points (L-T-P)</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-[10px] text-gray-500 mb-0.5">Lecture (L)</label>
+                        <input type="number" min="0" value={newCourse.lecture}
+                          onChange={(e) => setNewCourse((p) => ({ ...p, lecture: e.target.value }))}
+                          placeholder="0"
+                          className="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-500 mb-0.5">Tutorial (T)</label>
+                        <input type="number" min="0" value={newCourse.tutorial}
+                          onChange={(e) => setNewCourse((p) => ({ ...p, tutorial: e.target.value }))}
+                          placeholder="0"
+                          className="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-500 mb-0.5">Practical (P)</label>
+                        <input type="number" min="0" value={newCourse.practical}
+                          onChange={(e) => setNewCourse((p) => ({ ...p, practical: e.target.value }))}
+                          placeholder="0"
+                          className="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-gray-400 mt-1">
+                      Total Credits: {(Number(newCourse.lecture) || 0) + (Number(newCourse.tutorial) || 0) + (Number(newCourse.practical) || 0)}
+                    </div>
                   </div>
                   <button type="button" onClick={handleCreateDraftCourse}
                     disabled={!newCourse.courseCode.trim() || !newCourse.title.trim()}
@@ -895,10 +932,30 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                   className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Credits</label>
-                <input type="number" min="0" value={editingCourse.credits}
-                  onChange={(e) => setEditingCourse((p) => ({ ...p, credits: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                <label className="block text-xs font-medium text-gray-700 mb-1">Credit Points (L-T-P)</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="block text-[10px] text-gray-500 mb-0.5">Lecture (L)</label>
+                    <input type="number" min="0" value={editingCourse.lecture}
+                      onChange={(e) => setEditingCourse((p) => ({ ...p, lecture: e.target.value }))}
+                      className="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-gray-500 mb-0.5">Tutorial (T)</label>
+                    <input type="number" min="0" value={editingCourse.tutorial}
+                      onChange={(e) => setEditingCourse((p) => ({ ...p, tutorial: e.target.value }))}
+                      className="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-gray-500 mb-0.5">Practical (P)</label>
+                    <input type="number" min="0" value={editingCourse.practical}
+                      onChange={(e) => setEditingCourse((p) => ({ ...p, practical: e.target.value }))}
+                      className="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                  </div>
+                </div>
+                <div className="text-[10px] text-gray-400 mt-1">
+                  Total Credits: {(Number(editingCourse.lecture) || 0) + (Number(editingCourse.tutorial) || 0) + (Number(editingCourse.practical) || 0)}
+                </div>
               </div>
               <div className="flex gap-3 pt-1">
                 <button type="button" onClick={() => setEditingCourse(null)}

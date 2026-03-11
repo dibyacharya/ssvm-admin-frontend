@@ -175,11 +175,16 @@ const StepReviewComplete = ({
         ([, data]) => countCoursesInData(data) > 0
       );
 
+      const courseAssignmentErrors = [];
+
       if (courseEntries.length > 0) {
         setSubmitProgress("Assigning courses...");
 
         for (const [oldSemId, data] of courseEntries) {
           const realSemId = semIdMap[oldSemId] || oldSemId;
+          const sem = semesters.find(
+            (ss) => String(ss._id || ss.tempId || ss.id) === oldSemId
+          );
 
           try {
             if (isStructureFormat(data)) {
@@ -210,12 +215,17 @@ const StepReviewComplete = ({
                   const courseRes = await createCourse({
                     courseCode: dc.courseCode,
                     title: dc.title,
-                    credits: dc.credits || 0,
+                    creditPoints: {
+                      lecture: dc.lecture || 0,
+                      tutorial: dc.tutorial || 0,
+                      practical: dc.practical || 0,
+                    },
                   });
                   const created = courseRes.course || courseRes;
                   if (created?._id) draftIdMap[dc._id] = created._id;
                 } catch (err) {
-                  console.warn("Failed to create draft course:", dc.courseCode, err);
+                  const msg = err?.response?.data?.error || err?.message || "Unknown error";
+                  courseAssignmentErrors.push(`Failed to create draft course ${dc.courseCode}: ${msg}`);
                 }
               }
 
@@ -236,11 +246,6 @@ const StepReviewComplete = ({
                   .map((c) => resolveId(c._id || c.id))
                   .filter(Boolean),
               }));
-
-              // Find semester total credits
-              const sem = semesters.find(
-                (ss) => String(ss._id || ss.tempId || ss.id) === oldSemId
-              );
 
               setSubmitProgress(`Assigning courses to ${sem?.name || oldSemId}...`);
               await updateSemesterCourseAssignment(realProgramId, realSemId, {
@@ -272,9 +277,21 @@ const StepReviewComplete = ({
               }
             }
           } catch (err) {
-            console.warn(`Course assignment for semester ${realSemId} failed:`, err);
+            const semName = sem?.name || `Semester (${realSemId})`;
+            const details = err?.response?.data?.details;
+            const detailMsg = Array.isArray(details) ? details.map((d) => d.message).join("; ") : "";
+            const msg = detailMsg || err?.response?.data?.error || err?.message || "Unknown error";
+            courseAssignmentErrors.push(`${semName}: ${msg}`);
           }
         }
+      }
+
+      // If there were course assignment errors, show them to the user
+      if (courseAssignmentErrors.length > 0) {
+        setError(
+          `${isExisting ? "Program updated" : "Program created"}, but some course assignments failed:\n${courseAssignmentErrors.join("\n")}`
+        );
+        // Still update state so user can see the partial success
       }
 
       // 5. Update wizard state with real IDs
@@ -320,6 +337,12 @@ const StepReviewComplete = ({
             ? "Your program changes have been saved."
             : `Your program, ${periodLabel.toLowerCase()} structure, and courses have been configured.`}
         </p>
+
+        {error && (
+          <div className="mt-4 mx-auto max-w-lg bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800 text-left whitespace-pre-line">
+            {error}
+          </div>
+        )}
 
         <div className="mt-8 flex items-center justify-center gap-3">
           <Link

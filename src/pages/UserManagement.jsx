@@ -779,6 +779,14 @@ const UserManagement = () => {
       }
       if (field === 'programId' && value !== prev.programId) {
         next.batchId = '';
+        // Auto-set studentMode from the selected program's modeOfDelivery
+        if (value) {
+          const selectedProgram = profilePrograms.find((p) => p._id === value);
+          const programMode = normalizeModeOfDeliveryValue(selectedProgram?.modeOfDelivery);
+          if (programMode) {
+            next.studentMode = programMode;
+          }
+        }
       }
       return next;
     });
@@ -2069,16 +2077,17 @@ const UserManagement = () => {
                       </div>
                       <div>
                         <label className="mb-1 block text-sm font-medium text-gray-700">
-                          Student Mode *
+                          Mode of Delivery
                         </label>
                         <select
                           value={formData.studentMode}
                           onChange={(e) => handleFormChange('studentMode', e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-                          disabled={formSubmitting || formData.studentType === 'online'}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 bg-gray-50 text-gray-600 focus:outline-none"
+                          disabled
                         >
-                          <option value={MODE_OF_DELIVERY.REGULAR}>Regular</option>
-                          <option value={MODE_OF_DELIVERY.WILP}>WILP</option>
+                          {STUDENT_MODE_OPTIONS.map((opt) => (
+                            <option key={opt.id} value={opt.id}>{opt.label}</option>
+                          ))}
                         </select>
                       </div>
                       <div>

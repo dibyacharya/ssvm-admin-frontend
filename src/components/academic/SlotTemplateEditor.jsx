@@ -1,7 +1,20 @@
 import React from 'react';
 import { Plus, Save, Trash2 } from 'lucide-react';
 
-const SLOT_TYPE_OPTIONS = ['CLASS', 'BREAK'];
+const SLOT_TYPE_OPTIONS = ['CLASS', 'BREAK', 'MID_EXAM', 'END_EXAM'];
+
+const SLOT_TYPE_LABELS = {
+  CLASS: 'Class',
+  BREAK: 'Break',
+  MID_EXAM: 'Mid Exam',
+  END_EXAM: 'End Exam',
+};
+
+const SLOT_ROW_COLORS = {
+  MID_EXAM: 'bg-orange-50 border-orange-200',
+  END_EXAM: 'bg-red-50 border-red-200',
+  BREAK: 'bg-amber-50 border-amber-200',
+};
 
 const SlotTemplateEditor = ({
   slotTemplates = [],
@@ -39,7 +52,7 @@ const SlotTemplateEditor = ({
         {slotTemplates.map((template, templateIndex) => (
           <div
             key={template._id || `slot-template-${templateIndex}`}
-            className="grid grid-cols-1 lg:grid-cols-7 gap-2 items-center"
+            className={`grid grid-cols-1 lg:grid-cols-7 gap-2 items-center rounded-md px-2 py-1 ${SLOT_ROW_COLORS[template.type] || ''}`}
           >
             {/* Title */}
             <input
@@ -56,7 +69,7 @@ const SlotTemplateEditor = ({
               onChange={(e) => onUpdateTemplate(templateIndex, 'type', e.target.value)}
             >
               {SLOT_TYPE_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
+                <option key={opt} value={opt}>{SLOT_TYPE_LABELS[opt] || opt}</option>
               ))}
             </select>
             {/* Start Time */}
@@ -77,8 +90,8 @@ const SlotTemplateEditor = ({
             <input
               type="text"
               value={template.label || ''}
-              placeholder={template.type === 'BREAK' ? 'Label' : '—'}
-              disabled={template.type !== 'BREAK'}
+              placeholder={['BREAK', 'MID_EXAM', 'END_EXAM'].includes(template.type) ? 'Label' : '—'}
+              disabled={!['BREAK', 'MID_EXAM', 'END_EXAM'].includes(template.type)}
               className="border border-gray-300 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-400 outline-none disabled:bg-gray-50 disabled:text-gray-400"
               onChange={(e) => onUpdateTemplate(templateIndex, 'label', e.target.value)}
             />

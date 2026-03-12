@@ -95,6 +95,11 @@ export const downloadTimetableTemplate = async (id) => {
   return response;
 };
 
+export const scheduleExamVConf = async (semesterId, itemId) => {
+  const response = await api.post(`/semesters/${semesterId}/timetable/plan/${itemId}/schedule-vconf`);
+  return response.data;
+};
+
 export const parseTimetableUpload = async (id, file) => {
   const formData = new FormData();
   formData.append("file", file);

@@ -33,6 +33,7 @@ import {
   scheduleVirtualClasses,
   resetTimetable,
   downloadTimetableTemplate,
+  scheduleExamVConf as scheduleExamVConfService,
 } from '../../services/semester.services';
 import TimetableUploadModal from './TimetableUploadModal';
 import SlotTemplateEditor from './SlotTemplateEditor';
@@ -61,7 +62,7 @@ const WEEK_DAYS = [
 ];
 
 const CLASS_MODE_OPTIONS = ['VIRTUAL', 'PHYSICAL'];
-const SLOT_TYPE_OPTIONS = ['CLASS', 'BREAK'];
+const SLOT_TYPE_OPTIONS = ['CLASS', 'BREAK', 'MID_EXAM', 'END_EXAM'];
 const DEFAULT_SLOT_TEMPLATES = [
   { title: 'Slot 1', type: 'CLASS', startTime: '09:00', endTime: '10:30', order: 1 },
   { title: 'Slot 2', type: 'CLASS', startTime: '10:30', endTime: '12:00', order: 2 },
@@ -1664,6 +1665,17 @@ const SemesterManager = ({
         title: String(item.title || '').trim(),
         description: String(item.description || '').trim(),
         date: item.date || '',
+        course: item.course || null,
+        slotTemplateId: item.slotTemplateId || '',
+        startTime: item.startTime || '',
+        endTime: item.endTime || '',
+        mode: item.mode || '',
+        roomNo: item.roomNo || '',
+        campusNo: item.campusNo || '',
+        virtualLink: item.virtualLink || '',
+        meetingId: item.meetingId || null,
+        isVconfScheduled: !!item.isVconfScheduled,
+        examType: item.examType || '',
       };
       return {
         ...prev,
@@ -1738,6 +1750,18 @@ const SemesterManager = ({
           title: String(item.title || '').trim(),
           description: String(item.description || '').trim(),
           date: item.date || '',
+          itemId: item.itemId || '',
+          course: item.course || null,
+          slotTemplateId: item.slotTemplateId || '',
+          startTime: item.startTime || '',
+          endTime: item.endTime || '',
+          mode: item.mode || '',
+          roomNo: item.roomNo || '',
+          campusNo: item.campusNo || '',
+          virtualLink: item.virtualLink || '',
+          meetingId: item.meetingId || null,
+          isVconfScheduled: !!item.isVconfScheduled,
+          examType: item.examType || '',
         })),
         weeklyOffDays: Array.isArray(plan.weeklyOffDays) ? plan.weeklyOffDays : ['sunday'],
       };
@@ -1759,6 +1783,48 @@ const SemesterManager = ({
       }));
     } finally {
       setTimetableSavingBySemester((prev) => ({ ...prev, [`plan:${semesterId}`]: false }));
+    }
+  };
+
+  const handleScheduleExamVConf = async (semesterId, itemId) => {
+    try {
+      setTimetableErrorBySemester((prev) => ({ ...prev, [semesterId]: '' }));
+      const result = await scheduleExamVConfService(semesterId, itemId);
+      // Update local state with meeting info
+      setTimetableBySemester((prev) => {
+        const entry = getTimetableEntry(prev, semesterId);
+        const plan = entry.semesterPlan || { items: [] };
+        const items = (plan.items || []).map((item) => {
+          if (item.itemId === itemId) {
+            return {
+              ...item,
+              meetingId: result.meetingId,
+              virtualLink: result.vconfJoinUrl,
+              isVconfScheduled: true,
+            };
+          }
+          return item;
+        });
+        return {
+          ...prev,
+          [semesterId]: {
+            ...entry,
+            semesterPlan: { ...plan, items },
+          },
+        };
+      });
+      setTimetableNoticeBySemester((prev) => ({
+        ...prev,
+        [semesterId]: result.message || 'Virtual meeting scheduled successfully.',
+      }));
+    } catch (err) {
+      setTimetableErrorBySemester((prev) => ({
+        ...prev,
+        [semesterId]:
+          err?.response?.data?.error ||
+          err?.message ||
+          'Failed to schedule virtual meeting.',
+      }));
     }
   };
 
@@ -2207,6 +2273,8 @@ const SemesterManager = ({
                           <SemesterPlanEditor
                             semesterPlan={timetableEntry.semesterPlan || { startDate: null, endDate: null, items: [] }}
                             semesterRange={timetableEntry.semesterRange || {}}
+                            courses={semesterCourses}
+                            slotTemplates={timetableEntry.slotTemplates || []}
                             onAddItem={(item) => addPlanItem(semester._id, item)}
                             onUpdateItem={(index, field, value) =>
                               updatePlanItem(semester._id, index, field, value)
@@ -2214,6 +2282,7 @@ const SemesterManager = ({
                             onRemoveItem={(index) => removePlanItem(semester._id, index)}
                             onUpdateWeeklyOffDays={(days) => updateWeeklyOffDays(semester._id, days)}
                             onSave={() => saveSemesterPlan(semester._id)}
+                            onScheduleExamVConf={(itemId) => handleScheduleExamVConf(semester._id, itemId)}
                             saving={!!timetableSavingBySemester[`plan:${semester._id}`]}
                             periodLabel={periodLabel}
                           />

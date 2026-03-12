@@ -115,13 +115,22 @@ const UnifiedCalendarView = ({
     return idx;
   }, [expandedDateSchedule, weekDates, weeklyClassSchedule, dateClassSchedule, semesterPlan, slotTemplates]);
 
-  // Filter slot templates to only CLASS slots (show BREAK as dividers)
+  // Filter slot templates: CLASS + EXAM slots are schedulable, BREAK as dividers
   const classSlots = useMemo(
     () => slotTemplates.filter((s) => s.type === 'CLASS').sort((a, b) => (a.order || 0) - (b.order || 0)),
     [slotTemplates]
   );
+  const examSlots = useMemo(
+    () => slotTemplates.filter((s) => s.type === 'MID_EXAM' || s.type === 'END_EXAM').sort((a, b) => (a.order || 0) - (b.order || 0)),
+    [slotTemplates]
+  );
   const breakSlots = useMemo(
     () => slotTemplates.filter((s) => s.type === 'BREAK').sort((a, b) => (a.order || 0) - (b.order || 0)),
+    [slotTemplates]
+  );
+  // All schedulable slots (for rendering rows in order)
+  const allSchedulableSlots = useMemo(
+    () => slotTemplates.filter((s) => s.type !== 'BREAK').sort((a, b) => (a.order || 0) - (b.order || 0)),
     [slotTemplates]
   );
 
@@ -393,16 +402,18 @@ const UnifiedCalendarView = ({
         </div>
 
         {/* Slot Rows */}
-        {classSlots.length === 0 && (
+        {classSlots.length === 0 && examSlots.length === 0 && (
           <div className="p-6 text-center text-xs text-gray-400">
             No slot templates defined. Add slot templates above to see the calendar grid.
           </div>
         )}
 
-        {/* Render BREAK dividers + CLASS slot rows in order */}
+        {/* Render BREAK dividers + CLASS/EXAM slot rows in order */}
         {slotTemplates
           .sort((a, b) => (a.order || 0) - (b.order || 0))
           .map((slot, slotIdx) => {
+            const isExamSlot = slot.type === 'MID_EXAM' || slot.type === 'END_EXAM';
+
             if (slot.type === 'BREAK') {
               return (
                 <div
@@ -412,6 +423,110 @@ const UnifiedCalendarView = ({
                   <div className="col-span-8 px-3 py-1 text-[10px] text-amber-700 font-medium">
                     ☕ {slot.label || slot.title || 'Break'} ({slot.startTime} – {slot.endTime})
                   </div>
+                </div>
+              );
+            }
+
+            // EXAM slot row
+            if (isExamSlot) {
+              const examBg = slot.type === 'MID_EXAM' ? 'bg-orange-50' : 'bg-red-50';
+              const examText = slot.type === 'MID_EXAM' ? 'text-orange-700' : 'text-red-700';
+              const examLabel = slot.type === 'MID_EXAM' ? '📝 Mid Exam' : '📝 End Exam';
+
+              return (
+                <div
+                  key={`exam-${slotIdx}`}
+                  className={`grid grid-cols-8 border-b border-gray-200 ${examBg}`}
+                >
+                  {/* Time Label */}
+                  <div className={`px-2 py-2 border-r border-gray-200 flex flex-col justify-center ${examBg}`}>
+                    <div className={`text-[10px] font-medium ${examText}`}>
+                      {slot.startTime}
+                    </div>
+                    <div className={`text-[10px] ${examText} opacity-70`}>
+                      {slot.endTime}
+                    </div>
+                    <div className={`text-[9px] font-medium ${examText} truncate mt-0.5`}>
+                      {examLabel}
+                    </div>
+                  </div>
+
+                  {/* Day Cells — show plan items (EXAM/EVENT) matching this date+time */}
+                  {weekDates.map((date) => {
+                    const dk = formatDateKey(date);
+                    const isInRange = isDateInRange(date, semStart, semEnd);
+                    const isToday = dk === formatDateKey(new Date());
+
+                    if (!isInRange) {
+                      return (
+                        <div key={dk} className={`border-r border-gray-200 last:border-r-0 ${examBg} p-1`}>
+                          <div className="h-full flex items-center justify-center">
+                            <span className="text-[9px] text-gray-300">—</span>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Find plan items on this date that match this exam slot's time
+                    const datePlanItems = planMap.get(dk) || [];
+                    const matchingExams = datePlanItems.filter((pi) => {
+                      if (pi.type !== 'EXAM' && pi.type !== 'EVENT') return false;
+                      // Match by slot template ID or by time
+                      if (pi.slotTemplateId && String(pi.slotTemplateId) === String(slot._id)) return true;
+                      if (pi.startTime === slot.startTime && pi.endTime === slot.endTime) return true;
+                      return false;
+                    });
+
+                    if (matchingExams.length > 0) {
+                      const exam = matchingExams[0];
+                      const courseName = exam.course
+                        ? (courses.find((c) => String(c._id) === String(exam.course))?.courseCode || 'Course')
+                        : '';
+
+                      return (
+                        <div
+                          key={dk}
+                          className={`border-r border-gray-200 last:border-r-0 p-1 ${
+                            isToday ? 'ring-1 ring-inset ring-blue-200' : ''
+                          } ${examBg}`}
+                          title={`${exam.title}${courseName ? ` — ${courseName}` : ''}\n${exam.mode || ''}`}
+                        >
+                          <div className="min-h-[2.5rem] flex flex-col justify-center">
+                            <div className={`text-[10px] font-semibold ${examText} truncate`}>
+                              {exam.title || (exam.type === 'EXAM' ? 'Exam' : 'Event')}
+                            </div>
+                            {courseName && (
+                              <div className="text-[9px] text-gray-600 truncate">{courseName}</div>
+                            )}
+                            <div className="flex items-center gap-0.5 mt-0.5">
+                              {exam.mode === 'PHYSICAL' && <MapPin className="w-2.5 h-2.5 text-green-600" />}
+                              {exam.mode === 'VIRTUAL' && <Video className="w-2.5 h-2.5 text-purple-600" />}
+                              {exam.isVconfScheduled && <CheckCircle className="w-2.5 h-2.5 text-green-500" />}
+                              <span className={`text-[8px] font-bold px-1 rounded ${
+                                exam.type === 'EXAM' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'
+                              }`}>
+                                {exam.type === 'EXAM' ? 'E' : 'EV'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Empty exam cell
+                    return (
+                      <div
+                        key={dk}
+                        className={`border-r border-gray-200 last:border-r-0 p-1 ${examBg} ${
+                          isToday ? 'ring-1 ring-inset ring-blue-200' : ''
+                        }`}
+                      >
+                        <div className="h-full flex items-center justify-center min-h-[2.5rem]">
+                          <span className={`text-[9px] ${examText} opacity-30`}>—</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             }
@@ -557,7 +672,7 @@ const UnifiedCalendarView = ({
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-[10px] text-gray-500">
+      <div className="flex items-center gap-4 text-[10px] text-gray-500 flex-wrap">
         <div className="flex items-center gap-1">
           <span className="inline-block px-1 rounded bg-amber-100 text-amber-700 font-bold text-[8px]">W</span>
           <span>Recurring (Weekly)</span>
@@ -567,16 +682,24 @@ const UnifiedCalendarView = ({
           <span>One-time (Date Override)</span>
         </div>
         <div className="flex items-center gap-1">
+          <span className="inline-block px-1 rounded bg-orange-100 text-orange-700 font-bold text-[8px]">E</span>
+          <span>Exam</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="inline-block px-1 rounded bg-blue-100 text-blue-700 font-bold text-[8px]">EV</span>
+          <span>Event</span>
+        </div>
+        <div className="flex items-center gap-1">
           <span className="inline-block w-2 h-2 rounded-full bg-red-500" />
           <span>Holiday / Off Day</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="inline-block w-2 h-2 rounded-full bg-blue-500" />
-          <span>Event</span>
+          <span className="inline-block w-3 h-2 rounded bg-orange-100 border border-orange-200" />
+          <span>Mid Exam Slot</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="inline-block w-2 h-2 rounded-full bg-orange-500" />
-          <span>Exam</span>
+          <span className="inline-block w-3 h-2 rounded bg-red-100 border border-red-200" />
+          <span>End Exam Slot</span>
         </div>
         <div className="flex items-center gap-1">
           <CheckCircle className="w-3 h-3 text-green-500" />

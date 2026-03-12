@@ -137,6 +137,17 @@ export const getPlanItemsByDate = (semesterPlan) => {
       type: String(item.type || '').toUpperCase(),
       title: String(item.title || '').trim(),
       description: String(item.description || '').trim(),
+      course: item.course || null,
+      mode: item.mode || '',
+      startTime: item.startTime || '',
+      endTime: item.endTime || '',
+      examType: item.examType || '',
+      slotTemplateId: item.slotTemplateId || null,
+      meetingId: item.meetingId || null,
+      isVconfScheduled: !!item.isVconfScheduled,
+      roomNo: item.roomNo || '',
+      campusNo: item.campusNo || '',
+      itemId: item.itemId || '',
     });
   });
   return map;
@@ -225,7 +236,13 @@ export const PLAN_ITEM_TYPES = [
   { value: 'HOLIDAY', label: 'Holiday', color: 'bg-red-100 text-red-800 border-red-200', dotColor: 'bg-red-500' },
   { value: 'EVENT', label: 'Event', color: 'bg-blue-100 text-blue-800 border-blue-200', dotColor: 'bg-blue-500' },
   { value: 'EXAM', label: 'Exam', color: 'bg-orange-100 text-orange-800 border-orange-200', dotColor: 'bg-orange-500' },
-  { value: 'TIMELINE', label: 'Timeline', color: 'bg-purple-100 text-purple-800 border-purple-200', dotColor: 'bg-purple-500' },
+];
+
+export const SLOT_TEMPLATE_TYPES = [
+  { value: 'CLASS', label: 'Class' },
+  { value: 'BREAK', label: 'Break' },
+  { value: 'MID_EXAM', label: 'Mid Exam' },
+  { value: 'END_EXAM', label: 'End Exam' },
 ];
 
 export const getPlanItemTypeConfig = (type) =>

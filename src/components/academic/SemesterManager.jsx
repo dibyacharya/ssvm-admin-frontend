@@ -2123,17 +2123,6 @@ const SemesterManager = ({
 
                   <div className={activeSemesterTab === 'TIMETABLE' ? '' : 'hidden'}>
                     <div className="border border-gray-200 rounded-lg p-4 space-y-6 max-h-[70vh] overflow-y-auto">
-                      {timetableErrorBySemester[semester._id] && (
-                        <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2 whitespace-pre-wrap">
-                          {timetableErrorBySemester[semester._id]}
-                        </div>
-                      )}
-                      {timetableNoticeBySemester[semester._id] && (
-                        <div className="text-xs text-green-700 bg-green-50 border border-green-200 rounded p-2 whitespace-pre-wrap">
-                          {timetableNoticeBySemester[semester._id]}
-                        </div>
-                      )}
-
                       {timetableLoadingBySemester[semester._id] ? (
                         <div className="text-sm text-gray-500">Loading timetable...</div>
                       ) : (
@@ -2387,6 +2376,12 @@ const SemesterManager = ({
                             }
                             savingVConf={!!timetableSavingBySemester[`vconf:${semester._id}`]}
                             resettingTimetable={!!timetableSavingBySemester[`reset:${semester._id}`]}
+                            statusMessage={timetableErrorBySemester[semester._id] || timetableNoticeBySemester[semester._id] || ''}
+                            statusType={timetableErrorBySemester[semester._id] ? 'error' : 'success'}
+                            onClearStatus={() => {
+                              setTimetableErrorBySemester((prev) => ({ ...prev, [semester._id]: '' }));
+                              setTimetableNoticeBySemester((prev) => ({ ...prev, [semester._id]: '' }));
+                            }}
                             periodLabel={periodLabel}
                           />
                         </>

@@ -51,6 +51,9 @@ const UnifiedCalendarView = ({
   saving = false,
   savingVConf = false,
   resettingTimetable = false,
+  statusMessage = '',
+  statusType = '',
+  onClearStatus,
   periodLabel = 'Semester',
 }) => {
   /* ── State ── */
@@ -254,6 +257,26 @@ const UnifiedCalendarView = ({
           </button>
         </div>
       </div>
+
+      {/* ── Status Message (near buttons) ── */}
+      {statusMessage && (
+        <div className={`flex items-center justify-between text-xs rounded-md px-3 py-2 ${
+          statusType === 'error'
+            ? 'text-red-700 bg-red-50 border border-red-200'
+            : 'text-green-700 bg-green-50 border border-green-200'
+        }`}>
+          <span className="whitespace-pre-wrap flex-1">{statusMessage}</span>
+          {onClearStatus && (
+            <button
+              type="button"
+              onClick={onClearStatus}
+              className="ml-2 text-gray-400 hover:text-gray-600 font-bold"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ── Week Navigation ── */}
       <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">

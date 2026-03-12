@@ -305,22 +305,30 @@ const UnifiedCalendarView = ({
             return (
               <div
                 key={dk}
-                className={`px-1.5 py-2 text-center border-r border-gray-200 last:border-r-0 ${
+                className={`px-1.5 py-2 text-center border-r border-gray-200 last:border-r-0 relative ${
                   isOff
                     ? 'bg-red-50'
                     : isToday
-                    ? 'bg-blue-50'
+                    ? 'bg-blue-100 ring-2 ring-inset ring-blue-400'
                     : !isInRange
                     ? 'bg-gray-100'
                     : ''
                 }`}
               >
-                <div className={`text-xs font-medium ${isOff ? 'text-red-700' : isToday ? 'text-blue-700' : 'text-gray-800'}`}>
+                {isToday && (
+                  <div className="absolute top-0 left-0 right-0 h-[3px] bg-blue-500 rounded-b-sm" />
+                )}
+                <div className={`text-xs font-medium ${isOff ? 'text-red-700' : isToday ? 'text-blue-800 font-bold' : 'text-gray-800'}`}>
                   {getDayShortLabel(dayKey)}
                 </div>
-                <div className={`text-[10px] ${isOff ? 'text-red-600' : isToday ? 'text-blue-600' : 'text-gray-500'}`}>
+                <div className={`text-[10px] ${isOff ? 'text-red-600' : isToday ? 'text-blue-700 font-semibold' : 'text-gray-500'}`}>
                   {formatDateDisplay(date)}
                 </div>
+                {isToday && (
+                  <span className="inline-block mt-0.5 px-1.5 py-0 text-[8px] font-bold text-white bg-blue-500 rounded-full">
+                    TODAY
+                  </span>
+                )}
                 {/* Plan item badges */}
                 <div className="flex flex-wrap gap-0.5 justify-center mt-0.5">
                   {datePlanItems.map((pi, i) => {
@@ -455,7 +463,7 @@ const UnifiedCalendarView = ({
                       <div
                         key={dk}
                         className={`border-r border-gray-200 last:border-r-0 p-1 cursor-pointer transition ${
-                          isToday ? 'bg-blue-50/50' : 'bg-white'
+                          isToday ? 'bg-blue-50 ring-1 ring-inset ring-blue-200' : 'bg-white'
                         } hover:bg-blue-50`}
                         onClick={() => openAssignModal(date, slot, entry)}
                         title={`${courseName}${teacherName ? ` — ${teacherName}` : ''}\n${entry.mode || 'VIRTUAL'}${isWeekly ? ' (Recurring)' : ' (One-time)'}`}
@@ -498,7 +506,7 @@ const UnifiedCalendarView = ({
                     <div
                       key={dk}
                       className={`border-r border-gray-200 last:border-r-0 p-1 cursor-pointer transition ${
-                        isToday ? 'bg-blue-50/30' : 'bg-white'
+                        isToday ? 'bg-blue-50/60 ring-1 ring-inset ring-blue-200' : 'bg-white'
                       } hover:bg-gray-50`}
                       onClick={() => openAssignModal(date, slot)}
                     >

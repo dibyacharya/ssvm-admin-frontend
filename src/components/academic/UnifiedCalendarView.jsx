@@ -8,6 +8,7 @@ import {
   MapPin,
   Save,
   CheckCircle,
+  RotateCcw,
 } from 'lucide-react';
 import CalendarSlotAssignmentModal from './CalendarSlotAssignmentModal';
 import {
@@ -46,8 +47,10 @@ const UnifiedCalendarView = ({
   onSaveWeekly,
   onSaveDate,
   onScheduleVConf,
+  onResetTimetable,
   saving = false,
   savingVConf = false,
+  resettingTimetable = false,
   periodLabel = 'Semester',
 }) => {
   /* ── State ── */
@@ -239,6 +242,15 @@ const UnifiedCalendarView = ({
           >
             <Video className="w-3.5 h-3.5" />
             {savingVConf ? 'Scheduling...' : 'Schedule Virtual Classes'}
+          </button>
+          <button
+            type="button"
+            onClick={() => onResetTimetable && onResetTimetable(semesterId)}
+            disabled={resettingTimetable}
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition"
+          >
+            <RotateCcw className={`w-3.5 h-3.5 ${resettingTimetable ? 'animate-spin' : ''}`} />
+            {resettingTimetable ? 'Resetting...' : 'Reset Timetable'}
           </button>
         </div>
       </div>

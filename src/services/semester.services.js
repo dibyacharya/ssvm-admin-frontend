@@ -76,6 +76,11 @@ export const scheduleVirtualClasses = async (id, options = {}) => {
   return response.data;
 };
 
+export const resetTimetable = async (id) => {
+  const response = await api.post(`/semesters/${id}/timetable/reset`);
+  return response.data;
+};
+
 export const getScheduledMeetings = async (id) => {
   const response = await api.get(
     `/semesters/${id}/timetable/scheduled-meetings`

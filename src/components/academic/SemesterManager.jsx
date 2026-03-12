@@ -31,6 +31,7 @@ import {
   updateSemesterDateClassSchedule,
   updateSemesterPlan,
   scheduleVirtualClasses,
+  resetTimetable,
   downloadTimetableTemplate,
 } from '../../services/semester.services';
 import TimetableUploadModal from './TimetableUploadModal';
@@ -1369,6 +1370,37 @@ const SemesterManager = ({
     }
   };
 
+  const handleResetTimetable = async (semesterId) => {
+    if (!window.confirm(
+      '⚠️ This will DELETE all scheduled virtual classes for this semester.\n\nAll meeting entries created from the timetable will be permanently removed.\n\nThis cannot be undone. Proceed?'
+    )) {
+      return;
+    }
+    try {
+      setTimetableSavingBySemester((prev) => ({ ...prev, [`reset:${semesterId}`]: true }));
+      setTimetableErrorBySemester((prev) => ({ ...prev, [semesterId]: '' }));
+      setTimetableNoticeBySemester((prev) => ({ ...prev, [semesterId]: '' }));
+
+      const result = await resetTimetable(semesterId);
+      const msg = result?.message || 'Timetable reset complete.';
+      setTimetableNoticeBySemester((prev) => ({ ...prev, [semesterId]: msg }));
+
+      // Refresh timetable to reflect cleared state
+      await fetchSemesterTimetable(semesterId);
+    } catch (err) {
+      setTimetableErrorBySemester((prev) => ({
+        ...prev,
+        [semesterId]:
+          err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          err?.message ||
+          'Failed to reset timetable.',
+      }));
+    } finally {
+      setTimetableSavingBySemester((prev) => ({ ...prev, [`reset:${semesterId}`]: false }));
+    }
+  };
+
   const handleDownloadTemplate = async (semesterId) => {
     try {
       const response = await downloadTimetableTemplate(semesterId);
@@ -2333,11 +2365,13 @@ const SemesterManager = ({
                             onSaveWeekly={(semId) => saveWeeklyTimetable(semId)}
                             onSaveDate={(semId) => saveDateScheduleData(semId)}
                             onScheduleVConf={(semId) => handleScheduleVirtualClasses(semId)}
+                            onResetTimetable={(semId) => handleResetTimetable(semId)}
                             saving={
                               !!timetableSavingBySemester[`weekly:${semester._id}`] ||
                               !!timetableSavingBySemester[`date:${semester._id}`]
                             }
                             savingVConf={!!timetableSavingBySemester[`vconf:${semester._id}`]}
+                            resettingTimetable={!!timetableSavingBySemester[`reset:${semester._id}`]}
                             periodLabel={periodLabel}
                           />
                         </>

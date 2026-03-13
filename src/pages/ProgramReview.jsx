@@ -554,7 +554,7 @@ const ProgramReview = () => {
                         <th rowSpan={2} className="px-3 py-2 text-left">Sl.No</th>
                         <th rowSpan={2} className="px-3 py-2 text-left">Course Name</th>
                         <th rowSpan={2} className="px-3 py-2 text-left">Course Code</th>
-                        <th colSpan={4} className="px-3 py-2 text-center">LTPC</th>
+                        <th colSpan={4} className="px-3 py-2 text-center">CREDITS</th>
                         <th colSpan={4} className="px-3 py-2 text-center">Assessment Plan</th>
                         <th rowSpan={2} className="px-3 py-2 text-center">Action</th>
                       </tr>
@@ -562,7 +562,7 @@ const ProgramReview = () => {
                         <th className="px-3 py-2 text-center">L</th>
                         <th className="px-3 py-2 text-center">T</th>
                         <th className="px-3 py-2 text-center">P</th>
-                        <th className="px-3 py-2 text-center">C</th>
+                        <th className="px-3 py-2 text-center">Cr</th>
                         <th className="px-3 py-2 text-center">CA</th>
                         <th className="px-3 py-2 text-center">Mid Exam</th>
                         <th className="px-3 py-2 text-center">End Exam</th>

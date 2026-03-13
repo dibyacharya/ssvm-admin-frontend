@@ -245,7 +245,7 @@ const AcademicPlan = () => {
               <th className="text-center px-2 py-2 font-medium text-gray-600 w-10">L</th>
               <th className="text-center px-2 py-2 font-medium text-gray-600 w-10">T</th>
               <th className="text-center px-2 py-2 font-medium text-gray-600 w-10">P</th>
-              <th className="text-center px-2 py-2 font-medium text-gray-600 w-12">C</th>
+              <th className="text-center px-2 py-2 font-medium text-gray-600 w-12">Cr</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">

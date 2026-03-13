@@ -2079,7 +2079,7 @@ const SemesterManager = ({
                                   <th className="px-2 py-2 text-center w-10">L</th>
                                   <th className="px-2 py-2 text-center w-10">T</th>
                                   <th className="px-2 py-2 text-center w-10">P</th>
-                                  <th className="px-2 py-2 text-center w-10">C</th>
+                                  <th className="px-2 py-2 text-center w-10">Cr</th>
                                   <th className="px-3 py-2 text-left">Teachers</th>
                                 </tr>
                               </thead>

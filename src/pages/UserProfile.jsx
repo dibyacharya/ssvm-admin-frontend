@@ -136,6 +136,7 @@ const TEACHER_PERSONAL_DETAILS_SECTIONS = [
   {
     title: "Personal Details",
     fields: [
+      "Employee ID",
       "Title",
       "First",
       "Middle",
@@ -254,6 +255,7 @@ const TEACHER_CANONICAL_ALIASES = {
   profilephoto: TEACHER_PROFILE_PHOTO_FIELD,
   profileimage: TEACHER_PROFILE_PHOTO_FIELD,
   photo: TEACHER_PROFILE_PHOTO_FIELD,
+  employeeid: "Employee ID",
   title: "Title",
   first: "First",
   firstname: "First",
@@ -591,6 +593,17 @@ export default function UserProfile() {
     const normalizedPersonal = teacherProfile
       ? normalizeTeacherTemplate(profile?.personalDetails || {})
       : normalizePersonalTemplate(profile?.personalDetails || {});
+
+    // Inject employeeId from teacher profile into personalDetails (it lives outside personalDetails)
+    if (teacherProfile && !normalizedPersonal["Employee ID"]) {
+      const eid =
+        profile?.teacherProfile?.employeeId ||
+        profile?.employeeId ||
+        profile?.user?.userId ||
+        "";
+      if (eid) normalizedPersonal["Employee ID"] = eid;
+    }
+
     return {
       teacherProfile,
       normalizedProfile: {
@@ -801,11 +814,46 @@ export default function UserProfile() {
         details,
         profileData?.user?.name || ""
       );
-      return [
+
+      // Build associated schools from backend (fetched from Program.school via courses)
+      const backendSchools = Array.isArray(profileData?.associatedSchools)
+        ? profileData.associatedSchools
+        : [];
+      const schoolValue =
+        backendSchools.length > 0
+          ? backendSchools.join(", ")
+          : details["School Associated"] || "";
+
+      // Build access role tags (DEAN, PROGRAM_COORDINATOR, etc.)
+      const accessRoles = Array.isArray(profileData?.user?.accessRoles)
+        ? profileData.user.accessRoles
+        : [];
+      const roleTags = accessRoles
+        .filter((r) => r && r !== "TEACHER")
+        .map((r) =>
+          r
+            .split("_")
+            .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
+            .join(" ")
+        );
+
+      const fields = [
         { label: "Name", value: teacherName },
-        { label: "Designation", value: details["Designation"] || profileData?.user?.designation || "" },
-        { label: "School Associated", value: details["School Associated"] || "" },
+        {
+          label: "Designation",
+          value: details["Designation"] || profileData?.user?.designation || "Teacher",
+        },
+        { label: "School Associated", value: schoolValue },
       ];
+
+      if (roleTags.length > 0) {
+        fields.push({
+          label: "Tags",
+          value: roleTags.join(", "),
+        });
+      }
+
+      return fields;
     }
 
     const academic = isPlainObject(profileData?.academicSummary)
@@ -1277,6 +1325,17 @@ export default function UserProfile() {
                           className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-400 focus:outline-none"
                         />
                       )
+                    ) : field.label === "Tags" && field.value ? (
+                      <div className="mt-1 flex flex-wrap gap-1.5">
+                        {String(field.value).split(", ").map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
                     ) : (
                       <div className="mt-1 text-sm font-medium text-gray-800">{toDisplay(field.value)}</div>
                     )}

@@ -104,15 +104,15 @@ const ProgramReview = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [programId]);
 
-  const fetchProgramAcademicPlan = useCallback(async () => {
+  const fetchProgramAcademicPlan = useCallback(async ({ silent = false } = {}) => {
     if (!programId) return;
     try {
-      setAcademicPlanLoading(true);
+      if (!silent) setAcademicPlanLoading(true);
       setAcademicPlanError('');
       const data = await getAcademicPlan(programId);
       setAcademicPlan(data || null);
     } catch (err) {
-      setAcademicPlan(null);
+      if (!silent) setAcademicPlan(null);
       setAcademicPlanError(
         err?.response?.data?.error ||
           err?.response?.data?.message ||
@@ -120,7 +120,7 @@ const ProgramReview = () => {
           'Failed to load academic table.'
       );
     } finally {
-      setAcademicPlanLoading(false);
+      if (!silent) setAcademicPlanLoading(false);
     }
   }, [programId]);
 
@@ -276,7 +276,14 @@ const ProgramReview = () => {
     setAssessmentDraftByRow(nextDraft);
     setAssessmentSavingByRow({});
     setAssessmentErrorByRow({});
-    setAssessmentNoticeByRow({});
+    // Preserve existing notices (e.g. "Saved successfully!") during silent re-fetch
+    setAssessmentNoticeByRow((prev) => {
+      const preserved = {};
+      Object.keys(prev).forEach((key) => {
+        if (prev[key]) preserved[key] = prev[key];
+      });
+      return Object.keys(preserved).length > 0 ? preserved : {};
+    });
   }, [selectedSemester, getAssessmentRowKey]);
 
   const handleAssessmentInputChange = (row, field, value) => {
@@ -359,9 +366,18 @@ const ProgramReview = () => {
 
       setAssessmentNoticeByRow((prev) => ({
         ...prev,
-        [rowKey]: 'Saved',
+        [rowKey]: 'Saved successfully!',
       }));
-      await fetchProgramAcademicPlan();
+      // Clear the notice after 4 seconds
+      setTimeout(() => {
+        setAssessmentNoticeByRow((prev) => {
+          if (prev[rowKey] === 'Saved successfully!') {
+            return { ...prev, [rowKey]: '' };
+          }
+          return prev;
+        });
+      }, 4000);
+      await fetchProgramAcademicPlan({ silent: true });
     } catch (err) {
       const message =
         err?.response?.data?.error ||
@@ -648,7 +664,12 @@ const ProgramReview = () => {
                                   </span>
                                 ) : null}
                                 {rowNotice ? (
-                                  <span className="text-[11px] text-emerald-700">{rowNotice}</span>
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    {rowNotice}
+                                  </span>
                                 ) : null}
                               </div>
                             </td>
@@ -680,7 +701,7 @@ const ProgramReview = () => {
               </h3>
               <button
                 type="button"
-                onClick={() => setShowSemesterManager(false)}
+                onClick={() => { setShowSemesterManager(false); fetchProgramAcademicPlan({ silent: true }); }}
                 className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
               >
                 <X className="w-4 h-4" />
@@ -699,7 +720,11 @@ const ProgramReview = () => {
                 programId={programId}
                 periodType={academicPlan?.program?.periodType || program?.periodType || 'semester'}
                 onAddSemester={() => setShowSemesterManager(false)}
-                onUpdate={fetchProgramAcademicPlan}
+                onUpdate={async () => {
+                  await fetchProgramAcademicPlan({ silent: true });
+                  // Also refresh program details so credits/totals update
+                  try { const data = await getProgramById(programId); setProgram(data); } catch {}
+                }}
               />
             </div>
           </div>

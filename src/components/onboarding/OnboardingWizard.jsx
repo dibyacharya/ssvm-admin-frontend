@@ -570,6 +570,24 @@ const OnboardingWizard = ({ editProgramId = null }) => {
           })
         );
 
+        console.log("[wizard][loadProgram] HYDRATING with coursesBySemester:", JSON.stringify(
+          Object.fromEntries(
+            Object.entries(loadedCoursesBySemester).map(([k, v]) => [
+              k,
+              {
+                structureApplied: v?.structureApplied,
+                compCount: v?.structure?.compulsory_count,
+                compSlots: (v?.compulsorySlots || []).map(s => ({
+                  slotIndex: s.slotIndex,
+                  courseId: s.course?._id,
+                  courseCode: s.course?.courseCode,
+                  title: s.course?.title,
+                })),
+                elecBlockCount: (v?.electiveBlocks || []).length,
+              },
+            ])
+          ), null, 2
+        ));
         dispatch({
           type: 'HYDRATE',
           state: {
@@ -700,7 +718,7 @@ const OnboardingWizard = ({ editProgramId = null }) => {
   );
 
   const renderStep = () => {
-    const common = { state, dispatch, goNext, goBack, isEditMode };
+    const common = { state, dispatch, goNext, goBack, isEditMode, editProgramId };
     switch (state.currentStep) {
       case 1:
         return <StepProgramSetup {...common} />;

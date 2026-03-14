@@ -6,14 +6,19 @@ import {
   Building2,
   Loader2,
   AlertTriangle,
+  Save,
 } from "lucide-react";
 // Note: Loader2 still used in existing-program flow
 import {
   getProgramsDropdown,
   getProgramById,
+  createProgram,
+  updateProgram,
 } from "../../services/program.service";
 import {
   getSemesters,
+  createSemester,
+  updateSemester,
 } from "../../services/semester.services";
 import { getTeachers } from "../../services/user.service";
 import { getPeriodLabel } from "../../utils/periodLabel";
@@ -110,6 +115,8 @@ const StepProgramSetup = ({ state, dispatch, goNext, isEditMode = false }) => {
   );
   const [teachers, setTeachers] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [draftSaving, setDraftSaving] = useState(false);
+  const [draftFlash, setDraftFlash] = useState(null);
   const [error, setError] = useState(null);
   const [loadingPrograms, setLoadingPrograms] = useState(false);
 
@@ -296,6 +303,116 @@ const StepProgramSetup = ({ state, dispatch, goNext, isEditMode = false }) => {
       if (payload[key] === undefined) delete payload[key];
     });
     return payload;
+  };
+
+  /* ── Save Draft: persist program + semesters to backend ── */
+  const handleSaveDraft = async () => {
+    if (!formData.name || !formData.code || !formData.totalSemesters) {
+      setError(`Name, Code, and Total ${periodLabel}s are required.`);
+      return;
+    }
+    if (totalSemCount > 0 && semesterSlots.length === 0) {
+      setError(`Please configure ${periodLabel.toLowerCase()} slots.`);
+      return;
+    }
+    if (creditOverflow) {
+      setError(
+        `Total assigned credits (${assignedCredits}) exceed program total (${totalCredits}).`
+      );
+      return;
+    }
+    setError(null);
+    setDraftSaving(true);
+    setDraftFlash(null);
+
+    try {
+      const programPayload = buildProgramPayload();
+      programPayload.isActive = true;
+
+      let realProgramId = state.programId;
+      let createdProgram;
+
+      // Create or update program
+      if (realProgramId && !isTempId(realProgramId)) {
+        // Update existing program
+        const res = await updateProgram(realProgramId, programPayload);
+        createdProgram = res.program || res;
+        realProgramId = createdProgram._id || realProgramId;
+      } else {
+        // Create new program
+        const res = await createProgram(programPayload);
+        createdProgram = res.program || res;
+        realProgramId = createdProgram._id;
+      }
+
+      // Create or update semesters
+      const updatedSemesters = [];
+      for (let i = 0; i < semesterSlots.length; i++) {
+        const slot = semesterSlots[i];
+        const slotId = slot._id || slot.tempId || slot.id;
+        const isTemp = isTempId(slotId);
+
+        if (isTemp) {
+          // Create new semester
+          const semPayload = {
+            name: slot.name || `${periodLabel} ${i + 1}`,
+            semNumber: slot.semNumber || i + 1,
+            program: realProgramId,
+          };
+          if (slot.totalCredits) {
+            semPayload.totalCredits = Number(slot.totalCredits);
+          }
+          const semRes = await createSemester(semPayload);
+          const created = semRes?.semester || semRes;
+          updatedSemesters.push({
+            ...slot,
+            ...created,
+            _id: created._id,
+            tempId: undefined,
+          });
+        } else {
+          // Update existing semester
+          try {
+            const semPayload = {
+              name: slot.name,
+              semNumber: slot.semNumber || i + 1,
+            };
+            if (slot.totalCredits !== undefined) {
+              semPayload.totalCredits = Number(slot.totalCredits);
+            }
+            await updateSemester(slotId, semPayload);
+          } catch {
+            // If update fails (e.g. no changes), just keep the slot
+          }
+          updatedSemesters.push({ ...slot, _id: slotId });
+        }
+      }
+
+      // Update wizard state with real IDs
+      dispatch({
+        type: "SET_PROGRAM",
+        programId: realProgramId,
+        programData: { ...createdProgram, _id: realProgramId },
+        programMode: isEditMode ? "existing" : "create",
+      });
+      dispatch({ type: "SET_SEMESTERS", semesters: updatedSemesters });
+      dispatch({ type: "MARK_COMPLETE", step: 1 });
+
+      // Update local semester slots with real IDs
+      setSemesterSlots(updatedSemesters);
+
+      setDraftFlash({ type: "success", message: "Draft saved successfully! Program & semesters are persisted." });
+      setTimeout(() => setDraftFlash(null), 4000);
+    } catch (err) {
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to save draft.";
+      setError(msg);
+    } finally {
+      setDraftSaving(false);
+    }
   };
 
   /* ── Draft-only: save to local state and continue ── */
@@ -749,7 +866,7 @@ const StepProgramSetup = ({ state, dispatch, goNext, isEditMode = false }) => {
           </AnimatePresence>
 
           {/* Continue button */}
-          <motion.div variants={fadeUp} className="pt-4">
+          <motion.div variants={fadeUp} className="pt-4 flex items-center gap-3">
             <button
               onClick={handleCreateAndContinue}
               disabled={creditOverflow}
@@ -822,7 +939,7 @@ const StepProgramSetup = ({ state, dispatch, goNext, isEditMode = false }) => {
             </motion.div>
           )}
 
-          <motion.div variants={fadeUp} className="pt-4">
+          <motion.div variants={fadeUp} className="pt-4 flex items-center gap-3">
             <button
               onClick={handleSelectAndContinue}
               disabled={submitting || !selectedProgramId}

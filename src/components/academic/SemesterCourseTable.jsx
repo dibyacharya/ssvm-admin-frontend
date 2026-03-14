@@ -1909,7 +1909,7 @@ const SemesterCourseTable = ({
       await updateCourseTeachers(semesterId, editingCourse._id, teacherPayload);
 
       await fetchCourses();
-      if (onUpdate) onUpdate();
+      if (onUpdate) await onUpdate();
       closeEditCourseModal(true);
     } catch (error) {
       setEditingCourseError(
@@ -2286,11 +2286,6 @@ const SemesterCourseTable = ({
       return;
     }
 
-    if (localAssignmentWarnings.length > 0) {
-      setAssignmentError("Resolve assignment validation issues before saving.");
-      return;
-    }
-
     const enforceCreditTarget = Boolean(
       sanitizeDraft(assignmentDraft)?.structure?.enforce_credit_target
     );
@@ -2393,7 +2388,16 @@ const SemesterCourseTable = ({
       };
 
       const response = await updateSemesterCourseAssignment(programId, semesterId, payload);
-      const nextDraft = assignmentToDraft(response?.courseAssignment);
+      if (import.meta?.env?.DEV) {
+        console.debug("[ca][save-response]", { response, programId, semesterId });
+      }
+      // Backend may return courseAssignment at different paths
+      const assignmentData =
+        response?.courseAssignment ??
+        response?.semester?.courseAssignment ??
+        response?.data?.courseAssignment ??
+        response;
+      const nextDraft = assignmentToDraft(assignmentData);
       setAssignmentDraft(nextDraft);
       setStructureDraft({
         compulsory_count: nextDraft.structure.compulsory_count ?? 0,
@@ -2418,12 +2422,15 @@ const SemesterCourseTable = ({
       setAssignmentSource("persisted");
       const apiWarnings = extractApiWarnings(response);
       if (apiWarnings.length > 0) {
-        setAssignmentNotice(apiWarnings.join(" "));
+        setAssignmentNotice("Saved successfully. Notes: " + apiWarnings.join(" "));
       } else {
         setAssignmentNotice("Course assignment saved successfully.");
       }
 
-      if (onUpdate) onUpdate();
+      // Refetch the semester courses list so credit columns refresh
+      await fetchCourses();
+      // Notify parent to refresh academic plan data (awaited so table updates before user sees)
+      if (onUpdate) await onUpdate();
     } catch (error) {
       console.error("Failed to save course assignment:", error);
       const apiError = error?.response?.data;
@@ -2526,9 +2533,7 @@ const SemesterCourseTable = ({
     assignmentSaving ||
     assignmentLoading ||
     !programId ||
-    !assignmentSource ||
-    structureCreditInvalid ||
-    localAssignmentWarnings.length > 0;
+    !assignmentSource;
 
   const selectionLocked =
     assignmentSaving ||
@@ -3243,7 +3248,7 @@ const SemesterCourseTable = ({
             onClick={saveCourseAssignment}
             disabled={disableSaveAssignment}
             className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-            title={disableSaveAssignment ? (localAssignmentWarnings.length > 0 ? "Resolve warnings first" : structureCreditInvalid ? "Fix credit targets" : "") : ""}
+            title={disableSaveAssignment ? (!programId ? "Program is required" : !assignmentSource ? "No changes to save" : "") : ""}
           >
             <Save size={14} />
             {assignmentSaving ? "Saving..." : "Save & Update"}
@@ -3889,9 +3894,10 @@ const SemesterCourseTable = ({
 	            </div>
 
             {localAssignmentWarnings.length > 0 && (
-              <div className="space-y-1 rounded border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+              <div className="space-y-1 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
+                <div className="font-medium">Notes (you can still save):</div>
                 {localAssignmentWarnings.map((warning) => (
-                  <div key={warning}>{warning}</div>
+                  <div key={warning}>• {warning}</div>
                 ))}
               </div>
             )}

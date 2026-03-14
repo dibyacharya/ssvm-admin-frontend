@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronRight, ChevronLeft, Search, X, BookOpen,
-  AlertTriangle, Loader2, Check, Edit3,
+  AlertTriangle, Loader2, Check, Edit3, Save,
 } from 'lucide-react';
-import { getAllCourses } from '../../services/courses.service';
+import { getAllCourses, createCourse, lookupCourseByCode, updateCourse } from '../../services/courses.service';
+import { updateSemesterCourseAssignment } from '../../services/program.service';
 import { getPeriodLabel } from '../../utils/periodLabel';
 
 /* ── Constants ── */
@@ -53,6 +54,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
   const [pickerTab, setPickerTab] = useState('existing');
   const [newCourse, setNewCourse] = useState({ courseCode: '', title: '', lecture: '', tutorial: '', practical: '' });
   const [saveFlash, setSaveFlash] = useState(null);
+  const [draftSaving, setDraftSaving] = useState(false);
   // Edit course inline: { kind: 'compulsory', slotIndex, course } or { kind: 'elective', blockIndex, courseId, course }
   const [editingCourse, setEditingCourse] = useState(null);
 
@@ -346,6 +348,168 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
     return () => clearTimeout(timer);
   }, [drafts, activeTab, saveTabToWizard]);
 
+  /* ── Save Draft: persist course assignments to backend ── */
+  const handleSaveDraft = async () => {
+    const programId = state.programId;
+    if (!programId || String(programId).startsWith('draft_') || String(programId).startsWith('temp_')) {
+      setSaveFlash({ type: 'error', message: 'Please save program draft first (go to Step 1 and click Save Draft).' });
+      setTimeout(() => setSaveFlash(null), 5000);
+      return;
+    }
+
+    // Save all tabs to wizard state first
+    Object.entries(drafts).forEach(([semId, d]) => {
+      saveTabToWizard(semId, d);
+    });
+
+    setDraftSaving(true);
+    setSaveFlash(null);
+
+    const errors = [];
+    let savedCount = 0;
+
+    try {
+      for (const [semId, data] of Object.entries(drafts)) {
+        // Skip temp semesters and empty drafts
+        if (String(semId).startsWith('temp_') || String(semId).startsWith('draft_')) {
+          errors.push(`${semId}: Semester not saved to backend yet. Save Step 1 draft first.`);
+          continue;
+        }
+        if (!data?.structureApplied) continue;
+
+        const s = data.structure;
+        const compCount = toNum(s.compulsory_count);
+        const elecCount = toNum(s.elective_slot_count);
+        if (compCount === 0 && elecCount === 0) continue;
+
+        // Create any draft courses first
+        const draftIdMap = {};
+        const allDraftCourses = [
+          ...(data.compulsorySlots || []).filter((sl) => sl.course?.isDraft).map((sl) => sl.course),
+          ...(data.electiveBlocks || []).flatMap((b) =>
+            (b.options || []).filter((c) => c.isDraft)
+          ),
+        ];
+        const seenDraftIds = new Set();
+        for (const dc of allDraftCourses) {
+          if (seenDraftIds.has(dc._id)) continue;
+          seenDraftIds.add(dc._id);
+          try {
+            const courseRes = await createCourse({
+              courseCode: dc.courseCode,
+              title: dc.title,
+              creditPoints: {
+                lecture: dc.lecture || 0,
+                tutorial: dc.tutorial || 0,
+                practical: dc.practical || 0,
+              },
+            });
+            const created = courseRes.course || courseRes;
+            if (created?._id) draftIdMap[dc._id] = created._id;
+          } catch (err) {
+            const msg = err?.response?.data?.error || err?.message || "Unknown error";
+            // If course already exists, look it up by code and use existing ID
+            if (msg.toLowerCase().includes("already exists")) {
+              try {
+                const existing = await lookupCourseByCode(dc.courseCode);
+                const existingCourse = existing?.course || existing;
+                if (existingCourse?._id) {
+                  draftIdMap[dc._id] = existingCourse._id;
+                  console.log(`[wizard][saveDraft] draft course ${dc.courseCode} already exists, using ID: ${existingCourse._id}`);
+                  continue;
+                }
+              } catch (lookupErr) {
+                // Lookup failed — fall through to error
+              }
+            }
+            errors.push(`Failed to create course ${dc.courseCode}: ${msg}`);
+          }
+        }
+
+        // Update credit values for existing (non-draft) courses that may have been edited
+        const allEditedCourses = [
+          ...(data.compulsorySlots || [])
+            .filter((sl) => sl.course && !sl.course.isDraft)
+            .map((sl) => sl.course),
+          ...(data.electiveBlocks || [])
+            .flatMap((b) => (b.options || []).filter((c) => !c.isDraft)),
+        ];
+        for (const course of allEditedCourses) {
+          const courseCode = course.courseCode || course.code;
+          if (!courseCode) continue;
+          const lecture = Number(course.lecture ?? course.creditPoints?.lecture ?? 0);
+          const tutorial = Number(course.tutorial ?? course.creditPoints?.tutorial ?? 0);
+          const practical = Number(course.practical ?? course.creditPoints?.practical ?? 0);
+          try {
+            await updateCourse(courseCode, {
+              courseCode,
+              title: course.title || course.name,
+              creditPoints: { lecture, tutorial, practical },
+            });
+          } catch (err) {
+            console.log(`[wizard][saveDraft] failed to update course ${courseCode} credits:`, err?.message);
+          }
+        }
+
+        const resolveId = (id) => draftIdMap[id] || id;
+
+        // Build compulsory course IDs
+        const compulsoryCourseIds = (data.compulsorySlots || [])
+          .filter((sl) => sl.course)
+          .map((sl) => resolveId(sl.course._id || sl.course.id))
+          .filter(Boolean);
+
+        // Build elective baskets
+        const baskets = (data.electiveBlocks || []).map((block, idx) => ({
+          basketId: `basket_${idx}`,
+          rule: block.rule || 'ANY_ONE',
+          pickN: block.pickN || 1,
+          options: (block.options || [])
+            .map((c) => resolveId(c._id || c.id))
+            .filter(Boolean),
+        }));
+
+        try {
+          const sem = semesters.find((ss) => getSemId(ss) === semId);
+          await updateSemesterCourseAssignment(programId, semId, {
+            compulsory_count: compCount,
+            elective_slot_count: elecCount,
+            compulsory_credit_target: toNum(s.compulsory_credit_target),
+            elective_credit_target: toNum(s.elective_credit_target),
+            credit_target_total: toNum(sem?.totalCredits),
+            enforce_credit_target: Boolean(s.enforce_credit_target),
+            finalizeStructure: true,
+            compulsoryCourseIds,
+            electiveConfig: { mode: 'BASKET', baskets, tracks: [] },
+          });
+          savedCount++;
+        } catch (err) {
+          const semName = semesters.find((ss) => getSemId(ss) === semId)?.name || semId;
+          const details = err?.response?.data?.details;
+          const detailMsg = Array.isArray(details) ? details.map((d) => d.message).join('; ') : '';
+          errors.push(`${semName}: ${detailMsg || err?.response?.data?.error || err?.message || 'Unknown error'}`);
+        }
+      }
+
+      if (errors.length > 0 && savedCount === 0) {
+        setSaveFlash({ type: 'error', message: `Draft save failed: ${errors.join('. ')}` });
+      } else if (errors.length > 0) {
+        setSaveFlash({ type: 'error', message: `Saved ${savedCount} semester(s), but some had errors: ${errors.join('. ')}` });
+      } else if (savedCount > 0) {
+        setSaveFlash({ type: 'success', message: `Course assignments saved for ${savedCount} semester(s)!` });
+        dispatch({ type: 'MARK_COMPLETE', step: 2 });
+      } else {
+        setSaveFlash({ type: 'error', message: 'Nothing to save. Apply structure and add courses first, then save.' });
+      }
+      setTimeout(() => setSaveFlash(null), 6000);
+    } catch (err) {
+      setSaveFlash({ type: 'error', message: `Draft save failed: ${err?.message || 'Unknown error'}` });
+      setTimeout(() => setSaveFlash(null), 5000);
+    } finally {
+      setDraftSaving(false);
+    }
+  };
+
   /* ── Continue ── */
   const handleContinue = () => {
     // Save ALL semester tabs to wizard state (not just the active one)
@@ -397,24 +561,6 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
         Define course structure for each {periodLabel.toLowerCase()}.
       </p>
       <hr className="my-6 border-gray-200" />
-
-      {/* Save flash */}
-      <AnimatePresence>
-        {saveFlash && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className={`mb-4 rounded-lg border px-4 py-2.5 text-sm ${
-              saveFlash.type === 'success'
-                ? 'bg-green-50 border-green-200 text-green-700'
-                : 'bg-red-50 border-red-200 text-red-700'
-            }`}
-          >
-            {saveFlash.message}
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* ── Semester tabs ── */}
       <div className="flex gap-2 overflow-x-auto pb-2 mb-6">
@@ -764,10 +910,12 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
           <ChevronLeft className="w-4 h-4 mr-1" /> Back
         </button>
         <div className="flex flex-col items-end gap-1">
-          <button onClick={handleContinue}
-            className="inline-flex items-center px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
-            Continue <ChevronRight className="w-4 h-4 ml-2" />
-          </button>
+          <div className="flex items-center gap-3">
+            <button onClick={handleContinue}
+              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
+              Continue <ChevronRight className="w-4 h-4 ml-2" />
+            </button>
+          </div>
           <div className="text-[11px] text-gray-400">
             Course assignment is optional — you can complete it later.
           </div>

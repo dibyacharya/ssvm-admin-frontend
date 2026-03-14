@@ -653,9 +653,11 @@ const SemesterManager = ({
     };
   };
 
-  const fetchSemesterTimetable = async (semesterId) => {
+  const fetchSemesterTimetable = async (semesterId, { silent = false } = {}) => {
     if (!semesterId) return;
-    setTimetableLoadingBySemester((prev) => ({ ...prev, [semesterId]: true }));
+    if (!silent) {
+      setTimetableLoadingBySemester((prev) => ({ ...prev, [semesterId]: true }));
+    }
     setTimetableErrorBySemester((prev) => ({ ...prev, [semesterId]: '' }));
 
     try {
@@ -1300,7 +1302,7 @@ const SemesterManager = ({
         [semesterId]: 'Weekly class schedule saved successfully.',
       }));
       const scrollY = window.scrollY;
-      await fetchSemesterTimetable(semesterId);
+      await fetchSemesterTimetable(semesterId, { silent: true });
       requestAnimationFrame(() => window.scrollTo(0, scrollY));
     } catch (err) {
       setTimetableErrorBySemester((prev) => ({
@@ -1374,7 +1376,7 @@ const SemesterManager = ({
 
       // Refresh timetable to show updated VConf URLs
       const scrollYVconf = window.scrollY;
-      await fetchSemesterTimetable(semesterId);
+      await fetchSemesterTimetable(semesterId, { silent: true });
       requestAnimationFrame(() => window.scrollTo(0, scrollYVconf));
     } catch (err) {
       setTimetableErrorBySemester((prev) => ({
@@ -1407,7 +1409,7 @@ const SemesterManager = ({
 
       // Refresh timetable to reflect cleared state
       const scrollYReset = window.scrollY;
-      await fetchSemesterTimetable(semesterId);
+      await fetchSemesterTimetable(semesterId, { silent: true });
       requestAnimationFrame(() => window.scrollTo(0, scrollYReset));
     } catch (err) {
       setTimetableErrorBySemester((prev) => ({
@@ -1451,7 +1453,7 @@ const SemesterManager = ({
     }));
     // Refresh timetable after upload import
     const scrollYUpload = window.scrollY;
-    await fetchSemesterTimetable(semesterId);
+    await fetchSemesterTimetable(semesterId, { silent: true });
     requestAnimationFrame(() => window.scrollTo(0, scrollYUpload));
   };
 
@@ -1569,7 +1571,7 @@ const SemesterManager = ({
         ...prev,
         [semesterId]: 'Slot templates saved successfully.',
       }));
-      await fetchSemesterTimetable(semesterId);
+      await fetchSemesterTimetable(semesterId, { silent: true });
     } catch (err) {
       setTimetableErrorBySemester((prev) => ({
         ...prev,
@@ -1648,7 +1650,7 @@ const SemesterManager = ({
         [semesterId]: 'Date-wise class schedule saved successfully.',
       }));
       const scrollYDate = window.scrollY;
-      await fetchSemesterTimetable(semesterId);
+      await fetchSemesterTimetable(semesterId, { silent: true });
       requestAnimationFrame(() => window.scrollTo(0, scrollYDate));
     } catch (err) {
       setTimetableErrorBySemester((prev) => ({
@@ -1782,7 +1784,7 @@ const SemesterManager = ({
         [semesterId]: 'Semester plan saved successfully.',
       }));
       const scrollYPlan = window.scrollY;
-      await fetchSemesterTimetable(semesterId);
+      await fetchSemesterTimetable(semesterId, { silent: true });
       requestAnimationFrame(() => window.scrollTo(0, scrollYPlan));
     } catch (err) {
       setTimetableErrorBySemester((prev) => ({

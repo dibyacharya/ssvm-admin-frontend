@@ -3239,15 +3239,21 @@ const SemesterCourseTable = ({
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={saveCourseAssignment}
-            disabled={disableSaveAssignment}
-            className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            <Save size={14} />
-            {assignmentSaving ? "Saving..." : "Save Structure"}
-          </button>
+          <div className="flex flex-col items-end gap-1">
+            <button
+              type="button"
+              onClick={saveCourseAssignment}
+              disabled={disableSaveAssignment}
+              className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              title={disableSaveAssignment ? (structureDirty ? "Apply Structure first" : localAssignmentWarnings.length > 0 ? "Resolve warnings first" : "") : ""}
+            >
+              <Save size={14} />
+              {assignmentSaving ? "Saving..." : "Save Structure"}
+            </button>
+            {disableSaveAssignment && structureDirty && (
+              <span className="text-[10px] text-amber-600">Apply Structure first to enable save</span>
+            )}
+          </div>
         </div>
 
 	        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
@@ -3526,19 +3532,22 @@ const SemesterCourseTable = ({
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => clearCompulsorySlotCourse(slotIndex)}
+                                  onClick={(e) => { e.stopPropagation(); clearCompulsorySlotCourse(slotIndex); }}
                                   className="text-[11px] text-gray-500 hover:text-red-600"
+                                  style={{ pointerEvents: 'auto' }}
                                 >
                                   Clear
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => {
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     if (!course) return;
                                     openEditCourseModal(course);
                                   }}
                                   disabled={!course}
                                   className="text-[11px] text-gray-500 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                  style={{ pointerEvents: 'auto' }}
                                 >
                                   Edit
                                 </button>
@@ -3734,21 +3743,24 @@ const SemesterCourseTable = ({
                                           </span>
                                           <button
                                             type="button"
-                                            onClick={() => {
+                                            onClick={(e) => {
+                                              e.stopPropagation();
                                               if (!course) return;
                                               openEditCourseModal(course);
                                             }}
                                             disabled={!course}
                                             className="text-gray-400 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
                                             title="Edit candidate"
+                                            style={{ pointerEvents: 'auto' }}
                                           >
                                             <Edit3 size={14} />
                                           </button>
                                           <button
                                             type="button"
-                                            onClick={() => removeElectiveOption(blockIndex, normalizedId)}
+                                            onClick={(e) => { e.stopPropagation(); removeElectiveOption(blockIndex, normalizedId); }}
                                             className="text-gray-400 hover:text-red-600"
                                             title="Remove candidate"
+                                            style={{ pointerEvents: 'auto' }}
                                           >
                                             <X size={14} />
                                           </button>

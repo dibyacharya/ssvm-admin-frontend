@@ -2011,6 +2011,22 @@ const SemesterCourseTable = ({
     setStructureDraft((prev) => {
       return { ...prev, [field]: value };
     });
+
+    // Auto-sync structure change into assignmentDraft so structureDirty stays false
+    // sanitizeDraft() automatically grows/shrinks compulsorySlots and electiveBlocks arrays
+    setAssignmentDraft((prev) => {
+      return sanitizeDraft({
+        ...prev,
+        structure: {
+          ...(prev?.structure || {}),
+          [field]: value,
+        },
+      });
+    });
+
+    // Promote from "empty" to "draft" so the grid and save button are not locked
+    setAssignmentSource((prev) => (prev === "empty" || !prev) ? "draft" : prev);
+
     setAssignmentFieldErrors({});
     setAssignmentNotice("");
     setAssignmentError("");
@@ -2270,11 +2286,6 @@ const SemesterCourseTable = ({
       return;
     }
 
-    if (structureDirty) {
-      setAssignmentError("Apply structure first before final save.");
-      return;
-    }
-
     if (localAssignmentWarnings.length > 0) {
       setAssignmentError("Resolve assignment validation issues before saving.");
       return;
@@ -2516,17 +2527,12 @@ const SemesterCourseTable = ({
     assignmentLoading ||
     !programId ||
     !assignmentSource ||
-    assignmentSource === "empty" ||
-    structureDirty ||
     structureCreditInvalid ||
     localAssignmentWarnings.length > 0;
 
   const selectionLocked =
     assignmentSaving ||
-    assignmentLoading ||
-    !assignmentSource ||
-    assignmentSource === "empty" ||
-    structureDirty;
+    assignmentLoading;
 
   const electiveUsageByCourseId = useMemo(() => {
     const usage = new Map();
@@ -2630,13 +2636,6 @@ const SemesterCourseTable = ({
     setCoursePickerError("");
     setCoursePicker(null);
   };
-
-  useEffect(() => {
-    if (selectionLocked && coursePicker) {
-      setCoursePicker(null);
-      setCoursePickerError("");
-    }
-  }, [selectionLocked, coursePicker]);
 
   if (!semesterId) {
     return (
@@ -3229,7 +3228,7 @@ const SemesterCourseTable = ({
             </p>
             {assignmentSource === "empty" && (
               <p className="mt-1 text-xs text-amber-700">
-                Apply structure to start selecting compulsory and elective courses.
+                Set compulsory and elective counts below, then select courses for each slot.
               </p>
             )}
             {assignmentSource && (
@@ -3239,21 +3238,16 @@ const SemesterCourseTable = ({
             )}
           </div>
 
-          <div className="flex flex-col items-end gap-1">
-            <button
-              type="button"
-              onClick={saveCourseAssignment}
-              disabled={disableSaveAssignment}
-              className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-              title={disableSaveAssignment ? (structureDirty ? "Apply Structure first" : localAssignmentWarnings.length > 0 ? "Resolve warnings first" : "") : ""}
-            >
-              <Save size={14} />
-              {assignmentSaving ? "Saving..." : "Save Structure"}
-            </button>
-            {disableSaveAssignment && structureDirty && (
-              <span className="text-[10px] text-amber-600">Apply Structure first to enable save</span>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={saveCourseAssignment}
+            disabled={disableSaveAssignment}
+            className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            title={disableSaveAssignment ? (localAssignmentWarnings.length > 0 ? "Resolve warnings first" : structureCreditInvalid ? "Fix credit targets" : "") : ""}
+          >
+            <Save size={14} />
+            {assignmentSaving ? "Saving..." : "Save & Update"}
+          </button>
         </div>
 
 	        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
@@ -3370,19 +3364,9 @@ const SemesterCourseTable = ({
             )}
 	          </div>
 	          <div className="mt-3 flex flex-wrap items-center gap-3">
-	            <button
-	              type="button"
-              onClick={saveStructure}
-              disabled={assignmentSaving || !programId || structureCreditInvalid}
-              className="rounded bg-gray-900 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
-            >
-              Apply Structure
-            </button>
-            {structureDirty && (
-              <span className="text-xs text-amber-700">
-                Structure changed. Apply structure before final save.
-              </span>
-            )}
+            <span className="text-xs text-gray-500">
+              Structure changes are auto-applied. Fill slots and click Save Structure above.
+            </span>
           </div>
         </div>
 

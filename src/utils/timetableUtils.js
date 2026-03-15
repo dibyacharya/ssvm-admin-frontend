@@ -98,11 +98,11 @@ export const getWeekDates = (mondayDate) => {
 
 /**
  * Extract weekly off day keys (e.g. ['sunday', 'saturday']) from semester plan.
- * Defaults to ['sunday'] if not specified.
+ * Defaults to empty set if not specified.
  */
 export const getWeeklyOffDays = (semesterPlan) => {
   if (!semesterPlan?.weeklyOffDays || !Array.isArray(semesterPlan.weeklyOffDays)) {
-    return new Set(['sunday']);
+    return new Set([]);
   }
   return new Set(
     semesterPlan.weeklyOffDays.map((d) => String(d || '').toLowerCase()).filter(Boolean)

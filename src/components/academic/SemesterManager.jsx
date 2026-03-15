@@ -335,7 +335,7 @@ const normalizeTimetableResponse = (payload = {}, options = {}) => {
     return acc;
   }, {});
 
-  const semesterPlan = payload?.semesterPlan || { startDate: null, endDate: null, items: [], weeklyOffDays: ['sunday'] };
+  const semesterPlan = payload?.semesterPlan || { startDate: null, endDate: null, items: [], weeklyOffDays: [] };
 
   return {
     weeklyClassSchedule,
@@ -359,7 +359,7 @@ const createEmptyTimetableState = (semesterRange = {}) => ({
   slotTemplates: DEFAULT_SLOT_TEMPLATES.map((row, index) => normalizeSlotTemplateRow(row, index)),
   subjectTeacherMappings: [],
   subjectTeacherLookup: {},
-  semesterPlan: { startDate: null, endDate: null, items: [], weeklyOffDays: ['sunday'] },
+  semesterPlan: { startDate: null, endDate: null, items: [], weeklyOffDays: [] },
   semesterRange: {
     startDate: semesterRange?.semesterStartDate || semesterRange?.startDate || '',
     endDate: semesterRange?.semesterEndDate || semesterRange?.endDate || '',
@@ -1736,12 +1736,12 @@ const SemesterManager = ({
   const updateWeeklyOffDays = (semesterId, days) => {
     setTimetableBySemester((prev) => {
       const entry = getTimetableEntry(prev, semesterId);
-      const plan = entry.semesterPlan || { startDate: null, endDate: null, items: [], weeklyOffDays: ['sunday'] };
+      const plan = entry.semesterPlan || { startDate: null, endDate: null, items: [], weeklyOffDays: [] };
       return {
         ...prev,
         [semesterId]: {
           ...entry,
-          semesterPlan: { ...plan, weeklyOffDays: Array.isArray(days) ? days : ['sunday'] },
+          semesterPlan: { ...plan, weeklyOffDays: Array.isArray(days) ? days : [] },
         },
       };
     });
@@ -1749,7 +1749,7 @@ const SemesterManager = ({
 
   const saveSemesterPlan = async (semesterId) => {
     const entry = getTimetableEntry(timetableBySemester, semesterId);
-    const plan = entry.semesterPlan || { startDate: null, endDate: null, items: [], weeklyOffDays: ['sunday'] };
+    const plan = entry.semesterPlan || { startDate: null, endDate: null, items: [], weeklyOffDays: [] };
     try {
       setTimetableSavingBySemester((prev) => ({ ...prev, [`plan:${semesterId}`]: true }));
       setTimetableErrorBySemester((prev) => ({ ...prev, [semesterId]: '' }));
@@ -1775,7 +1775,7 @@ const SemesterManager = ({
           isVconfScheduled: !!item.isVconfScheduled,
           examType: item.examType || '',
         })),
-        weeklyOffDays: Array.isArray(plan.weeklyOffDays) ? plan.weeklyOffDays : ['sunday'],
+        weeklyOffDays: Array.isArray(plan.weeklyOffDays) ? plan.weeklyOffDays : [],
       };
 
       await updateSemesterPlan(semesterId, { semesterPlan: payload });

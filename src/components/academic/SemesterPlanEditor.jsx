@@ -13,7 +13,7 @@ const WEEK_DAYS_CONFIG = [
 ];
 
 const SemesterPlanEditor = ({
-  semesterPlan = { startDate: null, endDate: null, items: [], weeklyOffDays: ['sunday'] },
+  semesterPlan = { startDate: null, endDate: null, items: [], weeklyOffDays: [] },
   semesterRange = {},
   courses = [],
   slotTemplates = [],
@@ -30,7 +30,7 @@ const SemesterPlanEditor = ({
   const items = semesterPlan?.items || [];
   const weeklyOffDays = Array.isArray(semesterPlan?.weeklyOffDays)
     ? semesterPlan.weeklyOffDays
-    : ['sunday'];
+    : [];
 
   const minDate = semesterRange?.startDate || '';
   const maxDate = semesterRange?.endDate || '';

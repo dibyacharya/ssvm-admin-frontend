@@ -41,7 +41,11 @@ const sidebarItems = [
   { id: 'amendments', name: 'Course Amendments', icon: FileText, path: '/course-amendments' },
   { id: 'gantt', name: 'Gantt Chart', icon: GitBranch, path: '/gantt' },
   { id: 'fees', name: 'Fee Management', icon: CreditCard, path: '/fees' },
-  { id: 'exams', name: 'Examinations', icon: ClipboardCheck, path: '/exams' },
+  { id: 'exams', name: 'Examinations', icon: ClipboardCheck, type: 'group', path: '/exams', children: [
+    { id: 'exam-overview', name: 'Overview', icon: ClipboardCheck, path: '/exams' },
+    { id: 'paper-formats', name: 'Paper Formats', icon: FileText, path: '/exams/paper-formats' },
+    { id: 'qp-assignments', name: 'QP Assignments', icon: Users, path: '/exams/qp-assignments' },
+  ]},
   { id: 'helpdesk', name: 'Helpdesk', icon: MessageSquare, path: '/helpdesk' }
 ];
 const RBAC_VISIBILITY_ROLES = [

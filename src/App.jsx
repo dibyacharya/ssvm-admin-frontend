@@ -36,6 +36,8 @@ import FeeStructureForm from './pages/FeeStructureForm';
 import FeeRecords from './pages/FeeRecords';
 import FeeRecordDetail from './pages/FeeRecordDetail';
 import ExamManagement from './pages/ExamManagement';
+import ExamPaperFormats from './pages/ExamPaperFormats';
+import QuestionPaperAssignments from './pages/QuestionPaperAssignments';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -170,6 +172,8 @@ function App() {
               <Route path="fees/records" element={<FeeRecords />} />
               <Route path="fees/records/:id" element={<FeeRecordDetail />} />
               <Route path="exams" element={<ExamManagement />} />
+              <Route path="exams/paper-formats" element={<ExamPaperFormats />} />
+              <Route path="exams/qp-assignments" element={<QuestionPaperAssignments />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="certificates" element={<Certificates />} />
               <Route path="forums" element={<Forums />} />

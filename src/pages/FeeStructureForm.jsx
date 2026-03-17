@@ -316,7 +316,7 @@ const FeeStructureForm = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Structure Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fee Structure Name</label>
               <input
                 type="text"
                 value={form.name}

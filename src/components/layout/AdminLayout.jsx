@@ -49,6 +49,7 @@ const sidebarItems = [
     { id: 'exam-registration', name: 'Registration', icon: Calendar, path: '/exams/registration' },
     { id: 'exam-results', name: 'Results', icon: BarChart3, path: '/exams/results' },
     { id: 'result-committee', name: 'Result Committee', icon: Gavel, path: '/exams/result-committee' },
+    { id: 'certificates', name: 'Certificates', icon: Award, path: '/exams/certificates' },
   ]},
   { id: 'helpdesk', name: 'Helpdesk', icon: MessageSquare, path: '/helpdesk' }
 ];

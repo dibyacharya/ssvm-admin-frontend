@@ -42,6 +42,7 @@ import ExamRegistrationManagement from './pages/ExamRegistrationManagement';
 import ResultManagement from './pages/ResultManagement';
 import ResultCommitteeManagement from './pages/ResultCommitteeManagement';
 import CertificateManagement from './pages/CertificateManagement';
+import ExamSettingsPage from './pages/ExamSettings';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -182,6 +183,7 @@ function App() {
               <Route path="exams/results" element={<ResultManagement />} />
               <Route path="exams/result-committee" element={<ResultCommitteeManagement />} />
               <Route path="exams/certificates" element={<CertificateManagement />} />
+              <Route path="exams/settings" element={<ExamSettingsPage />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="certificates" element={<Certificates />} />
               <Route path="forums" element={<Forums />} />

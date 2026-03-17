@@ -271,7 +271,7 @@ const FeeStructureManagement = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Structure Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fee Structure Name</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Program</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Periods</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Late Fee</th>
@@ -354,13 +354,15 @@ const FeeStructureManagement = () => {
       {/* Toast */}
       {toast && (
         <div
-          className={`fixed bottom-4 right-4 z-50 rounded-lg border px-4 py-3 text-sm shadow-lg ${
+          onClick={() => setToast(null)}
+          className={`fixed bottom-4 right-4 z-50 rounded-lg border px-4 py-3 text-sm shadow-lg cursor-pointer transition-opacity hover:opacity-80 flex items-center gap-2 ${
             toast.type === 'success'
               ? 'border-green-200 bg-green-50 text-green-700'
               : 'border-red-200 bg-red-50 text-red-700'
           }`}
         >
           {toast.message}
+          <span className="text-xs opacity-50 ml-1">✕</span>
         </div>
       )}
     </div>

@@ -40,6 +40,7 @@ import ExamPaperFormats from './pages/ExamPaperFormats';
 import QuestionPaperAssignments from './pages/QuestionPaperAssignments';
 import ExamRegistrationManagement from './pages/ExamRegistrationManagement';
 import ResultManagement from './pages/ResultManagement';
+import ResultCommitteeManagement from './pages/ResultCommitteeManagement';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -178,6 +179,7 @@ function App() {
               <Route path="exams/qp-assignments" element={<QuestionPaperAssignments />} />
               <Route path="exams/registration" element={<ExamRegistrationManagement />} />
               <Route path="exams/results" element={<ResultManagement />} />
+              <Route path="exams/result-committee" element={<ResultCommitteeManagement />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="certificates" element={<Certificates />} />
               <Route path="forums" element={<Forums />} />

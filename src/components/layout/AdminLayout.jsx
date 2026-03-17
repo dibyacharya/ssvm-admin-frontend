@@ -28,7 +28,8 @@ import {
   Eye,
   FileText,
   CreditCard,
-  ClipboardCheck
+  ClipboardCheck,
+  Gavel
 } from 'lucide-react';
 
 const sidebarItems = [
@@ -47,6 +48,7 @@ const sidebarItems = [
     { id: 'qp-assignments', name: 'QP Assignments', icon: Users, path: '/exams/qp-assignments' },
     { id: 'exam-registration', name: 'Registration', icon: Calendar, path: '/exams/registration' },
     { id: 'exam-results', name: 'Results', icon: BarChart3, path: '/exams/results' },
+    { id: 'result-committee', name: 'Result Committee', icon: Gavel, path: '/exams/result-committee' },
   ]},
   { id: 'helpdesk', name: 'Helpdesk', icon: MessageSquare, path: '/helpdesk' }
 ];

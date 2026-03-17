@@ -38,6 +38,7 @@ import FeeRecordDetail from './pages/FeeRecordDetail';
 import ExamManagement from './pages/ExamManagement';
 import ExamPaperFormats from './pages/ExamPaperFormats';
 import QuestionPaperAssignments from './pages/QuestionPaperAssignments';
+import ExamRegistrationManagement from './pages/ExamRegistrationManagement';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -174,6 +175,7 @@ function App() {
               <Route path="exams" element={<ExamManagement />} />
               <Route path="exams/paper-formats" element={<ExamPaperFormats />} />
               <Route path="exams/qp-assignments" element={<QuestionPaperAssignments />} />
+              <Route path="exams/registration" element={<ExamRegistrationManagement />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="certificates" element={<Certificates />} />
               <Route path="forums" element={<Forums />} />

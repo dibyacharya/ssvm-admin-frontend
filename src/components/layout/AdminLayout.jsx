@@ -45,6 +45,7 @@ const sidebarItems = [
     { id: 'exam-overview', name: 'Overview', icon: ClipboardCheck, path: '/exams' },
     { id: 'paper-formats', name: 'Paper Formats', icon: FileText, path: '/exams/paper-formats' },
     { id: 'qp-assignments', name: 'QP Assignments', icon: Users, path: '/exams/qp-assignments' },
+    { id: 'exam-registration', name: 'Registration', icon: Calendar, path: '/exams/registration' },
   ]},
   { id: 'helpdesk', name: 'Helpdesk', icon: MessageSquare, path: '/helpdesk' }
 ];

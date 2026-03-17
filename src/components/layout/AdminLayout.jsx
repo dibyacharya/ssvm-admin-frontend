@@ -26,7 +26,9 @@ import {
   ChevronRight,
   GitBranch,
   Eye,
-  FileText
+  FileText,
+  CreditCard,
+  ClipboardCheck
 } from 'lucide-react';
 
 const sidebarItems = [
@@ -38,6 +40,8 @@ const sidebarItems = [
   { id: 'courses', name: 'Course Management', icon: BookOpen, path: '/courses/list' },
   { id: 'amendments', name: 'Course Amendments', icon: FileText, path: '/course-amendments' },
   { id: 'gantt', name: 'Gantt Chart', icon: GitBranch, path: '/gantt' },
+  { id: 'fees', name: 'Fee Management', icon: CreditCard, path: '/fees' },
+  { id: 'exams', name: 'Examinations', icon: ClipboardCheck, path: '/exams' },
   { id: 'helpdesk', name: 'Helpdesk', icon: MessageSquare, path: '/helpdesk' }
 ];
 const RBAC_VISIBILITY_ROLES = [

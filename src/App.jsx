@@ -31,6 +31,11 @@ import CourseAmendments from './pages/CourseAmendments';
 import CourseAmendmentForm from './pages/CourseAmendmentForm';
 import CourseAmendmentDetail from './pages/CourseAmendmentDetail';
 import { Analytics, Certificates, Forums, Settings } from './pages/PlaceholderComponents';
+import FeeStructureManagement from './pages/FeeStructureManagement';
+import FeeStructureForm from './pages/FeeStructureForm';
+import FeeRecords from './pages/FeeRecords';
+import FeeRecordDetail from './pages/FeeRecordDetail';
+import ExamManagement from './pages/ExamManagement';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -159,6 +164,12 @@ function App() {
               <Route path="enrollment" element={<Navigate to="/cohorts" replace />} />
               <Route path="cohorts" element={<CohortList />} />
               <Route path="cohorts/students/:studentId" element={<EnrollmentStudentDetail />} />
+              <Route path="fees" element={<FeeStructureManagement />} />
+              <Route path="fees/new" element={<FeeStructureForm />} />
+              <Route path="fees/:id/edit" element={<FeeStructureForm />} />
+              <Route path="fees/records" element={<FeeRecords />} />
+              <Route path="fees/records/:id" element={<FeeRecordDetail />} />
+              <Route path="exams" element={<ExamManagement />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="certificates" element={<Certificates />} />
               <Route path="forums" element={<Forums />} />

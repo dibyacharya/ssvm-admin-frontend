@@ -324,6 +324,39 @@ const FeeRecordDetail = () => {
         </div>
       )}
 
+      {/* CCAvenue Gateway Details */}
+      {record.paymentGateway === 'CCAVENUE' && (
+        <div className="bg-indigo-50 rounded-xl border border-indigo-200 p-6 space-y-3">
+          <h2 className="text-lg font-semibold text-indigo-800 flex items-center gap-2">
+            <CreditCard className="w-5 h-5" />
+            Gateway Details (CCAvenue)
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <span className="text-indigo-600">Transaction ID</span>
+              <p className="font-mono font-medium text-indigo-900">{record.transactionId || '-'}</p>
+            </div>
+            <div>
+              <span className="text-indigo-600">Order ID</span>
+              <p className="font-mono font-medium text-indigo-900">{record.orderId || '-'}</p>
+            </div>
+            <div>
+              <span className="text-indigo-600">Gateway Status</span>
+              <p className={`font-medium ${
+                record.gatewayStatus === 'SUCCESS' ? 'text-green-700' :
+                record.gatewayStatus === 'FAILURE' ? 'text-red-700' :
+                record.gatewayStatus === 'INITIATED' ? 'text-amber-700' :
+                'text-indigo-900'
+              }`}>{record.gatewayStatus || '-'}</p>
+            </div>
+            <div>
+              <span className="text-indigo-600">Initiated At</span>
+              <p className="font-medium text-indigo-900">{formatDate(record.gatewayInitiatedAt)}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toast */}
       {toast && (
         <div

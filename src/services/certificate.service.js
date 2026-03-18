@@ -44,3 +44,16 @@ export const getCertificateStats = async (params = {}) => {
   const res = await api.get("/certificates/stats", { params });
   return res.data;
 };
+
+export const downloadCertificatePdf = async (id, withLetterhead = true) => {
+  const res = await api.get(`/certificates/${id}/download-pdf`, {
+    params: { withLetterhead },
+    responseType: "blob",
+  });
+  return res.data;
+};
+
+export const issueToStudent = async (data) => {
+  const res = await api.post("/certificates/issue-individual", data);
+  return res.data;
+};

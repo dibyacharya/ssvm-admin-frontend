@@ -6,8 +6,18 @@ export const getAllFeeConfigs = async () => {
   return res.data;
 };
 
+export const createFeeConfig = async (data) => {
+  const res = await api.post("/certificate-applications/fee-config", data);
+  return res.data;
+};
+
 export const updateFeeConfig = async (type, data) => {
   const res = await api.put(`/certificate-applications/fee-config/${type}`, data);
+  return res.data;
+};
+
+export const deleteFeeConfig = async (type) => {
+  const res = await api.delete(`/certificate-applications/fee-config/${type}`);
   return res.data;
 };
 

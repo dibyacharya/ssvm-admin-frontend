@@ -51,10 +51,11 @@ const QuestionPaperAssignments = () => {
     examType: 'mid_term',
     paperFormat: '',
     preparer: '',
+    setters: [],
     preparationDeadline: '',
     reviewer: '',
     reviewDeadline: '',
-    requiredQuestionCount: 0,
+    requiredQuestionCount: 1,
     notes: '',
   });
 
@@ -90,14 +91,14 @@ const QuestionPaperAssignments = () => {
   const openCreateModal = () => {
     setForm({
       course: '', semester: '', examType: 'mid_term', paperFormat: '',
-      preparer: '', preparationDeadline: '', reviewer: '', reviewDeadline: '',
-      requiredQuestionCount: 0, notes: '',
+      preparer: '', setters: [], preparationDeadline: '', reviewer: '', reviewDeadline: '',
+      requiredQuestionCount: 1, notes: '',
     });
     setShowModal(true);
   };
 
   const handleCreate = async () => {
-    if (!form.course || !form.paperFormat || !form.preparer || !form.reviewer) {
+    if (!form.course || !form.paperFormat || (form.setters.length === 0 && !form.preparer) || !form.reviewer) {
       showToast('error', 'Please fill all required fields');
       return;
     }
@@ -412,31 +413,21 @@ const QuestionPaperAssignments = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Semester</label>
-                  <select
-                    value={form.semester}
-                    onChange={(e) => setForm((p) => ({ ...p, semester: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  >
-                    <option value="">Select semester</option>
-                    {semesters.map((s) => (
-                      <option key={s._id} value={s._id}>{s.name || `Semester ${s.number}`}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Exam Type *</label>
                   <select
                     value={form.examType}
                     onChange={(e) => setForm((p) => ({ ...p, examType: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   >
-                    <option value="mid_term">Mid Term</option>
-                    <option value="end_term">End Term</option>
+                    <option value="mid_term">Mid</option>
+                    <option value="re_mid">ReMid</option>
+                    <option value="end_term">End</option>
+                    <option value="back">Back</option>
+                    <option value="supplementary">Supplementary</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Paper Format *</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Question Paper Format *</label>
                   <select
                     value={form.paperFormat}
                     onChange={(e) => handleFormatSelect(e.target.value)}
@@ -451,82 +442,107 @@ const QuestionPaperAssignments = () => {
                     <p className="text-xs text-amber-600 mt-1">No paper formats found for this course</p>
                   )}
                 </div>
-              </div>
-
-              <div className="border-t border-gray-200 pt-4">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Faculty Assignment</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Preparer (Faculty) *</label>
-                    <select
-                      value={form.preparer}
-                      onChange={(e) => setForm((p) => ({ ...p, preparer: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    >
-                      <option value="">Select preparer</option>
-                      {teachers.map((t) => (
-                        <option key={t._id} value={t._id}>{t.name} ({t.email})</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Preparation Deadline</label>
-                    <input
-                      type="date"
-                      value={form.preparationDeadline}
-                      onChange={(e) => setForm((p) => ({ ...p, preparationDeadline: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Reviewer (Faculty) *</label>
-                    <select
-                      value={form.reviewer}
-                      onChange={(e) => setForm((p) => ({ ...p, reviewer: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    >
-                      <option value="">Select reviewer</option>
-                      {teachers.filter((t) => t._id !== form.preparer).map((t) => (
-                        <option key={t._id} value={t._id}>{t.name} ({t.email})</option>
-                      ))}
-                    </select>
-                    {form.preparer && form.reviewer && form.preparer === form.reviewer && (
-                      <p className="text-xs text-red-600 mt-1">Preparer and reviewer must be different</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Review Deadline</label>
-                    <input
-                      type="date"
-                      value={form.reviewDeadline}
-                      onChange={(e) => setForm((p) => ({ ...p, reviewDeadline: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Required Questions</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">No. of Sets</label>
                   <input
                     type="number"
                     min={1}
                     value={form.requiredQuestionCount}
-                    onChange={(e) => setForm((p) => ({ ...p, requiredQuestionCount: Number(e.target.value) }))}
+                    onChange={(e) => setForm((p) => ({ ...p, requiredQuestionCount: Math.max(1, Number(e.target.value)) }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   />
-                  <p className="text-xs text-gray-500 mt-0.5">Target will be 3x = {(form.requiredQuestionCount || 0) * 3}</p>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Notes</label>
-                  <input
-                    type="text"
-                    value={form.notes}
-                    onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-                    placeholder="Optional notes for faculty"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
+              </div>
+
+              <div className="border-t border-gray-200 pt-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Question Paper Setter & Reviewer</h3>
+                <div className="space-y-4">
+                  {/* Multiple Setter selection */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Question Paper Setter (Faculty) *</label>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {form.setters.map((setterId) => {
+                        const teacher = teachers.find(t => t._id === setterId);
+                        return teacher ? (
+                          <span key={setterId} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-50 text-blue-700 text-xs">
+                            {teacher.name}
+                            <button
+                              type="button"
+                              onClick={() => setForm(p => ({ ...p, setters: p.setters.filter(id => id !== setterId), preparer: p.setters.filter(id => id !== setterId)[0] || '' }))}
+                              className="hover:text-blue-900"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ) : null;
+                      })}
+                    </div>
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        if (e.target.value && !form.setters.includes(e.target.value)) {
+                          setForm(p => ({
+                            ...p,
+                            setters: [...p.setters, e.target.value],
+                            preparer: p.setters.length === 0 ? e.target.value : p.preparer,
+                          }));
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    >
+                      <option value="">Add setter...</option>
+                      {teachers.filter(t => !form.setters.includes(t._id)).map((t) => (
+                        <option key={t._id} value={t._id}>{t.name} ({t.email})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Question Paper Setting Deadline</label>
+                      <input
+                        type="date"
+                        value={form.preparationDeadline}
+                        onChange={(e) => setForm((p) => ({ ...p, preparationDeadline: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Review Deadline</label>
+                      <input
+                        type="date"
+                        value={form.reviewDeadline}
+                        onChange={(e) => setForm((p) => ({ ...p, reviewDeadline: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Reviewer (Faculty) *</label>
+                      <select
+                        value={form.reviewer}
+                        onChange={(e) => setForm((p) => ({ ...p, reviewer: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      >
+                        <option value="">Select reviewer</option>
+                        {teachers.filter((t) => !form.setters.includes(t._id)).map((t) => (
+                          <option key={t._id} value={t._id}>{t.name} ({t.email})</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Notes</label>
+                      <input
+                        type="text"
+                        value={form.notes}
+                        onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+                        placeholder="Optional notes for faculty"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

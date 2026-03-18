@@ -24,6 +24,7 @@ import {
   Loader2,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   GitBranch,
   Eye,
   FileText,
@@ -39,8 +40,6 @@ const sidebarItems = [
   { id: 'programs', name: 'Program Management', icon: GraduationCap, path: '/programs' },
   { id: 'batches', name: 'Batch Management', icon: Layers, path: '/batches' },
   { id: 'courses', name: 'Course Management', icon: BookOpen, path: '/courses/list' },
-  { id: 'amendments', name: 'Course Amendments', icon: FileText, path: '/course-amendments' },
-  { id: 'gantt', name: 'Gantt Chart', icon: GitBranch, path: '/gantt' },
   { id: 'fees', name: 'Fee Management', icon: CreditCard, path: '/fees' },
   { id: 'exams', name: 'Examinations', icon: ClipboardCheck, type: 'group', path: '/exams', children: [
     { id: 'exam-overview', name: 'Overview', icon: ClipboardCheck, path: '/exams' },
@@ -53,6 +52,7 @@ const sidebarItems = [
     { id: 'exam-settings', name: 'Settings', icon: Settings, path: '/exams/settings' },
     { id: 'cert-applications', name: 'Cert Applications', icon: FileText, path: '/exams/cert-applications' },
   ]},
+  { id: 'gantt', name: 'Gantt Chart', icon: GitBranch, path: '/gantt' },
   { id: 'helpdesk', name: 'Helpdesk', icon: MessageSquare, type: 'group', path: '/helpdesk', children: [
     { id: 'helpdesk-tickets', name: 'Tickets', icon: MessageSquare, path: '/helpdesk' },
     { id: 'helpdesk-config', name: 'Configuration', icon: Settings, path: '/helpdesk/config' },
@@ -65,8 +65,6 @@ const RBAC_VISIBILITY_ROLES = [
   'PROGRAM_COORDINATOR',
   'COURSE_COORDINATOR',
 ];
-const SIDEBAR_COLLAPSE_KEY = 'admin_sidebar_collapsed';
-
 const AdminLayout = () => {
   const { user, logout, hasAnyAccessRole } = useAuth();
   const location = useLocation();
@@ -78,6 +76,9 @@ const AdminLayout = () => {
     return window.innerWidth >= 768;
   });
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isPinned, setIsPinned] = useState(false);
+  const hoverTimerRef = useRef(null);
+  const sidebarRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -137,10 +138,6 @@ const AdminLayout = () => {
 
   const toggleGroup = (groupId) => {
     setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
-  };
-
-  const handleSidebarCollapseToggle = () => {
-    setIsCollapsed((prev) => !prev);
   };
 
   // Debounced global search
@@ -262,6 +259,14 @@ const AdminLayout = () => {
     }
   };
 
+  // Effective collapsed state: collapsed only when not pinned AND isCollapsed
+  const sidebarSmall = isCollapsed && !isPinned;
+
+  // Cleanup hover timer on unmount
+  useEffect(() => {
+    return () => clearTimeout(hoverTimerRef.current);
+  }, []);
+
   const isActiveRoute = (path) => {
     if (location.pathname === path) return true;
     // Also match sub-paths (e.g., /programs/new should highlight /programs)
@@ -281,32 +286,78 @@ const AdminLayout = () => {
 
       {/* Sidebar */}
       <div
+        ref={sidebarRef}
         className={`
           fixed md:static inset-y-0 left-0 z-50 bg-white shadow-xl transform
-          ${isCollapsed ? 'md:w-20' : 'md:w-64'} w-64
+          ${sidebarSmall ? 'md:w-20' : 'md:w-64'} w-64
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           md:translate-x-0 transition-all duration-300 ease-in-out flex flex-col
         `}
-        onMouseEnter={() => { if (isDesktop) setIsCollapsed(false); }}
-        onMouseLeave={() => { if (isDesktop) setIsCollapsed(true); }}
+        onMouseEnter={() => {
+          if (isDesktop && !isPinned) {
+            clearTimeout(hoverTimerRef.current);
+            hoverTimerRef.current = setTimeout(() => setIsCollapsed(false), 50);
+          }
+        }}
+        onMouseLeave={() => {
+          if (isDesktop && !isPinned) {
+            clearTimeout(hoverTimerRef.current);
+            hoverTimerRef.current = setTimeout(() => setIsCollapsed(true), 200);
+          }
+        }}
       >
         {/* Sidebar Header */}
-        <div className="flex items-center justify-center border-b border-gray-200 px-4 py-5">
-          <div className="flex items-center justify-center">
-            {isCollapsed ? (
-              <img
-                src="/logo.png"
-                alt="KIITX"
-                className="h-10 w-10 object-contain transition-all duration-300"
-              />
-            ) : (
-              <img
-                src="/logo_full.png"
-                alt="KIITX"
-                className="h-12 object-contain transition-all duration-300"
-              />
-            )}
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-5 relative">
+          <div className="flex items-center justify-center w-full">
+            <div className={`flex items-center justify-center overflow-hidden transition-all duration-300 ${sidebarSmall ? 'w-10' : 'w-full'}`}>
+              {sidebarSmall ? (
+                <img
+                  src="/logo.png"
+                  alt="KIITX"
+                  className="h-10 w-10 object-contain flex-shrink-0"
+                />
+              ) : (
+                <img
+                  src="/logo_full.png"
+                  alt="KIITX"
+                  className="h-12 object-contain"
+                />
+              )}
+            </div>
           </div>
+          {/* Pin/Collapse toggle — visible on desktop when expanded */}
+          {!sidebarSmall && isDesktop && (
+            <button
+              onClick={() => {
+                if (isPinned) {
+                  setIsPinned(false);
+                  setIsCollapsed(true);
+                } else {
+                  setIsPinned(true);
+                  setIsCollapsed(false);
+                }
+              }}
+              className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-300 rounded-full shadow-md flex items-center justify-center hover:bg-gray-100 transition-colors z-10"
+              aria-label={isPinned ? 'Collapse sidebar' : 'Pin sidebar'}
+              title={isPinned ? 'Collapse sidebar' : 'Pin sidebar'}
+            >
+              <ChevronLeft className={`w-3.5 h-3.5 text-gray-500 transition-transform duration-300 ${isPinned ? '' : 'rotate-180'}`} />
+            </button>
+          )}
+          {/* Expand chevron — visible on desktop when collapsed */}
+          {sidebarSmall && isDesktop && (
+            <button
+              onClick={() => {
+                setIsPinned(true);
+                setIsCollapsed(false);
+              }}
+              className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-300 rounded-full shadow-md flex items-center justify-center hover:bg-gray-100 transition-colors z-10"
+              aria-label="Expand sidebar"
+              title="Expand sidebar"
+            >
+              <ChevronRight className="w-3.5 h-3.5 text-gray-500" />
+            </button>
+          )}
           <button
             onClick={() => setSidebarOpen(false)}
             className="md:hidden absolute right-3 top-5 p-1 rounded-md hover:bg-gray-100"
@@ -327,7 +378,7 @@ const AdminLayout = () => {
               const isGroupActive = item.children?.some(child => isActiveRoute(child.path));
 
               return (
-                <div key={item.id}>
+                <div key={item.id} className="relative group/nav">
                   <button
                     type="button"
                     onClick={() => toggleGroup(item.id)}
@@ -338,18 +389,17 @@ const AdminLayout = () => {
                         : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                       }
                     `}
-                    title={isCollapsed ? item.name : undefined}
+                    title={sidebarSmall ? item.name : undefined}
                   >
                     <span className={`flex justify-center w-6 flex-shrink-0 ${isGroupActive ? 'text-blue-600' : 'text-gray-400'}`}>
                       <Icon className="w-5 h-5" />
                     </span>
                     <span
-                      className={`whitespace-nowrap transition-opacity duration-300 flex-1 text-left ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
-                      style={{ transitionDelay: isCollapsed ? '0ms' : '300ms' }}
+                      className={`whitespace-nowrap transition-opacity duration-200 flex-1 text-left overflow-hidden ${sidebarSmall ? 'opacity-0 w-0' : 'opacity-100'}`}
                     >
                       {item.name}
                     </span>
-                    {!isCollapsed && (
+                    {!sidebarSmall && (
                       <span className="flex-shrink-0">
                         {isExpanded
                           ? <ChevronDown className="w-4 h-4" />
@@ -358,7 +408,13 @@ const AdminLayout = () => {
                       </span>
                     )}
                   </button>
-                  {isExpanded && !isCollapsed && (
+                  {/* Tooltip for collapsed state */}
+                  {sidebarSmall && (
+                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 pointer-events-none group-hover/nav:opacity-100 transition-opacity duration-200 z-50">
+                      {item.name}
+                    </div>
+                  )}
+                  {isExpanded && !sidebarSmall && (
                     <div className="ml-4 mt-1 space-y-0.5 border-l-2 border-gray-200 pl-2">
                       {item.children.map((child) => {
                         const ChildIcon = child.icon;
@@ -393,21 +449,25 @@ const AdminLayout = () => {
               return (
                 <div
                   key={item.id}
-                  className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed opacity-60"
+                  className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed opacity-60 relative group/nav"
                   title={item.name}
                 >
                   <span className="flex justify-center w-6 flex-shrink-0 text-gray-300">
                     <Icon className="w-5 h-5" />
                   </span>
                   <span
-                    className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
-                    style={{ transitionDelay: isCollapsed ? '0ms' : '300ms' }}
+                    className={`whitespace-nowrap transition-opacity duration-200 overflow-hidden ${sidebarSmall ? 'opacity-0 w-0' : 'opacity-100'}`}
                   >
                     {item.name}
                     <span className="ml-2 text-[10px] font-semibold uppercase bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded">
                       Soon
                     </span>
                   </span>
+                  {sidebarSmall && (
+                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 pointer-events-none group-hover/nav:opacity-100 transition-opacity duration-200 z-50">
+                      {item.name}
+                    </div>
+                  )}
                 </div>
               );
             }
@@ -419,83 +479,84 @@ const AdminLayout = () => {
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
                 className={`
-                  flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
+                  flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors relative group/nav
                   ${isActive
                     ? 'bg-blue-50 text-blue-700'
                     : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                   }
                 `}
-                title={isCollapsed ? item.name : undefined}
+                title={sidebarSmall ? item.name : undefined}
               >
                 <span className={`flex justify-center w-6 flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-400'}`}>
                   <Icon className="w-5 h-5" />
                 </span>
                 <span
-                  className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
-                  style={{ transitionDelay: isCollapsed ? '0ms' : '300ms' }}
+                  className={`whitespace-nowrap transition-opacity duration-200 overflow-hidden ${sidebarSmall ? 'opacity-0 w-0' : 'opacity-100'}`}
                 >
                   {item.name}
                 </span>
+                {sidebarSmall && (
+                  <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 pointer-events-none group-hover/nav:opacity-100 transition-opacity duration-200 z-50">
+                    {item.name}
+                  </div>
+                )}
               </Link>
             );
           })}
         </nav>
 
-        {/* User Profile Section */}
-        <div className="px-2 py-3 border-t border-gray-200">
+        {/* User Profile Section — compact */}
+        <div className="px-2 py-1.5 border-t border-gray-200 flex-shrink-0">
           <button
             type="button"
             onClick={openMyProfile}
-            className="mb-2 flex w-full items-center gap-3 px-4 py-2 rounded-lg transition-colors hover:bg-gray-50"
+            className="flex w-full items-center gap-2 px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-50"
             title="Open My Profile"
             aria-label="Open My Profile"
           >
-            <div className="w-9 h-9 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-white text-sm font-medium">{profileBadge}</span>
+            <div className="w-7 h-7 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-xs font-medium">{profileBadge}</span>
             </div>
             <span
-              className={`whitespace-nowrap transition-opacity duration-300 text-left min-w-0 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
-              style={{ transitionDelay: isCollapsed ? '0ms' : '300ms' }}
+              className={`whitespace-nowrap transition-opacity duration-200 text-left min-w-0 overflow-hidden ${sidebarSmall ? 'opacity-0 w-0' : 'opacity-100'}`}
             >
-              <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
-              <p className="text-xs text-gray-500 truncate">{user?.role}</p>
+              <p className="text-sm font-medium text-gray-900 truncate leading-tight">{user?.name}</p>
+              <p className="text-[10px] text-gray-500 truncate leading-tight">{user?.role}</p>
             </span>
           </button>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-            title="Sign Out"
-            aria-label="Sign Out"
-          >
-            <span className="flex justify-center w-6 flex-shrink-0">
-              <LogOut className="w-5 h-5" />
-            </span>
-            <span
-              className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
-              style={{ transitionDelay: isCollapsed ? '0ms' : '300ms' }}
-            >
-              Sign Out
-            </span>
-          </button>
-          {isDevMode && (
+          <div className="flex items-center gap-1 mt-0.5">
             <button
-              onClick={handleProbeBackend}
-              disabled={probeLoading}
-              className="mt-1 flex items-center gap-3 w-full px-4 py-2 text-xs text-blue-700 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-60"
-              title="Probe Backend"
-              aria-label="Probe Backend"
+              onClick={handleLogout}
+              className="flex items-center gap-2 flex-1 px-3 py-1.5 text-xs text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+              title="Sign Out"
+              aria-label="Sign Out"
             >
-              <span className="flex justify-center w-6 flex-shrink-0">
-                <Eye className="w-4 h-4" />
+              <span className="flex justify-center w-5 flex-shrink-0">
+                <LogOut className="w-4 h-4" />
               </span>
               <span
-                className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
-                style={{ transitionDelay: isCollapsed ? '0ms' : '300ms' }}
+                className={`whitespace-nowrap transition-opacity duration-200 overflow-hidden ${sidebarSmall ? 'opacity-0 w-0' : 'opacity-100'}`}
               >
-                {probeLoading ? 'Probing...' : 'Probe Backend'}
+                Sign Out
               </span>
             </button>
-          )}
+            {isDevMode && (
+              <button
+                onClick={handleProbeBackend}
+                disabled={probeLoading}
+                className="flex items-center gap-2 px-2 py-1.5 text-[10px] text-blue-700 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-60"
+                title="Probe Backend"
+                aria-label="Probe Backend"
+              >
+                <Eye className="w-3.5 h-3.5 flex-shrink-0" />
+                <span
+                  className={`whitespace-nowrap transition-opacity duration-200 overflow-hidden ${sidebarSmall ? 'opacity-0 w-0' : 'opacity-100'}`}
+                >
+                  {probeLoading ? '...' : 'Probe'}
+                </span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

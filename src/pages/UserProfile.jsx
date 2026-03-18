@@ -1344,49 +1344,65 @@ export default function UserProfile() {
               })}
             </div>
 
-            <div className="rounded-lg border border-gray-200 bg-white p-4">
-              <div className="mb-3 text-sm font-semibold text-gray-700">Profile Photo</div>
-              <div className="mb-4 flex justify-center">
-                {profilePhotoUrl ? (
-                  <img
-                    src={profilePhotoUrl}
-                    alt="Profile"
-                    className="h-36 w-36 rounded-full border border-gray-200 object-cover"
-                  />
-                ) : (
-                  <div className="flex h-36 w-36 items-center justify-center rounded-full border border-dashed border-gray-300 bg-gray-50 text-sm text-gray-500">
-                    No Photo
-                  </div>
-                )}
-              </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-5">
+              <div className="mb-4 text-sm font-semibold text-gray-700">Profile Photo</div>
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative group">
+                  {profilePhotoUrl ? (
+                    <img
+                      src={profilePhotoUrl}
+                      alt="Profile"
+                      className="h-32 w-32 rounded-full border-4 border-white shadow-lg object-cover ring-2 ring-gray-200"
+                    />
+                  ) : (
+                    <div className="flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500 shadow-lg ring-2 ring-gray-200">
+                      <span className="text-3xl font-bold text-white">
+                        {(profileData?.name || 'U').charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={photoBusy}
+                    className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 group-hover:bg-black/40 transition-all cursor-pointer"
+                  >
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      {photoBusy ? <Loader2 className="h-6 w-6 text-white animate-spin" /> : <Camera className="h-6 w-6 text-white" />}
+                    </span>
+                  </button>
+                </div>
 
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handlePhotoUpload}
-              />
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoUpload}
+                />
 
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => photoInputRef.current?.click()}
-                  disabled={photoBusy}
-                  className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 disabled:opacity-60"
-                >
-                  {photoBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-                  Upload
-                </button>
-                <button
-                  type="button"
-                  onClick={handlePhotoDelete}
-                  disabled={photoBusy || !profilePhotoUrl}
-                  className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 disabled:opacity-60"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={photoBusy}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-60 transition-colors"
+                  >
+                    {photoBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+                    Change Photo
+                  </button>
+                  {profilePhotoUrl && (
+                    <button
+                      type="button"
+                      onClick={handlePhotoDelete}
+                      disabled={photoBusy}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100 disabled:opacity-60 transition-colors"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Remove
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

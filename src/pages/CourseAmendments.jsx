@@ -91,13 +91,13 @@ const CourseAmendments = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Course Amendments</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Program Amendments</h1>
           <p className="text-sm text-gray-500 mt-1">
             Manage course changes across program batches
           </p>
         </div>
         <button
-          onClick={() => navigate('/course-amendments/new')}
+          onClick={() => navigate('/program-amendments/new')}
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="w-4 h-4" />
@@ -167,7 +167,7 @@ const CourseAmendments = () => {
           <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 text-sm">No amendments found</p>
           <button
-            onClick={() => navigate('/course-amendments/new')}
+            onClick={() => navigate('/program-amendments/new')}
             className="mt-3 inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium"
           >
             <Plus className="w-4 h-4" />
@@ -212,7 +212,7 @@ const CourseAmendments = () => {
                   <tr
                     key={amd._id}
                     className="hover:bg-gray-50 cursor-pointer transition-colors"
-                    onClick={() => navigate(`/course-amendments/${amd._id}`)}
+                    onClick={() => navigate(`/program-amendments/${amd._id}`)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-blue-600">
                       {amd.amendmentId || '-'}

@@ -259,7 +259,7 @@ const ExamRegistrationManagement = () => {
                       <div>
                         <h3 className="font-semibold text-gray-900">{p.title}</h3>
                         <p className="text-xs text-gray-500">
-                          {p.examType === 'mid_term' ? 'Mid Term' : p.examType === 'end_term' ? 'End Term' : 'Re-Exam'} | {formatDate(p.registrationStartDate)} — {formatDate(p.registrationEndDate)} | {p.courses?.length || 0} courses
+                          {{ mid_term: 'Mid', re_mid: 'ReMid', end_term: 'End', back: 'Back', supplementary: 'Supplementary' }[p.examType] || p.examType} | {formatDate(p.registrationStartDate)} — {formatDate(p.registrationEndDate)} | {p.courses?.length || 0} courses
                         </p>
                       </div>
                     </div>
@@ -465,9 +465,11 @@ const ExamRegistrationManagement = () => {
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Exam Type *</label>
                   <select value={periodForm.examType} onChange={(e) => setPeriodForm(p => ({ ...p, examType: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                    <option value="mid_term">Mid Term</option>
-                    <option value="end_term">End Term</option>
-                    <option value="re_exam">Re-Exam</option>
+                    <option value="mid_term">Mid</option>
+                    <option value="re_mid">ReMid</option>
+                    <option value="end_term">End</option>
+                    <option value="back">Back</option>
+                    <option value="supplementary">Supplementary</option>
                   </select>
                 </div>
                 <div>

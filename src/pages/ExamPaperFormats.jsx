@@ -280,8 +280,11 @@ const ExamPaperFormats = () => {
           className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
         >
           <option value="">All Types</option>
-          <option value="mid_term">Mid Term</option>
-          <option value="end_term">End Term</option>
+          <option value="mid_term">Mid</option>
+          <option value="re_mid">ReMid</option>
+          <option value="end_term">End</option>
+          <option value="back">Back</option>
+          <option value="supplementary">Supplementary</option>
         </select>
       </div>
 
@@ -305,7 +308,7 @@ const ExamPaperFormats = () => {
                   <div>
                     <h3 className="font-semibold text-gray-900">{fmt.title}</h3>
                     <p className="text-xs text-gray-500">
-                      {fmt.course?.code} - {fmt.course?.name} | {fmt.examType === 'mid_term' ? 'Mid Term' : 'End Term'} | {fmt.totalMarks} marks | {fmt.duration} min
+                      {fmt.course?.code} - {fmt.course?.name} | {{ mid_term: 'Mid', re_mid: 'ReMid', end_term: 'End', back: 'Back', supplementary: 'Supplementary' }[fmt.examType] || fmt.examType} | {fmt.totalMarks} marks | {fmt.duration} min
                     </p>
                   </div>
                 </div>
@@ -402,38 +405,12 @@ const ExamPaperFormats = () => {
               {/* Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Course *</label>
-                  <select
-                    value={form.course}
-                    onChange={(e) => setForm((p) => ({ ...p, course: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  >
-                    <option value="">Select course</option>
-                    {courses.map((c) => (
-                      <option key={c._id} value={c._id}>{c.code} - {c.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Semester</label>
-                  <select
-                    value={form.semester}
-                    onChange={(e) => setForm((p) => ({ ...p, semester: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  >
-                    <option value="">Select semester</option>
-                    {semesters.map((s) => (
-                      <option key={s._id} value={s._id}>{s.name || `Semester ${s.number}`}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Title *</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Format Name *</label>
                   <input
                     type="text"
                     value={form.title}
                     onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-                    placeholder="e.g. Mid Term Paper - Data Structures"
+                    placeholder="e.g. Mid Term Paper Format"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   />
                 </div>
@@ -444,8 +421,11 @@ const ExamPaperFormats = () => {
                     onChange={(e) => setForm((p) => ({ ...p, examType: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   >
-                    <option value="mid_term">Mid Term</option>
-                    <option value="end_term">End Term</option>
+                    <option value="mid_term">Mid</option>
+                    <option value="re_mid">ReMid</option>
+                    <option value="end_term">End</option>
+                    <option value="back">Back</option>
+                    <option value="supplementary">Supplementary</option>
                   </select>
                 </div>
                 <div>
@@ -468,14 +448,14 @@ const ExamPaperFormats = () => {
                 </div>
               </div>
 
-              {/* General Instructions */}
+              {/* About Question Paper Format */}
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">General Instructions</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">About Question Paper Format</label>
                 <textarea
                   value={form.generalInstructions}
                   onChange={(e) => setForm((p) => ({ ...p, generalInstructions: e.target.value }))}
                   rows={2}
-                  placeholder="Enter general instructions for the paper..."
+                  placeholder="Describe the question paper format..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 />
               </div>

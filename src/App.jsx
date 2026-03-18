@@ -166,10 +166,14 @@ function App() {
               <Route path="academic-plan" element={<AcademicPlan />} />
               <Route path="gantt" element={<GanttChart />} />
               <Route path="batch-detail/:batchId" element={<BatchDetail />} />
-              <Route path="course-amendments" element={<CourseAmendments />} />
-              <Route path="course-amendments/new" element={<CourseAmendmentForm />} />
-              <Route path="course-amendments/:id/edit" element={<CourseAmendmentForm />} />
-              <Route path="course-amendments/:id" element={<CourseAmendmentDetail />} />
+              {/* Amendment list is now inside ProgramReview - only keep create/edit/detail routes */}
+              <Route path="program-amendments/new" element={<CourseAmendmentForm />} />
+              <Route path="program-amendments/:id/edit" element={<CourseAmendmentForm />} />
+              <Route path="program-amendments/:id" element={<CourseAmendmentDetail />} />
+              {/* Backward compat redirects */}
+              <Route path="program-amendments" element={<Navigate to="/programs" replace />} />
+              <Route path="course-amendments" element={<Navigate to="/programs" replace />} />
+              <Route path="course-amendments/:id" element={<Navigate to="/programs" replace />} />
               <Route path="migration" element={<MigrationDashboard />} />
               <Route path="enrollment" element={<Navigate to="/cohorts" replace />} />
               <Route path="cohorts" element={<CohortList />} />

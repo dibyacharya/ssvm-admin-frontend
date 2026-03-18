@@ -181,18 +181,18 @@ export default function CertificateManagement() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Certificates & Degrees</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Certificates & Degrees</h1>
         <p className="text-sm text-gray-500 mt-1">Generate, verify, and issue certificates to students</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-gray-100 dark:bg-gray-800 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === tab.id ? "bg-white dark:bg-gray-700 text-indigo-600 shadow-sm" : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
+              activeTab === tab.id ? "bg-white text-blue-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
             }`}
           >
             <tab.icon className="w-4 h-4" /> {tab.label}
@@ -210,16 +210,16 @@ export default function CertificateManagement() {
               <input
                 type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by name, serial, roll..."
-                className="w-full pl-10 pr-3 py-2 border rounded-lg text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
+                className="w-full pl-10 pr-3 py-2 border rounded-lg text-sm"
               />
             </div>
             <select value={filterType} onChange={(e) => setFilterType(e.target.value)}
-              className="px-3 py-2 border rounded-lg text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200">
+              className="px-3 py-2 border rounded-lg text-sm">
               <option value="">All Types</option>
               {Object.entries(TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 border rounded-lg text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200">
+              className="px-3 py-2 border rounded-lg text-sm">
               <option value="">All Statuses</option>
               <option value="generated">Generated</option>
               <option value="verified">Verified</option>
@@ -230,8 +230,8 @@ export default function CertificateManagement() {
 
           {/* Bulk Actions */}
           {selected.length > 0 && (
-            <div className="flex items-center gap-3 mb-4 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
-              <span className="text-sm text-indigo-700 dark:text-indigo-300">{selected.length} selected</span>
+            <div className="flex items-center gap-3 mb-4 p-3 bg-blue-50 rounded-lg">
+              <span className="text-sm text-blue-700">{selected.length} selected</span>
               <button onClick={handleBulkVerify} className="px-3 py-1.5 text-sm bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">Bulk Verify</button>
               <button onClick={handleBulkIssue} className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700">Bulk Issue</button>
               <button onClick={() => setSelected([])} className="text-sm text-gray-500 hover:text-gray-700">Clear</button>
@@ -247,33 +247,33 @@ export default function CertificateManagement() {
               <p>No certificates found</p>
             </div>
           ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+                <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-3 text-left">
                       <input type="checkbox" checked={selected.length === certificates.length && certificates.length > 0}
                         onChange={toggleSelectAll} className="rounded" />
                     </th>
-                    <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Serial No</th>
-                    <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Student</th>
-                    <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Type</th>
-                    <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Program</th>
-                    <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">CGPA</th>
-                    <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Status</th>
-                    <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Actions</th>
+                    <th className="px-4 py-3 text-left text-gray-600">Serial No</th>
+                    <th className="px-4 py-3 text-left text-gray-600">Student</th>
+                    <th className="px-4 py-3 text-left text-gray-600">Type</th>
+                    <th className="px-4 py-3 text-left text-gray-600">Program</th>
+                    <th className="px-4 py-3 text-left text-gray-600">CGPA</th>
+                    <th className="px-4 py-3 text-left text-gray-600">Status</th>
+                    <th className="px-4 py-3 text-left text-gray-600">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="divide-y divide-gray-200">
                   {certificates.map((cert) => (
-                    <tr key={cert._id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <tr key={cert._id} className="hover:bg-gray-50">
                       <td className="px-4 py-3">
                         <input type="checkbox" checked={selected.includes(cert._id)}
                           onChange={() => toggleSelect(cert._id)} className="rounded" />
                       </td>
                       <td className="px-4 py-3 font-mono text-xs">{cert.serialNumber}</td>
                       <td className="px-4 py-3">
-                        <div className="font-medium text-gray-900 dark:text-white">{cert.studentName}</div>
+                        <div className="font-medium text-gray-900">{cert.studentName}</div>
                         <div className="text-xs text-gray-500">{cert.rollNumber}</div>
                       </td>
                       <td className="px-4 py-3 text-xs">{TYPE_LABELS[cert.type] || cert.type}</td>
@@ -286,7 +286,7 @@ export default function CertificateManagement() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
-                          <button onClick={() => handleViewDetail(cert._id)} className="p-1.5 text-gray-500 hover:text-indigo-600 rounded" title="View">
+                          <button onClick={() => handleViewDetail(cert._id)} className="p-1.5 text-gray-500 hover:text-blue-600 rounded" title="View">
                             <Eye className="w-4 h-4" />
                           </button>
                           {cert.status === "generated" && (
@@ -317,39 +317,39 @@ export default function CertificateManagement() {
 
       {/* Generate Tab */}
       {activeTab === "generate" && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 max-w-xl">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Generate Certificates</h2>
+        <div className="bg-white rounded-xl border border-gray-200 p-6 max-w-xl">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Generate Certificates</h2>
           <form onSubmit={handleGenerate} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Certificate Type *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Certificate Type *</label>
               <select value={genForm.type} onChange={(e) => setGenForm({ ...genForm, type: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                className="w-full px-3 py-2 border rounded-lg">
                 {Object.entries(TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Program ID *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Program ID *</label>
               <input type="text" value={genForm.programId}
                 onChange={(e) => setGenForm({ ...genForm, programId: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-3 py-2 border rounded-lg"
                 placeholder="Program ObjectId" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Batch ID</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Batch ID</label>
               <input type="text" value={genForm.batchId}
                 onChange={(e) => setGenForm({ ...genForm, batchId: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-3 py-2 border rounded-lg"
                 placeholder="Optional - Batch ObjectId" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Academic Year</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
               <input type="text" value={genForm.academicYear}
                 onChange={(e) => setGenForm({ ...genForm, academicYear: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-3 py-2 border rounded-lg"
                 placeholder="e.g. 2025-26" />
             </div>
             <button type="submit" disabled={generating}
-              className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
               {generating ? "Generating..." : "Generate Certificates"}
             </button>
           </form>
@@ -361,20 +361,20 @@ export default function CertificateManagement() {
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.entries(stats.byType || {}).map(([type, count]) => (
-              <div key={type} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+              <div key={type} className="bg-white rounded-xl border border-gray-200 p-4">
                 <p className="text-sm text-gray-500">{TYPE_LABELS[type] || type}</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{count}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{count}</p>
               </div>
             ))}
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {Object.entries(stats.byStatus || {}).map(([status, count]) => (
-              <div key={status} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+              <div key={status} className="bg-white rounded-xl border border-gray-200 p-4">
                 <div className="flex items-center gap-2">
                   <span className={`w-2 h-2 rounded-full ${STATUS_COLORS[status]?.split(" ")[0] || "bg-gray-300"}`} />
                   <p className="text-sm text-gray-500 capitalize">{status}</p>
                 </div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{count}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{count}</p>
               </div>
             ))}
           </div>
@@ -384,10 +384,10 @@ export default function CertificateManagement() {
       {/* Detail Modal */}
       {showDetailModal && selectedCert && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b dark:border-gray-700 flex items-start justify-between">
+          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b flex items-start justify-between">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{TYPE_LABELS[selectedCert.type]}</h2>
+                <h2 className="text-xl font-bold text-gray-900">{TYPE_LABELS[selectedCert.type]}</h2>
                 <p className="text-sm text-gray-500 mt-1 font-mono">{selectedCert.serialNumber}</p>
               </div>
               <button onClick={() => setShowDetailModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
@@ -417,12 +417,12 @@ export default function CertificateManagement() {
               </div>
               {selectedCert.remarks && (
                 <div>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Remarks</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{selectedCert.remarks}</p>
+                  <p className="text-sm font-medium text-gray-700">Remarks</p>
+                  <p className="text-sm text-gray-600 mt-1">{selectedCert.remarks}</p>
                 </div>
               )}
               {selectedCert.revokeReason && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                <div className="p-3 bg-red-50 rounded-lg">
                   <p className="text-sm font-medium text-red-700">Revocation Reason</p>
                   <p className="text-sm text-red-600 mt-1">{selectedCert.revokeReason}</p>
                 </div>
@@ -448,7 +448,7 @@ function Detail({ label, value }) {
   return (
     <div>
       <p className="text-xs text-gray-500">{label}</p>
-      <p className="text-sm font-medium text-gray-900 dark:text-white mt-0.5">{value || "-"}</p>
+      <p className="text-sm font-medium text-gray-900 mt-0.5">{value || "-"}</p>
     </div>
   );
 }

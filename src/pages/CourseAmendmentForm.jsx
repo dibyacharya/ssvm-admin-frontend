@@ -194,7 +194,7 @@ const CourseAmendmentForm = () => {
         const res = await createAmendment(payload);
         setSuccessMsg('Amendment created as draft.');
         // Navigate to edit mode for the newly created amendment
-        navigate(`/course-amendments/${res.amendment._id}/edit`, {
+        navigate(`/program-amendments/${res.amendment._id}/edit`, {
           replace: true,
         });
       }
@@ -244,7 +244,7 @@ const CourseAmendmentForm = () => {
       // Now submit for approval
       await submitForApproval(amendmentId);
       setSuccessMsg('Amendment submitted for approval!');
-      setTimeout(() => navigate(`/course-amendments/${amendmentId}`), 800);
+      setTimeout(() => navigate(`/program-amendments/${amendmentId}`), 800);
     } catch (err) {
       setError(
         err?.response?.data?.error ||
@@ -272,14 +272,14 @@ const CourseAmendmentForm = () => {
       {/* Header */}
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navigate('/course-amendments')}
+          onClick={() => navigate('/program-amendments')}
           className="p-2 hover:bg-gray-100 rounded-lg"
         >
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {isEdit ? 'Edit Amendment' : 'New Course Amendment'}
+            {isEdit ? 'Edit Amendment' : 'New Program Amendment'}
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
             Define course changes for program batches
@@ -540,7 +540,7 @@ const CourseAmendmentForm = () => {
       {/* Actions */}
       <div className="flex items-center justify-end gap-3 pb-8">
         <button
-          onClick={() => navigate('/course-amendments')}
+          onClick={() => navigate('/program-amendments')}
           className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
         >
           Cancel

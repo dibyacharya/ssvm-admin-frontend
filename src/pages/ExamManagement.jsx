@@ -161,11 +161,11 @@ const ExamManagement = () => {
           className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option value="">All Types</option>
-          <option value="mid_term">Mid Term</option>
-          <option value="end_term">End Term</option>
-          <option value="quiz">Quiz</option>
-          <option value="practice">Practice</option>
-          <option value="re_exam">Re-Exam</option>
+          <option value="mid_term">Mid</option>
+          <option value="re_mid">ReMid</option>
+          <option value="end_term">End</option>
+          <option value="back">Back</option>
+          <option value="supplementary">Supplementary</option>
         </select>
         {(filterStatus || filterType) && (
           <button

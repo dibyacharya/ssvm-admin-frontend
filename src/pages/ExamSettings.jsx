@@ -6,7 +6,7 @@ import {
 import * as settingsService from "../services/examSettings.service";
 
 const CATEGORY_META = {
-  grading: { label: "Grading", icon: GraduationCap, color: "text-indigo-600 bg-indigo-50" },
+  grading: { label: "Grading", icon: GraduationCap, color: "text-blue-600 bg-blue-50" },
   attendance: { label: "Attendance", icon: Clock, color: "text-amber-600 bg-amber-50" },
   registration: { label: "Registration", icon: UserCheck, color: "text-blue-600 bg-blue-50" },
   conduct: { label: "Exam Conduct", icon: FileText, color: "text-green-600 bg-green-50" },
@@ -117,14 +117,14 @@ export default function ExamSettingsPage() {
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Settings className="w-6 h-6" /> Exam Settings
           </h1>
           <p className="text-sm text-gray-500 mt-1">Configure grading, attendance, conduct, and integration settings</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-3 py-2 text-sm border rounded-lg hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
+            className="flex items-center gap-2 px-3 py-2 text-sm border rounded-lg hover:bg-gray-50">
             <Plus className="w-4 h-4" /> Add Setting
           </button>
           <button onClick={handleReset}
@@ -135,10 +135,10 @@ export default function ExamSettingsPage() {
       </div>
 
       {/* Category Tabs */}
-      <div className="flex gap-1 mb-6 bg-gray-100 dark:bg-gray-800 rounded-lg p-1 overflow-x-auto">
+      <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 overflow-x-auto">
         <button onClick={() => setActiveCategory("")}
           className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
-            !activeCategory ? "bg-white dark:bg-gray-700 text-indigo-600 shadow-sm" : "text-gray-600 dark:text-gray-400"
+            !activeCategory ? "bg-white text-blue-600 shadow-sm" : "text-gray-600"
           }`}>
           All
         </button>
@@ -147,7 +147,7 @@ export default function ExamSettingsPage() {
           return (
             <button key={cat} onClick={() => setActiveCategory(cat)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
-                activeCategory === cat ? "bg-white dark:bg-gray-700 text-indigo-600 shadow-sm" : "text-gray-600 dark:text-gray-400"
+                activeCategory === cat ? "bg-white text-blue-600 shadow-sm" : "text-gray-600"
               }`}>
               <meta.icon className="w-3.5 h-3.5" /> {meta.label}
             </button>
@@ -168,9 +168,9 @@ export default function ExamSettingsPage() {
                   <div className={`p-1.5 rounded-lg ${meta.color}`}>
                     <meta.icon className="w-4 h-4" />
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{meta.label}</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">{meta.label}</h2>
                 </div>
-                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
+                <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-200">
                   {items.map((setting) => (
                     <SettingRow
                       key={setting.key}
@@ -218,7 +218,7 @@ function SettingRow({ setting, isEditing, editValue, onEditValueChange, onStartE
     return (
       <div className="flex items-center justify-between px-5 py-4">
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-900 dark:text-white">{setting.label}</p>
+          <p className="text-sm font-medium text-gray-900">{setting.label}</p>
           <p className="text-xs text-gray-500 mt-0.5">{setting.description}</p>
         </div>
         <div className="flex items-center gap-3">
@@ -241,17 +241,17 @@ function SettingRow({ setting, isEditing, editValue, onEditValueChange, onStartE
       <div className="px-5 py-4">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <p className="text-sm font-medium text-gray-900 dark:text-white">{setting.label}</p>
+            <p className="text-sm font-medium text-gray-900">{setting.label}</p>
             <p className="text-xs text-gray-500">{setting.description}</p>
           </div>
-          <button onClick={onStartEdit} className="p-1.5 text-gray-400 hover:text-indigo-600 rounded">
+          <button onClick={onStartEdit} className="p-1.5 text-gray-400 hover:text-blue-600 rounded">
             <Edit3 className="w-4 h-4" />
           </button>
         </div>
         <div className="grid grid-cols-7 gap-2">
           {(setting.value || []).map((g) => (
-            <div key={g.grade} className="text-center p-2 rounded-lg bg-gray-50 dark:bg-gray-700">
-              <p className="text-lg font-bold text-gray-900 dark:text-white">{g.grade}</p>
+            <div key={g.grade} className="text-center p-2 rounded-lg bg-gray-50">
+              <p className="text-lg font-bold text-gray-900">{g.grade}</p>
               <p className="text-xs text-gray-500">GP: {g.gradePoint}</p>
               <p className="text-xs text-gray-400">{g.minPercentage}-{g.maxPercentage}%</p>
             </div>
@@ -264,7 +264,7 @@ function SettingRow({ setting, isEditing, editValue, onEditValueChange, onStartE
   return (
     <div className="flex items-center justify-between px-5 py-4">
       <div className="flex-1 mr-4">
-        <p className="text-sm font-medium text-gray-900 dark:text-white">{setting.label}</p>
+        <p className="text-sm font-medium text-gray-900">{setting.label}</p>
         <p className="text-xs text-gray-500 mt-0.5">{setting.description}</p>
       </div>
       <div className="flex items-center gap-2">
@@ -272,21 +272,21 @@ function SettingRow({ setting, isEditing, editValue, onEditValueChange, onStartE
           <>
             {setting.valueType === "gradeScale" || setting.valueType === "json" ? (
               <textarea value={editValue} onChange={(e) => onEditValueChange(e.target.value)}
-                rows={8} className="w-80 px-3 py-2 border rounded-lg text-sm font-mono dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                rows={8} className="w-80 px-3 py-2 border rounded-lg text-sm font-mono" />
             ) : (
               <input type={setting.valueType === "number" ? "number" : "text"} value={editValue}
                 onChange={(e) => onEditValueChange(e.target.value)}
-                className="w-32 px-3 py-1.5 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                className="w-32 px-3 py-1.5 border rounded-lg text-sm" />
             )}
             <button onClick={onSave} className="p-1.5 text-green-600 hover:bg-green-50 rounded"><Check className="w-4 h-4" /></button>
             <button onClick={onCancel} className="p-1.5 text-gray-400 hover:bg-gray-50 rounded"><X className="w-4 h-4" /></button>
           </>
         ) : (
           <>
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">
+            <span className="text-sm font-medium text-gray-700 bg-gray-100 px-3 py-1 rounded">
               {String(setting.value)}
             </span>
-            <button onClick={onStartEdit} className="p-1.5 text-gray-400 hover:text-indigo-600 rounded"><Edit3 className="w-4 h-4" /></button>
+            <button onClick={onStartEdit} className="p-1.5 text-gray-400 hover:text-blue-600 rounded"><Edit3 className="w-4 h-4" /></button>
             <button onClick={onDelete} className="p-1.5 text-gray-400 hover:text-red-600 rounded"><Trash2 className="w-4 h-4" /></button>
           </>
         )}
@@ -326,34 +326,34 @@ function AddSettingModal({ onClose, onCreated, showToast }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md">
-        <div className="p-6 border-b dark:border-gray-700">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Add Custom Setting</h2>
+      <div className="bg-white rounded-xl w-full max-w-md">
+        <div className="p-6 border-b">
+          <h2 className="text-lg font-bold text-gray-900">Add Custom Setting</h2>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Key *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Key *</label>
             <input type="text" value={form.key} onChange={(e) => setForm({ ...form, key: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-3 py-2 border rounded-lg"
               placeholder="e.g. custom_exam_rule" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Label *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Label *</label>
             <input type="text" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+              className="w-full px-3 py-2 border rounded-lg" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
               <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                className="w-full px-3 py-2 border rounded-lg">
                 {Object.entries(CATEGORY_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
               <select value={form.valueType} onChange={(e) => setForm({ ...form, valueType: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                className="w-full px-3 py-2 border rounded-lg">
                 <option value="string">String</option>
                 <option value="number">Number</option>
                 <option value="boolean">Boolean</option>
@@ -362,19 +362,19 @@ function AddSettingModal({ onClose, onCreated, showToast }) {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
             <input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+              className="w-full px-3 py-2 border rounded-lg" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Value *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Value *</label>
             <input type="text" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-3 py-2 border rounded-lg"
               placeholder={form.valueType === "boolean" ? "true or false" : "Value"} />
           </div>
           <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg text-gray-700 dark:text-gray-300 dark:border-gray-600">Cancel</button>
-            <button type="submit" disabled={submitting} className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg text-gray-700">Cancel</button>
+            <button type="submit" disabled={submitting} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
               {submitting ? "Creating..." : "Create Setting"}
             </button>
           </div>

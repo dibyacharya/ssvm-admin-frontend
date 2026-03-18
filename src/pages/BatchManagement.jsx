@@ -5,6 +5,7 @@ import {
   Edit,
   Trash2,
   Plus,
+  FileText,
 } from 'lucide-react';
 import {
   getAllBatches,
@@ -238,6 +239,16 @@ const BatchManagement = () => {
                 })()}
               </div>
               <div className="flex items-center space-x-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/program-amendments?batch=${batch._id}`);
+                  }}
+                  className="p-1 text-gray-400 hover:text-emerald-600"
+                  title="Program Amendments"
+                >
+                  <FileText className="w-4 h-4" />
+                </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

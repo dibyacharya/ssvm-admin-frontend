@@ -12,6 +12,7 @@ import SemesterCourseTable from '../components/academic/SemesterCourseTable';
 import {
   getModeOfDeliveryLabel,
 } from '../constants/modeOfDelivery';
+import { listAmendments } from '../services/courseAmendment.service';
 
 const toNumberOrNull = (value) => {
   const parsed = Number(value);
@@ -49,6 +50,8 @@ const ProgramReview = () => {
   const [assessmentSavingByRow, setAssessmentSavingByRow] = useState({});
   const [assessmentErrorByRow, setAssessmentErrorByRow] = useState({});
   const [assessmentNoticeByRow, setAssessmentNoticeByRow] = useState({});
+  const [amendments, setAmendments] = useState([]);
+  const [amendmentsLoading, setAmendmentsLoading] = useState(false);
 
   const pLabel = getPeriodLabel(academicPlan?.program?.periodType || program?.periodType || 'semester');
   const pLabelLower = pLabel.toLowerCase();
@@ -101,6 +104,14 @@ const ProgramReview = () => {
 
   useEffect(() => {
     fetchProgram();
+    // Load amendments for this program
+    if (programId) {
+      setAmendmentsLoading(true);
+      listAmendments({ program: programId, limit: 20 })
+        .then((res) => setAmendments(Array.isArray(res?.amendments) ? res.amendments : []))
+        .catch(() => setAmendments([]))
+        .finally(() => setAmendmentsLoading(false));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [programId]);
 
@@ -690,6 +701,69 @@ const ProgramReview = () => {
             )}
           </div>
         )}
+      </div>
+
+      {/* ── Program Amendments Section ── */}
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <div className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-blue-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Program Amendments</h2>
+            {amendments.length > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">{amendments.length}</span>
+            )}
+          </div>
+          <Link
+            to={`/program-amendments/new?program=${programId}`}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 transition-colors"
+          >
+            + New Amendment
+          </Link>
+        </div>
+
+        <div className="p-5">
+          {amendmentsLoading ? (
+            <div className="text-center py-6 text-sm text-gray-400">Loading amendments...</div>
+          ) : amendments.length === 0 ? (
+            <div className="text-center py-6">
+              <FileText className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-gray-500">No amendments for this program yet</p>
+              <Link to={`/program-amendments/new?program=${programId}`} className="text-xs text-blue-600 hover:underline mt-1 inline-block">
+                Create the first amendment
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {amendments.map((amd) => (
+                <Link
+                  key={amd._id}
+                  to={`/program-amendments/${amd._id}`}
+                  className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-900 truncate">{amd.title || amd.amendmentId || 'Amendment'}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${
+                        amd.status === 'APPROVED' || amd.status === 'FULLY_APPLIED' ? 'bg-green-100 text-green-700' :
+                        amd.status === 'PENDING_APPROVAL' ? 'bg-amber-100 text-amber-700' :
+                        amd.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                        'bg-gray-100 text-gray-600'
+                      }`}>
+                        {(amd.status || 'DRAFT').replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-400">
+                      <span>{amd.scope === 'CURRENT_AND_FUTURE' ? 'Current & Future' : 'Future Only'}</span>
+                      <span>{amd.changes?.length || 0} changes</span>
+                      {amd.createdAt && <span>{new Date(amd.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+                    </div>
+                  </div>
+                  <span className="text-gray-400 text-xs">View →</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {showSemesterManager && selectedSemester && manageSemesterId && (

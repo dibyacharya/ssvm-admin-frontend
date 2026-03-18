@@ -130,12 +130,12 @@ export default function ResultCommitteeManagement() {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Result Committee</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Result Committee</h1>
           <p className="text-sm text-gray-500 mt-1">Schedule committee meetings, record decisions, and publish results</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <Plus className="w-4 h-4" /> Schedule Meeting
         </button>
@@ -146,7 +146,7 @@ export default function ResultCommitteeManagement() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-2 border rounded-lg text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
+          className="px-3 py-2 border rounded-lg text-sm"
         >
           <option value="">All Statuses</option>
           <option value="scheduled">Scheduled</option>
@@ -222,11 +222,11 @@ function MeetingCard({ meeting, onView, onStart, onComplete, onFinalize, onPubli
   const totalAgenda = meeting.agendaItems?.length || 0;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+    <div className="bg-white rounded-xl border border-gray-200 p-5">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{meeting.title}</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{meeting.title}</h3>
             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[meeting.status]}`}>
               {meeting.status.replace(/_/g, " ")}
             </span>
@@ -250,7 +250,7 @@ function MeetingCard({ meeting, onView, onStart, onComplete, onFinalize, onPubli
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={onView} className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg" title="View Details">
+          <button onClick={onView} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg" title="View Details">
             <Eye className="w-4 h-4" />
           </button>
           {meeting.status === "scheduled" && (
@@ -340,46 +340,46 @@ function CreateMeetingModal({ onClose, onCreated, showToast }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b dark:border-gray-700">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Schedule Committee Meeting</h2>
+      <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b">
+          <h2 className="text-xl font-bold text-gray-900">Schedule Committee Meeting</h2>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
               <input
                 type="text" value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-3 py-2 border rounded-lg"
                 placeholder="e.g. Semester 4 Result Committee"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Meeting Date *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Date *</label>
               <input
                 type="datetime-local" value={form.meetingDate}
                 onChange={(e) => setForm({ ...form, meetingDate: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-3 py-2 border rounded-lg"
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Chairperson ID *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Chairperson ID *</label>
               <input
                 type="text" value={form.chairperson}
                 onChange={(e) => setForm({ ...form, chairperson: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-3 py-2 border rounded-lg"
                 placeholder="User ID of chairperson"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Academic Year</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
               <input
                 type="text" value={form.academicYear}
                 onChange={(e) => setForm({ ...form, academicYear: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-3 py-2 border rounded-lg"
                 placeholder="e.g. 2025-26"
               />
             </div>
@@ -388,19 +388,19 @@ function CreateMeetingModal({ onClose, onCreated, showToast }) {
           {/* Members */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Committee Members</label>
-              <button type="button" onClick={addMember} className="text-sm text-indigo-600 hover:text-indigo-700">+ Add Member</button>
+              <label className="text-sm font-medium text-gray-700">Committee Members</label>
+              <button type="button" onClick={addMember} className="text-sm text-blue-600 hover:text-blue-700">+ Add Member</button>
             </div>
             {form.members.map((m, i) => (
               <div key={i} className="flex gap-2 mb-2">
                 <input
                   type="text" value={m.user} placeholder="User ID"
                   onChange={(e) => updateMember(i, "user", e.target.value)}
-                  className="flex-1 px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="flex-1 px-3 py-2 border rounded-lg text-sm"
                 />
                 <select
                   value={m.role} onChange={(e) => updateMember(i, "role", e.target.value)}
-                  className="px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="px-3 py-2 border rounded-lg text-sm"
                 >
                   <option value="member">Member</option>
                   <option value="secretary">Secretary</option>
@@ -416,19 +416,19 @@ function CreateMeetingModal({ onClose, onCreated, showToast }) {
           {/* Agenda Items */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Agenda Items (Semesters to Review)</label>
-              <button type="button" onClick={addAgenda} className="text-sm text-indigo-600 hover:text-indigo-700">+ Add Agenda</button>
+              <label className="text-sm font-medium text-gray-700">Agenda Items (Semesters to Review)</label>
+              <button type="button" onClick={addAgenda} className="text-sm text-blue-600 hover:text-blue-700">+ Add Agenda</button>
             </div>
             {form.agendaItems.map((a, i) => (
               <div key={i} className="flex gap-2 mb-2">
                 <input
                   type="text" value={a.semester} placeholder="Semester ID"
                   onChange={(e) => updateAgenda(i, "semester", e.target.value)}
-                  className="flex-1 px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="flex-1 px-3 py-2 border rounded-lg text-sm"
                 />
                 <select
                   value={a.examType} onChange={(e) => updateAgenda(i, "examType", e.target.value)}
-                  className="px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="px-3 py-2 border rounded-lg text-sm"
                 >
                   <option value="regular">Regular</option>
                   <option value="supplementary">Supplementary</option>
@@ -441,9 +441,9 @@ function CreateMeetingModal({ onClose, onCreated, showToast }) {
             ))}
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t dark:border-gray-700">
-            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600">Cancel</button>
-            <button type="submit" disabled={submitting} className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
+            <button type="submit" disabled={submitting} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
               {submitting ? "Scheduling..." : "Schedule Meeting"}
             </button>
           </div>
@@ -502,12 +502,12 @@ function MeetingDetailModal({ meeting, onClose, onRefresh, onStart, onComplete, 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="p-6 border-b dark:border-gray-700 flex items-start justify-between">
+        <div className="p-6 border-b flex items-start justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{meeting.title}</h2>
+              <h2 className="text-xl font-bold text-gray-900">{meeting.title}</h2>
               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[meeting.status]}`}>
                 {meeting.status.replace(/_/g, " ")}
               </span>
@@ -547,7 +547,7 @@ function MeetingDetailModal({ meeting, onClose, onRefresh, onStart, onComplete, 
 
           {/* Attendance */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Committee Members & Attendance</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Committee Members & Attendance</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {meeting.members?.map((m) => {
                 const userId = m.user?._id || m.user;
@@ -557,8 +557,8 @@ function MeetingDetailModal({ meeting, onClose, onRefresh, onStart, onComplete, 
                     key={userId}
                     className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${
                       isPresent
-                        ? "bg-green-50 border-green-300 dark:bg-green-900/20 dark:border-green-700"
-                        : "bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600"
+                        ? "bg-green-50 border-green-300"
+                        : "bg-gray-50 border-gray-200"
                     }`}
                   >
                     <input
@@ -569,7 +569,7 @@ function MeetingDetailModal({ meeting, onClose, onRefresh, onStart, onComplete, 
                       disabled={meeting.status === "decisions_recorded"}
                     />
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{m.user?.name || userId}</p>
+                      <p className="text-sm font-medium text-gray-900">{m.user?.name || userId}</p>
                       <p className="text-xs text-gray-500 capitalize">{m.role}</p>
                     </div>
                   </label>
@@ -577,7 +577,7 @@ function MeetingDetailModal({ meeting, onClose, onRefresh, onStart, onComplete, 
               })}
             </div>
             {meeting.status !== "decisions_recorded" && (
-              <button onClick={saveAttendance} className="mt-2 text-sm text-indigo-600 hover:text-indigo-700">
+              <button onClick={saveAttendance} className="mt-2 text-sm text-blue-600 hover:text-blue-700">
                 Save Attendance
               </button>
             )}
@@ -585,7 +585,7 @@ function MeetingDetailModal({ meeting, onClose, onRefresh, onStart, onComplete, 
 
           {/* Agenda Items */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Agenda Items</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Agenda Items</h3>
             <div className="space-y-3">
               {meeting.agendaItems?.map((item, idx) => (
                 <AgendaItem
@@ -603,12 +603,12 @@ function MeetingDetailModal({ meeting, onClose, onRefresh, onStart, onComplete, 
 
           {/* Minutes */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Minutes of Meeting</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Minutes of Meeting</h3>
             <textarea
               value={minutesText}
               onChange={(e) => setMinutesText(e.target.value)}
               rows={6}
-              className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-3 py-2 border rounded-lg text-sm"
               placeholder="Record minutes of the meeting here..."
               disabled={meeting.status === "decisions_recorded"}
             />
@@ -616,7 +616,7 @@ function MeetingDetailModal({ meeting, onClose, onRefresh, onStart, onComplete, 
               <button
                 onClick={saveMinutes}
                 disabled={savingMinutes}
-                className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm"
+                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm"
               >
                 {savingMinutes ? "Saving..." : "Save Minutes"}
               </button>
@@ -639,15 +639,15 @@ function AgendaItem({ item, index, expanded, onToggle, onDecide, canDecide }) {
   const [remarks, setRemarks] = useState(item.remarks || "");
 
   return (
-    <div className="border rounded-lg dark:border-gray-700 overflow-hidden">
+    <div className="border rounded-lg overflow-hidden">
       <div
-        className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50"
+        className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50"
         onClick={onToggle}
       >
         <div className="flex items-center gap-3">
           <span className="text-sm font-medium text-gray-500">#{index + 1}</span>
           <div>
-            <p className="text-sm font-medium text-gray-900 dark:text-white">
+            <p className="text-sm font-medium text-gray-900">
               Semester: {item.semester?.name || item.semester}
             </p>
             <p className="text-xs text-gray-500 capitalize">{item.examType} Exam</p>
@@ -664,21 +664,21 @@ function AgendaItem({ item, index, expanded, onToggle, onDecide, canDecide }) {
             <span className="mx-1">|</span>
             <span className="text-red-600">{item.failCount} fail</span>
             <span className="mx-1">|</span>
-            <span className="text-indigo-600">Avg SGPA: {item.avgSGPA}</span>
+            <span className="text-blue-600">Avg SGPA: {item.avgSGPA}</span>
           </div>
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </div>
       </div>
 
       {expanded && canDecide && (
-        <div className="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
+        <div className="p-4 border-t bg-gray-50/30">
           <div className="flex gap-4 items-end">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Decision</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Decision</label>
               <select
                 value={decision}
                 onChange={(e) => setDecision(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-3 py-2 border rounded-lg text-sm"
               >
                 <option value="pending">Pending</option>
                 <option value="approved">Approve</option>
@@ -688,17 +688,17 @@ function AgendaItem({ item, index, expanded, onToggle, onDecide, canDecide }) {
               </select>
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Remarks</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Remarks</label>
               <input
                 type="text" value={remarks}
                 onChange={(e) => setRemarks(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-3 py-2 border rounded-lg text-sm"
                 placeholder="Optional remarks..."
               />
             </div>
             <button
               onClick={() => onDecide(decision, remarks)}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm whitespace-nowrap"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm whitespace-nowrap"
             >
               Record Decision
             </button>
@@ -713,8 +713,8 @@ function AgendaItem({ item, index, expanded, onToggle, onDecide, canDecide }) {
       )}
 
       {expanded && !canDecide && item.remarks && (
-        <div className="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
-          <p className="text-sm text-gray-600 dark:text-gray-400"><strong>Remarks:</strong> {item.remarks}</p>
+        <div className="p-4 border-t bg-gray-50/30">
+          <p className="text-sm text-gray-600"><strong>Remarks:</strong> {item.remarks}</p>
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import {
   Shield,
   Save,
@@ -9,7 +9,11 @@ import {
   AlertTriangle,
   Search,
   Eye,
-  Trash2
+  Trash2,
+  ChevronDown,
+  Users,
+  Grid3X3,
+  GitBranch
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -41,6 +45,17 @@ const SYSTEM_ROLE_LEVEL_MAP = {
   teacher: 2,
   ta: 2,
   student: 1
+};
+
+const SYSTEM_ROLE_SHORT_MAP = {
+  admin: 'A',
+  dean: 'D',
+  associate_dean: 'AD',
+  program_coordinator: 'PC',
+  course_coordinator: 'CC',
+  teacher: 'T',
+  ta: 'TA',
+  student: 'S'
 };
 
 const CUSTOM_ROLE_COLORS = [
@@ -177,6 +192,65 @@ const normalizeAccessRoles = (values) => {
   return normalized;
 };
 
+const CollapsibleSection = ({ id, title, subtitle, icon: Icon, badge, defaultOpen = true, children, headerRight }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const contentRef = useRef(null);
+  const [contentHeight, setContentHeight] = useState(defaultOpen ? 'auto' : '0px');
+
+  useEffect(() => {
+    if (!contentRef.current) return;
+    if (isOpen) {
+      const height = contentRef.current.scrollHeight;
+      setContentHeight(`${height}px`);
+      const timer = setTimeout(() => setContentHeight('auto'), 300);
+      return () => clearTimeout(timer);
+    } else {
+      setContentHeight(`${contentRef.current.scrollHeight}px`);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setContentHeight('0px'));
+      });
+    }
+  }, [isOpen]);
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          {Icon && <Icon className="w-5 h-5 text-blue-600 flex-shrink-0" />}
+          <div className="text-left">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+              {badge != null && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                  {badge}
+                </span>
+              )}
+            </div>
+            {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {headerRight && <div onClick={(e) => e.stopPropagation()}>{headerRight}</div>}
+          <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${isOpen ? '' : '-rotate-90'}`} />
+        </div>
+      </button>
+      <div
+        ref={contentRef}
+        style={{ maxHeight: contentHeight }}
+        className={`transition-[max-height] duration-300 ease-in-out ${contentHeight === 'auto' ? '' : 'overflow-hidden'}`}
+      >
+        <div className="border-t border-gray-200">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const RBACManager = () => {
   const { user, updateUser } = useAuth();
 
@@ -205,6 +279,7 @@ const RBACManager = () => {
   const [newRoleForm, setNewRoleForm] = useState({
     label: '',
     key: '',
+    shortTitle: '',
     description: '',
     parentRoleId: '',
     childRoleIds: []
@@ -214,6 +289,9 @@ const RBACManager = () => {
   const [previewBusy, setPreviewBusy] = useState(false);
   const [previewError, setPreviewError] = useState('');
   const [toastState, setToastState] = useState(null);
+  const [expandedFeatures, setExpandedFeatures] = useState(new Set());
+  const [visibleRoleIds, setVisibleRoleIds] = useState(null); // null = show all
+  const [expandedRoleIds, setExpandedRoleIds] = useState(new Set()); // which role columns are expanded
 
   const realRole = getRealRole(user);
   const accessRoles = useMemo(() => normalizeAccessRoles(user?.accessRoles), [user?.accessRoles]);
@@ -244,10 +322,17 @@ const RBACManager = () => {
         ? SYSTEM_ROLE_COLOR_MAP[key]
         : CUSTOM_ROLE_COLORS[customColorIndex++ % CUSTOM_ROLE_COLORS.length];
 
+      const name = role?.label || role?.key || 'Role';
+      // Short title: system map > API shortTitle > first letters of words
+      const shortTitle = SYSTEM_ROLE_SHORT_MAP[key]
+        || String(role?.shortTitle || '').trim()
+        || name.split(/\s+/).map(w => w[0]?.toUpperCase()).join('');
+
       return {
         id: role?._id || key,
         key,
-        name: role?.label || role?.key || 'Role',
+        name,
+        shortTitle,
         level: SYSTEM_ROLE_LEVEL_MAP[key] || 1,
         color,
         description: role?.description || (isSystemRole ? 'System role' : 'Custom role'),
@@ -553,6 +638,7 @@ const RBACManager = () => {
   const submitCreateRole = async () => {
     const label = String(newRoleForm.label || '').trim();
     const key = toRoleKey(newRoleForm.key || label);
+    const shortTitle = String(newRoleForm.shortTitle || '').trim().toUpperCase().slice(0, 4);
     const description = String(newRoleForm.description || '').trim();
     const parentRoleId = String(newRoleForm.parentRoleId || '').trim();
     const childRoleIds = Array.isArray(newRoleForm.childRoleIds)
@@ -583,6 +669,7 @@ const RBACManager = () => {
       await createRole({
         roleName: label,
         roleKey: key,
+        shortTitle: shortTitle || undefined,
         description,
         parentRoleId: parentRoleId || undefined,
         childRoleIds,
@@ -592,6 +679,7 @@ const RBACManager = () => {
       setNewRoleForm({
         label: '',
         key: '',
+        shortTitle: '',
         description: '',
         parentRoleId: '',
         childRoleIds: []
@@ -653,6 +741,64 @@ const RBACManager = () => {
 
   const categories = [...new Set(features.map((feature) => feature.category))];
 
+  const toggleFeatureExpand = (featureId) => {
+    setExpandedFeatures((prev) => {
+      const next = new Set(prev);
+      if (next.has(featureId)) next.delete(featureId);
+      else next.add(featureId);
+      return next;
+    });
+  };
+
+  const displayedRoles = visibleRoleIds
+    ? roles.filter((r) => visibleRoleIds.has(r.id))
+    : roles;
+
+  const toggleRoleVisibility = (roleId) => {
+    setVisibleRoleIds((prev) => {
+      if (!prev) {
+        // First toggle: show all except this one
+        const next = new Set(roles.map((r) => r.id));
+        next.delete(roleId);
+        return next;
+      }
+      const next = new Set(prev);
+      if (next.has(roleId)) {
+        if (next.size <= 1) return null; // Don't hide last role, reset to all
+        next.delete(roleId);
+      } else {
+        next.add(roleId);
+      }
+      return next;
+    });
+  };
+
+  const toggleRoleExpand = (roleId) => {
+    setExpandedRoleIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(roleId)) next.delete(roleId);
+      else next.add(roleId);
+      return next;
+    });
+  };
+
+  const expandAllRoles = () => setExpandedRoleIds(new Set(roles.map((r) => r.id)));
+  const collapseAllRoles = () => setExpandedRoleIds(new Set());
+
+  // Count granted permissions per role per feature (across all actions & scopes)
+  const getFeatureRoleSummary = (feature, role) => {
+    let granted = 0;
+    let total = 0;
+    actions.forEach((action) => {
+      scopes.forEach((scope) => {
+        total++;
+        const key = getPermissionKey(role.id, feature.id, action.id, scope.id);
+        if (permissions[key]) granted++;
+      });
+    });
+    return { granted, total };
+  };
+
   if (!isAdminUser) {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -663,7 +809,7 @@ const RBACManager = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {toastState && (
         <div
           className={`fixed right-6 top-6 z-[60] rounded-lg border px-4 py-2 text-sm shadow-lg ${
@@ -676,35 +822,29 @@ const RBACManager = () => {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Shield className="w-8 h-8 text-blue-600 mr-3" />
-              Roles & Permissions
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Manage role-based access control and preview access safely via act-as mode.
-            </p>
-            {rolesError && <p className="text-sm text-red-600 mt-1">{rolesError}</p>}
-            {previewError && <p className="text-sm text-red-600 mt-1">{previewError}</p>}
-            {deleteRoleError && <p className="text-sm text-red-600 mt-1">{deleteRoleError}</p>}
+      {/* ── Page Header — single compact row ── */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-5 py-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5">
+            <Shield className="w-6 h-6 text-blue-600 flex-shrink-0" />
+            <h1 className="text-lg font-bold text-gray-900">Roles & Permissions</h1>
+            {(rolesError || previewError || deleteRoleError) && (
+              <span className="text-xs text-red-600">{rolesError || previewError || deleteRoleError}</span>
+            )}
           </div>
 
-          <div className="flex items-center space-x-2 flex-wrap">
-            <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
-              <Eye className="w-4 h-4 text-gray-600" />
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 bg-gray-100 rounded-lg px-2.5 py-1.5" title="Temporarily view the system as another role — no DB changes">
+              <Eye className="w-3.5 h-3.5 text-gray-500" />
               <select
                 value={isPreviewActive ? effectiveRole : ''}
                 onChange={handlePreviewRoleChange}
                 disabled={previewBusy || rolesLoading}
-                className="bg-transparent text-sm text-gray-800 focus:outline-none"
+                className="bg-transparent text-xs text-gray-700 focus:outline-none"
               >
-                <option value="">Preview as role (Off)</option>
+                <option value="">Preview (Off)</option>
                 {apiRoles.map((role) => (
-                  <option key={role._id} value={role.key}>
-                    {role.label}
-                  </option>
+                  <option key={role._id} value={role.key}>{role.label}</option>
                 ))}
               </select>
             </div>
@@ -713,241 +853,352 @@ const RBACManager = () => {
               onClick={() => {
                 setShowAddRoleModal(true);
                 setAddRoleError('');
-                setNewRoleForm({
-                  label: '',
-                  key: '',
-                  description: '',
-                  parentRoleId: '',
-                  childRoleIds: []
-                });
+                setNewRoleForm({ label: '', key: '', shortTitle: '', description: '', parentRoleId: '', childRoleIds: [] });
                 setNewRolePermissions({});
                 setMatrixSearchTerm('');
                 setKeyTouched(false);
-                if (!featuresLoading && availableFeatures.length === 0) {
-                  loadFeatures();
-                }
+                if (!featuresLoading && availableFeatures.length === 0) loadFeatures();
               }}
-              className="flex items-center px-4 py-2 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
+              className="flex items-center px-3 py-1.5 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors text-xs"
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-3.5 h-3.5 mr-1" />
               Add Role
             </button>
 
             <button
               onClick={handleReset}
               disabled={!hasChanges && !isPreviewActive}
-              className="flex items-center px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center px-3 py-1.5 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs"
             >
-              <RotateCcw className="w-4 h-4 mr-2" />
+              <RotateCcw className="w-3.5 h-3.5 mr-1" />
               Reset
             </button>
 
             <button
               onClick={() => setShowSaveModal(true)}
               disabled={!hasChanges}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs"
             >
-              <Save className="w-4 h-4 mr-2" />
-              Save Changes
+              <Save className="w-3.5 h-3.5 mr-1" />
+              Save
             </button>
           </div>
         </div>
 
         {isPreviewActive && (
-          <div className="mb-4 flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
-            <div className="text-sm text-amber-900">
-              Previewing as <span className="font-semibold">{user?.effectiveRoleLabel || effectiveRole}</span>. This does not change your real role in DB.
-            </div>
+          <div className="mt-2 flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            <span className="text-xs text-amber-900">
+              Previewing as <strong>{user?.effectiveRoleLabel || effectiveRole}</strong> — no DB changes
+            </span>
             <button
               onClick={handleExitPreview}
               disabled={previewBusy}
-              className="px-3 py-1.5 text-sm rounded border border-amber-300 text-amber-900 hover:bg-amber-100 disabled:opacity-60"
+              className="px-2 py-1 text-xs rounded border border-amber-300 text-amber-900 hover:bg-amber-100 disabled:opacity-60"
             >
-              Exit Preview
+              Exit
             </button>
           </div>
         )}
-
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Search features..."
-              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <select
-            value={filterCategory}
-            onChange={(event) => setFilterCategory(event.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="all">All Categories</option>
-            {categories.map((category) => (
-              <option key={category} value={category}>{category}</option>
-            ))}
-          </select>
-        </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Role Hierarchy</h2>
-        <div className="flex flex-wrap gap-4">
-          {roleHierarchyDisplay.map((role, index) => (
-            <div key={role.name} className="flex items-center">
-              <div className={`w-3 h-3 ${role.color} rounded-full mr-2`}></div>
-              <span className="text-sm font-medium text-gray-700">{role.name}</span>
-              {index < roleHierarchyDisplay.length - 1 && <span className="mx-3 text-gray-400">→</span>}
-            </div>
-          ))}
-        </div>
-        <p className="text-sm text-gray-500 mt-2">
-          Higher roles inherit view permissions from lower roles. Custom roles default to view-only until edited.
-        </p>
-      </div>
 
+
+      {/* ── Custom Roles (Collapsible) ── */}
       {customRoles.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Custom Roles</h2>
-          <div className="space-y-2">
+        <CollapsibleSection
+          id="custom-roles"
+          title="Custom Roles"
+          icon={Users}
+          badge={customRoles.length}
+          defaultOpen={false}
+        >
+          <div className="px-6 py-4 space-y-2">
             {customRoles.map((role) => {
               const isDeleting = deletingRoleId === role._id;
               return (
                 <div
                   key={role._id}
-                  className="flex items-center justify-between rounded border border-gray-200 px-3 py-2"
+                  className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3 hover:bg-gray-50 transition-colors"
                 >
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{role.label || role.key}</p>
-                    <p className="text-xs text-gray-500">{role.key}</p>
-                    <p className="text-xs text-gray-500">
-                      Parent: {role?.parentRole?.label || 'None'}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Children:{' '}
-                      {Array.isArray(role?.childRoles) && role.childRoles.length > 0
-                        ? role.childRoles.map((child) => child.label || child.key).join(', ')
-                        : 'None'}
-                    </p>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-gray-900">{role.label || role.key}</p>
+                      <span className="text-xs text-gray-400 font-mono bg-gray-100 px-1.5 py-0.5 rounded">{role.key}</span>
+                    </div>
+                    <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
+                      <span>Parent: {role?.parentRole?.label || 'None'}</span>
+                      <span>
+                        Children:{' '}
+                        {Array.isArray(role?.childRoles) && role.childRoles.length > 0
+                          ? role.childRoles.map((child) => child.label || child.key).join(', ')
+                          : 'None'}
+                      </span>
+                    </div>
                   </div>
                   <button
                     onClick={() => handleDeleteRole(role)}
                     disabled={isDeleting}
-                    className="inline-flex items-center rounded border border-red-300 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50 disabled:opacity-60"
+                    className="inline-flex items-center rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60 transition-colors flex-shrink-0 ml-3"
                   >
-                    <Trash2 className="w-4 h-4 mr-1.5" />
+                    <Trash2 className="w-3.5 h-3.5 mr-1.5" />
                     {isDeleting ? 'Deleting...' : 'Delete'}
                   </button>
                 </div>
               );
             })}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Permission Matrix</h2>
-          <p className="text-sm text-gray-600 mt-1">
-            Configure permissions for each role, feature, action, and scope combination.
-          </p>
+      {/* ── Permission Matrix (Collapsible) ── */}
+      <CollapsibleSection
+        id="permission-matrix"
+        title="Permission Matrix"
+        subtitle="Click a feature to expand its actions. Toggle roles to show/hide columns."
+        icon={Grid3X3}
+        badge={`${filteredFeatures.length} features`}
+        defaultOpen={true}
+        headerRight={
+          <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search features..."
+                className="pl-8 pr-3 py-1.5 w-48 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+            <select
+              value={filterCategory}
+              onChange={(event) => setFilterCategory(event.target.value)}
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <option value="all">All Categories</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </div>
+        }
+      >
+        {/* Role visibility pills + expand/collapse controls */}
+        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-gray-500 mr-1">Roles:</span>
+          {roles.map((role) => {
+            const isVisible = !visibleRoleIds || visibleRoleIds.has(role.id);
+            return (
+              <button
+                key={role.id}
+                type="button"
+                onClick={() => toggleRoleVisibility(role.id)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all border ${
+                  isVisible
+                    ? 'bg-white border-gray-300 text-gray-800 shadow-sm'
+                    : 'bg-gray-100 border-transparent text-gray-400'
+                }`}
+              >
+                <div className={`w-2 h-2 ${role.color} rounded-full ${isVisible ? '' : 'opacity-40'}`}></div>
+                {role.name}
+              </button>
+            );
+          })}
+          <span className="text-gray-300 mx-1">|</span>
+          {visibleRoleIds && (
+            <button
+              type="button"
+              onClick={() => setVisibleRoleIds(null)}
+              className="text-xs text-blue-600 hover:underline"
+            >
+              Show all
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={expandAllRoles}
+            className="text-xs text-blue-600 hover:underline"
+          >
+            Expand all
+          </button>
+          <button
+            type="button"
+            onClick={collapseAllRoles}
+            className="text-xs text-gray-500 hover:underline"
+          >
+            Collapse all
+          </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <div className="min-w-max">
-            <div className="bg-gray-50 border-b border-gray-200">
-              <div className="flex">
-                <div className="w-64 p-4 font-medium text-gray-900 border-r border-gray-200">
-                  Feature / Role
-                </div>
-                {roles.map((role) => (
-                  <div key={role.id} className="w-48 p-4 text-center border-r border-gray-200">
-                    <div className="flex items-center justify-center">
-                      <div className={`w-3 h-3 ${role.color} rounded-full mr-2`}></div>
-                      <span className="font-medium text-gray-900">{role.name}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+        {/* Scope legend — sticky */}
+        <div className="px-4 py-2 bg-blue-50 border-b border-blue-100 flex items-center gap-4 flex-wrap">
+          <span className="text-xs font-medium text-blue-700">Scope levels:</span>
+          {scopes.map((scope) => (
+            <span key={scope.id} className="inline-flex items-center gap-1 text-xs text-blue-600">
+              <span className="w-5 h-5 rounded bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-[10px]">{scope.name.charAt(0)}</span>
+              {scope.name}
+            </span>
+          ))}
+          <div className="ml-auto flex items-center gap-3">
+            <span className="flex items-center gap-1 text-xs text-gray-500"><span className="w-3 h-3 bg-green-500 rounded inline-block"></span> Granted</span>
+            <span className="flex items-center gap-1 text-xs text-gray-500"><span className="w-3 h-3 bg-gray-200 rounded inline-block"></span> Denied</span>
+          </div>
+        </div>
 
-            {filteredFeatures.map((feature) => (
-              <div key={feature.id} className="border-b border-gray-200">
-                <div className="bg-gray-25 border-b border-gray-100">
-                  <div className="flex">
-                    <div className="w-64 p-4 border-r border-gray-200">
-                      <div className="font-medium text-gray-900">{feature.name}</div>
-                      <div className="text-sm text-gray-500">{feature.category}</div>
-                    </div>
-                    {roles.map((role) => (
-                      <div key={role.id} className="w-48 p-4 border-r border-gray-200"></div>
-                    ))}
-                  </div>
-                </div>
-
-                {actions.map((action) => (
-                  <div key={action.id} className="border-b border-gray-50 last:border-b-0">
-                    <div className="flex">
-                      <div className="w-64 p-3 border-r border-gray-200 bg-gray-25">
-                        <div className="text-sm font-medium text-gray-700 ml-4">{action.name}</div>
+        <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 240px)' }}>
+          <table className="w-full border-collapse">
+            {/* Column headers — click role to expand/collapse */}
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="text-left p-3 font-medium text-gray-900 text-sm border-r border-gray-200 min-w-40 w-40 sticky left-0 bg-gray-50 z-20">
+                  Feature
+                </th>
+                {displayedRoles.map((role) => {
+                  const isRoleExpanded = expandedRoleIds.has(role.id);
+                  return (
+                    <th
+                      key={role.id}
+                      className={`p-2 border-r border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors ${isRoleExpanded ? 'min-w-44' : 'min-w-16 w-16'}`}
+                      onClick={() => toggleRoleExpand(role.id)}
+                      title={isRoleExpanded ? `Collapse ${role.name}` : `Click to expand ${role.name}`}
+                    >
+                      <div className="flex items-center justify-center gap-1.5">
+                        <div className={`w-2.5 h-2.5 ${role.color} rounded-full flex-shrink-0`}></div>
+                        <span className={`font-medium whitespace-nowrap ${isRoleExpanded ? 'text-gray-900 text-xs' : 'text-gray-500 text-[10px]'}`}>
+                          {isRoleExpanded ? role.name : role.shortTitle}
+                        </span>
+                        <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform duration-200 ${isRoleExpanded ? '' : '-rotate-90'}`} />
                       </div>
-                      {roles.map((role) => (
-                        <div key={role.id} className="w-48 p-3 border-r border-gray-200">
-                          <div className="grid grid-cols-3 gap-1">
-                            {scopes.map((scope) => {
-                              const permKey = getPermissionKey(role.id, feature.id, action.id, scope.id);
-                              const isGranted = permissions[permKey];
-                              return (
-                                <button
-                                  key={scope.id}
-                                  onClick={() => togglePermission(role.id, feature.id, action.id, scope.id)}
-                                  className={`
-                                    w-8 h-8 rounded text-xs font-medium transition-all
-                                    ${
-                                      isGranted
-                                        ? 'bg-green-500 text-white shadow-sm'
-                                        : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
-                                    }
-                                  `}
-                                  title={`${action.name} ${feature.name} at ${scope.name} level`}
-                                >
-                                  {scope.name.charAt(0)}
-                                </button>
-                              );
-                            })}
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredFeatures.map((feature) => {
+                const isFeatureOpen = expandedFeatures.has(feature.id);
+                return (
+                  <React.Fragment key={feature.id}>
+                    {/* Feature header row — always visible, clickable */}
+                    <tr
+                      className="border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+                      onClick={() => toggleFeatureExpand(feature.id)}
+                    >
+                      <td className="p-3 border-r border-gray-200 sticky left-0 bg-white z-[5]">
+                        <div className="flex items-center gap-2">
+                          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 flex-shrink-0 ${isFeatureOpen ? '' : '-rotate-90'}`} />
+                          <div>
+                            <div className="font-medium text-gray-900 text-sm">{feature.name}</div>
+                            <div className="text-[11px] text-gray-400">{feature.category}</div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
+                      </td>
+                      {displayedRoles.map((role) => {
+                        const isRoleExpanded = expandedRoleIds.has(role.id);
+                        const { granted, total } = getFeatureRoleSummary(feature, role);
+                        const pct = total > 0 ? Math.round((granted / total) * 100) : 0;
+                        return (
+                          <td key={role.id} className="p-2 border-r border-gray-200 text-center" onClick={(e) => e.stopPropagation()}>
+                            {!isFeatureOpen ? (
+                              isRoleExpanded ? (
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <div className="w-14 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full ${pct > 70 ? 'bg-green-500' : pct > 30 ? 'bg-amber-400' : 'bg-gray-300'}`}
+                                      style={{ width: `${pct}%` }}
+                                    ></div>
+                                  </div>
+                                  <span className="text-[10px] text-gray-400 font-mono">{granted}/{total}</span>
+                                </div>
+                              ) : (
+                                <div
+                                  className={`w-6 h-6 rounded-full mx-auto flex items-center justify-center text-[9px] font-bold ${
+                                    pct > 70 ? 'bg-green-100 text-green-700' : pct > 30 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-400'
+                                  }`}
+                                  title={`${role.name}: ${granted}/${total} granted`}
+                                >
+                                  {pct > 0 ? `${pct}` : '0'}
+                                </div>
+                              )
+                            ) : (
+                              <span className="text-[10px] text-gray-300">&mdash;</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+
+                    {/* Expanded: action rows */}
+                    {isFeatureOpen && actions.map((action) => (
+                      <tr key={`${feature.id}-${action.id}`} className="border-b border-gray-100 bg-gray-50/30">
+                        <td className="py-2 px-3 border-r border-gray-200 sticky left-0 bg-gray-50/80 z-[5]">
+                          <div className="text-xs font-medium text-gray-600 pl-8">{action.name}</div>
+                        </td>
+                        {displayedRoles.map((role) => {
+                          const isRoleExpanded = expandedRoleIds.has(role.id);
+                          if (!isRoleExpanded) {
+                            const grantedCount = scopes.filter((scope) => {
+                              const permKey = getPermissionKey(role.id, feature.id, action.id, scope.id);
+                              return permissions[permKey];
+                            }).length;
+                            return (
+                              <td
+                                key={role.id}
+                                className="p-1.5 border-r border-gray-200 text-center"
+                                title={`${role.name}: ${grantedCount}/${scopes.length} scopes granted for ${action.name}`}
+                              >
+                                <span className={`text-[10px] font-bold ${grantedCount === scopes.length ? 'text-green-600' : grantedCount > 0 ? 'text-amber-500' : 'text-gray-300'}`}>
+                                  {grantedCount}/{scopes.length}
+                                </span>
+                              </td>
+                            );
+                          }
+                          return (
+                            <td key={role.id} className="p-1.5 border-r border-gray-200">
+                              <div className="flex items-center justify-center gap-0.5 flex-wrap">
+                                {scopes.map((scope) => {
+                                  const permKey = getPermissionKey(role.id, feature.id, action.id, scope.id);
+                                  const isGranted = permissions[permKey];
+                                  return (
+                                    <button
+                                      key={scope.id}
+                                      onClick={() => togglePermission(role.id, feature.id, action.id, scope.id)}
+                                      className={`
+                                        w-6 h-6 rounded text-[9px] font-semibold transition-all relative group/scope
+                                        ${
+                                          isGranted
+                                            ? 'bg-green-500 text-white shadow-sm hover:bg-green-600'
+                                            : 'bg-gray-200 text-gray-400 hover:bg-gray-300'
+                                        }
+                                      `}
+                                      title={`${scope.name}: ${action.name} — ${feature.name}`}
+                                    >
+                                      {scope.name.charAt(0)}
+                                      <span className="absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-gray-900 text-white text-[9px] rounded whitespace-nowrap opacity-0 group-hover/scope:opacity-100 transition-opacity pointer-events-none z-20">
+                                        {scope.name}
+                                      </span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
 
-        <div className="p-4 bg-gray-50 border-t border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-green-500 rounded mr-2"></div>
-                <span className="text-sm text-gray-600">Granted</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-gray-200 rounded mr-2"></div>
-                <span className="text-sm text-gray-600">Denied</span>
-              </div>
-              {rolesLoading && <span className="text-sm text-gray-500">Loading roles...</span>}
-            </div>
-            <div className="text-sm text-gray-500">
-              Scope levels: U=University, S=School, D=Department, P=Program, C=Course, B=Batch
-            </div>
-          </div>
-        </div>
-      </div>
+        {rolesLoading && (
+          <div className="px-4 py-3 text-center text-sm text-gray-500">Loading roles...</div>
+        )}
+      </CollapsibleSection>
 
       {showAddRoleModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -981,21 +1232,39 @@ const RBACManager = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Role Code (roleKey)</label>
-                  <input
-                    type="text"
-                    value={newRoleForm.key}
-                    onChange={(event) => {
-                      setKeyTouched(true);
-                      setNewRoleForm((prev) => ({
-                        ...prev,
-                        key: toRoleKey(event.target.value)
-                      }));
-                    }}
-                    placeholder="content_reviewer"
-                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Role Code (roleKey)</label>
+                    <input
+                      type="text"
+                      value={newRoleForm.key}
+                      onChange={(event) => {
+                        setKeyTouched(true);
+                        setNewRoleForm((prev) => ({
+                          ...prev,
+                          key: toRoleKey(event.target.value)
+                        }));
+                      }}
+                      placeholder="content_reviewer"
+                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div className="w-24">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Short Title</label>
+                    <input
+                      type="text"
+                      value={newRoleForm.shortTitle}
+                      onChange={(event) =>
+                        setNewRoleForm((prev) => ({
+                          ...prev,
+                          shortTitle: event.target.value.toUpperCase().slice(0, 4)
+                        }))
+                      }
+                      placeholder="CR"
+                      maxLength={4}
+                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center font-bold uppercase"
+                    />
+                  </div>
                 </div>
 
                 <div>

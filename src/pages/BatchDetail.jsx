@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { getBatchById, getBatchStudents } from '../services/batch.service';
 import { getProgramById } from '../services/program.service';
-import { getAmendmentsByBatch } from '../services/courseAmendment.service';
+import { getAmendmentsByBatch, getAmendmentsByProgram, applyToBatch, revertFromBatch } from '../services/courseAmendment.service';
 import SemesterManager from '../components/academic/SemesterManager';
 import { getPeriodLabel } from '../utils/periodLabel';
 
@@ -84,8 +84,11 @@ const BatchDetail = () => {
   const [hasLoadedStudents, setHasLoadedStudents] = useState(false);
 
   const [amendments, setAmendments] = useState([]);
+  const [programAmendments, setProgramAmendments] = useState([]);
   const [amendmentsLoading, setAmendmentsLoading] = useState(false);
   const [hasLoadedAmendments, setHasLoadedAmendments] = useState(false);
+  const [applyingId, setApplyingId] = useState(null);
+  const [revertingId, setRevertingId] = useState(null);
 
   // Sync activeBatchTab to URL so tab persists on refresh
   useEffect(() => {
@@ -142,12 +145,66 @@ const BatchDetail = () => {
   const fetchAmendments = async () => {
     try {
       setAmendmentsLoading(true);
-      const res = await getAmendmentsByBatch(batchId);
-      setAmendments(res.amendments || []);
+      const programId = batch?.program?._id || batch?.program;
+      const [batchRes, progRes] = await Promise.all([
+        getAmendmentsByBatch(batchId).catch(() => ({ amendments: [] })),
+        programId ? getAmendmentsByProgram(programId).catch(() => ({ amendments: [] })) : { amendments: [] },
+      ]);
+      setAmendments(batchRes.amendments || []);
+      setProgramAmendments(progRes.amendments || []);
     } catch {
       setAmendments([]);
+      setProgramAmendments([]);
     } finally {
       setAmendmentsLoading(false);
+    }
+  };
+
+  // Available = APPROVED/PARTIALLY_APPLIED program amendments not yet applied to this batch
+  const availableAmendments = useMemo(() => {
+    const appliedIds = new Set(
+      amendments.filter(a => a.batchStatus === 'APPLIED').map(a => a._id)
+    );
+    return programAmendments.filter(amd => {
+      if (!['APPROVED', 'PARTIALLY_APPLIED'].includes(amd.status)) return false;
+      // Check if already applied to this batch
+      if (appliedIds.has(amd._id)) return false;
+      const batchApp = amd.batchApplications?.find(
+        ba => (ba.batchId?._id || ba.batchId) === batchId
+      );
+      if (batchApp?.status === 'APPLIED') return false;
+      return true;
+    });
+  }, [programAmendments, amendments, batchId]);
+
+  // Applied = batch amendments with APPLIED status
+  const appliedAmendments = useMemo(() => {
+    return amendments.filter(a => a.batchStatus === 'APPLIED');
+  }, [amendments]);
+
+  const handleApplyAmendment = async (amendmentId) => {
+    try {
+      setApplyingId(amendmentId);
+      await applyToBatch(amendmentId, batchId);
+      await fetchAmendments();
+    } catch (err) {
+      console.error('Failed to apply amendment:', err);
+      alert(err?.response?.data?.message || 'Failed to apply amendment');
+    } finally {
+      setApplyingId(null);
+    }
+  };
+
+  const handleRevertAmendment = async (amendmentId) => {
+    try {
+      setRevertingId(amendmentId);
+      await revertFromBatch(amendmentId, batchId);
+      await fetchAmendments();
+    } catch (err) {
+      console.error('Failed to revert amendment:', err);
+      alert(err?.response?.data?.message || 'Failed to revert amendment');
+    } finally {
+      setRevertingId(null);
     }
   };
 
@@ -426,81 +483,148 @@ const BatchDetail = () => {
           )}
 
           {(hasLoadedAmendments || activeBatchTab === 'AMENDMENTS') && (
-            <div className={activeBatchTab === 'AMENDMENTS' ? 'space-y-4' : 'hidden'}>
-              <div className="flex items-center justify-between">
-                <h3 className="text-md font-semibold text-gray-900">Course Amendments</h3>
-                <a
-                  href="/course-amendments/new"
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  New Amendment
-                </a>
-              </div>
+            <div className={activeBatchTab === 'AMENDMENTS' ? 'space-y-6' : 'hidden'}>
+              <h3 className="text-md font-semibold text-gray-900">Program Amendments</h3>
+
               {amendmentsLoading && (
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
                   <span className="ml-2 text-sm text-gray-500">Loading amendments...</span>
                 </div>
               )}
-              {!amendmentsLoading && amendments.length === 0 && (
-                <div className="text-center py-8 text-gray-400 text-sm">
-                  No amendments found for this batch.
-                </div>
-              )}
-              {!amendmentsLoading && amendments.length > 0 && (
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Batch Status</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Changes</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {amendments.map((amd) => (
-                        <tr
-                          key={amd._id}
-                          className="hover:bg-gray-50 cursor-pointer"
-                          onClick={() => window.location.href = `/course-amendments/${amd._id}`}
-                        >
-                          <td className="px-4 py-3 text-sm font-mono text-blue-600">{amd.amendmentId || '-'}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{amd.title || '-'}</td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                              amd.status === 'FULLY_APPLIED' ? 'bg-green-100 text-green-800' :
-                              amd.status === 'APPROVED' ? 'bg-blue-100 text-blue-800' :
-                              amd.status === 'PENDING_APPROVAL' ? 'bg-yellow-100 text-yellow-800' :
-                              amd.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                              'bg-gray-100 text-gray-700'
-                            }`}>
-                              {amd.status?.replace(/_/g, ' ') || '-'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                              amd.batchStatus === 'APPLIED' ? 'bg-green-100 text-green-800' :
-                              amd.batchStatus === 'REVERTED' ? 'bg-purple-100 text-purple-800' :
-                              'bg-gray-100 text-gray-600'
-                            }`}>
-                              {amd.batchStatus || 'Not Applied'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-500">
-                            {amd.changes?.length || 0} change{(amd.changes?.length || 0) !== 1 ? 's' : ''}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-500">
-                            {amd.createdAt ? formatDate(amd.createdAt) : '-'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+
+              {!amendmentsLoading && (
+                <>
+                  {/* Section A: Available Amendments */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                      Available Amendments
+                      {availableAmendments.length > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700">
+                          {availableAmendments.length}
+                        </span>
+                      )}
+                    </h4>
+                    {availableAmendments.length === 0 ? (
+                      <div className="text-center py-6 text-gray-400 text-sm border border-dashed border-gray-200 rounded-lg">
+                        No available amendments to apply.
+                      </div>
+                    ) : (
+                      <div className="border border-gray-200 rounded-lg overflow-hidden">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">Scope</th>
+                              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">Changes</th>
+                              <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {availableAmendments.map((amd) => (
+                              <tr key={amd._id} className="hover:bg-gray-50">
+                                <td className="px-4 py-3 text-sm font-mono text-blue-600">
+                                  <Link to={`/program-amendments/${amd._id}`} className="hover:underline">
+                                    {amd.amendmentId || '-'}
+                                  </Link>
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-900">{amd.title || '-'}</td>
+                                <td className="px-4 py-3 text-xs text-gray-500">
+                                  {amd.scope === 'CURRENT_AND_FUTURE' ? 'Current + Future' : 'Future Only'}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-500">
+                                  {amd.changes?.length || 0} change{(amd.changes?.length || 0) !== 1 ? 's' : ''}
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleApplyAmendment(amd._id)}
+                                    disabled={applyingId === amd._id}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors disabled:opacity-60"
+                                  >
+                                    {applyingId === amd._id ? (
+                                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" />
+                                    ) : null}
+                                    Apply
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Section B: Applied Amendments */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                      Applied Amendments
+                      {appliedAmendments.length > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700">
+                          {appliedAmendments.length}
+                        </span>
+                      )}
+                    </h4>
+                    {appliedAmendments.length === 0 ? (
+                      <div className="text-center py-6 text-gray-400 text-sm border border-dashed border-gray-200 rounded-lg">
+                        No amendments applied to this batch yet.
+                      </div>
+                    ) : (
+                      <div className="border border-gray-200 rounded-lg overflow-hidden">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">Changes</th>
+                              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                              <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {appliedAmendments.map((amd) => (
+                              <tr key={amd._id} className="hover:bg-gray-50">
+                                <td className="px-4 py-3 text-sm font-mono text-blue-600">
+                                  <Link to={`/program-amendments/${amd._id}`} className="hover:underline">
+                                    {amd.amendmentId || '-'}
+                                  </Link>
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-900">{amd.title || '-'}</td>
+                                <td className="px-4 py-3">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    Applied
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-500">
+                                  {amd.changes?.length || 0} change{(amd.changes?.length || 0) !== 1 ? 's' : ''}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-500">
+                                  {amd.createdAt ? formatDate(amd.createdAt) : '-'}
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRevertAmendment(amd._id)}
+                                    disabled={revertingId === amd._id}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors disabled:opacity-60"
+                                  >
+                                    {revertingId === amd._id ? (
+                                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" />
+                                    ) : null}
+                                    Revert
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           )}

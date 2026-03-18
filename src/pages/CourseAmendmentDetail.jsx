@@ -168,7 +168,7 @@ const CourseAmendmentDetail = () => {
         <AlertTriangle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
         <p className="text-gray-500">{error || 'Amendment not found'}</p>
         <button
-          onClick={() => navigate('/course-amendments')}
+          onClick={() => navigate('/program-amendments')}
           className="mt-3 text-blue-600 hover:text-blue-800 text-sm"
         >
           Back to amendments
@@ -188,7 +188,7 @@ const CourseAmendmentDetail = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate('/course-amendments')}
+            onClick={() => navigate('/program-amendments')}
             className="p-2 hover:bg-gray-100 rounded-lg"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -216,7 +216,7 @@ const CourseAmendmentDetail = () => {
           {canEdit && (
             <button
               onClick={() =>
-                navigate(`/course-amendments/${amendment._id}/edit`)
+                navigate(`/program-amendments/${amendment._id}/edit`)
               }
               className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
             >

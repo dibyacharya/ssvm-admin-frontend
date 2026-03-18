@@ -130,16 +130,16 @@ export default function CertificateApplications() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Certificate Applications</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Certificate Applications</h1>
         <p className="text-sm text-gray-500 mt-1">Manage fee configuration, review applications, and issue certificates</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-gray-100 dark:bg-gray-800 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit">
         {tabs.map((tab) => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === tab.id ? "bg-white dark:bg-gray-700 text-indigo-600 shadow-sm" : "text-gray-600 dark:text-gray-400"
+              activeTab === tab.id ? "bg-white text-blue-600 shadow-sm" : "text-gray-600"
             }`}>
             <tab.icon className="w-4 h-4" /> {tab.label}
           </button>
@@ -154,10 +154,10 @@ export default function CertificateApplications() {
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by name, application no, roll..."
-                className="w-full pl-10 pr-3 py-2 border rounded-lg text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200" />
+                className="w-full pl-10 pr-3 py-2 border rounded-lg text-sm" />
             </div>
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 border rounded-lg text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200">
+              className="px-3 py-2 border rounded-lg text-sm">
               <option value="">All Statuses</option>
               <option value="payment_pending">Payment Pending</option>
               <option value="submitted">Submitted</option>
@@ -167,7 +167,7 @@ export default function CertificateApplications() {
               <option value="rejected">Rejected</option>
             </select>
             <select value={filterType} onChange={(e) => setFilterType(e.target.value)}
-              className="px-3 py-2 border rounded-lg text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200">
+              className="px-3 py-2 border rounded-lg text-sm">
               <option value="">All Types</option>
               {feeConfigs.length === 0 && <option disabled>Loading...</option>}
               {feeConfigs.map((c) => <option key={c.certificateType} value={c.certificateType}>{c.label}</option>)}
@@ -177,25 +177,25 @@ export default function CertificateApplications() {
           {loading ? <div className="text-center py-12 text-gray-500">Loading...</div> : applications.length === 0 ? (
             <div className="text-center py-12 text-gray-500"><FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" /><p>No applications found</p></div>
           ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+                <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Application #</th>
-                    <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Student</th>
-                    <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Type</th>
-                    <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Fee</th>
-                    <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Payment</th>
-                    <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Status</th>
-                    <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Actions</th>
+                    <th className="px-4 py-3 text-left text-gray-600">Application #</th>
+                    <th className="px-4 py-3 text-left text-gray-600">Student</th>
+                    <th className="px-4 py-3 text-left text-gray-600">Type</th>
+                    <th className="px-4 py-3 text-left text-gray-600">Fee</th>
+                    <th className="px-4 py-3 text-left text-gray-600">Payment</th>
+                    <th className="px-4 py-3 text-left text-gray-600">Status</th>
+                    <th className="px-4 py-3 text-left text-gray-600">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="divide-y divide-gray-200">
                   {applications.map((app) => (
-                    <tr key={app._id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <tr key={app._id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 font-mono text-xs">{app.applicationNumber}</td>
                       <td className="px-4 py-3">
-                        <div className="font-medium text-gray-900 dark:text-white">{app.studentName}</div>
+                        <div className="font-medium text-gray-900">{app.studentName}</div>
                         <div className="text-xs text-gray-500">{app.rollNumber}</div>
                       </td>
                       <td className="px-4 py-3 text-xs">{app.certificateLabel || app.certificateType}</td>
@@ -216,7 +216,7 @@ export default function CertificateApplications() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
-                          <button onClick={() => setSelectedApp(app)} className="p-1.5 text-gray-500 hover:text-indigo-600 rounded" title="View">
+                          <button onClick={() => setSelectedApp(app)} className="p-1.5 text-gray-500 hover:text-blue-600 rounded" title="View">
                             <Eye className="w-4 h-4" />
                           </button>
                           {["submitted", "under_review"].includes(app.status) && (
@@ -246,42 +246,42 @@ export default function CertificateApplications() {
 
       {/* Fee Config Tab */}
       {activeTab === "fees" && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-700">
+            <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Certificate Type</th>
-                <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Fee (Indian) ₹</th>
-                <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Fee (Foreign) $</th>
-                <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Approval Role</th>
-                <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Processing Days</th>
-                <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Active</th>
-                <th className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">Actions</th>
+                <th className="px-4 py-3 text-left text-gray-600">Certificate Type</th>
+                <th className="px-4 py-3 text-left text-gray-600">Fee (Indian) ₹</th>
+                <th className="px-4 py-3 text-left text-gray-600">Fee (Foreign) $</th>
+                <th className="px-4 py-3 text-left text-gray-600">Approval Role</th>
+                <th className="px-4 py-3 text-left text-gray-600">Processing Days</th>
+                <th className="px-4 py-3 text-left text-gray-600">Active</th>
+                <th className="px-4 py-3 text-left text-gray-600">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-200">
               {feeConfigs.map((config) => (
-                <tr key={config.certificateType} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                <tr key={config.certificateType} className="hover:bg-gray-50">
                   {editingFee === config.certificateType ? (
                     <>
-                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{config.label}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900">{config.label}</td>
                       <td className="px-4 py-3">
                         <input type="number" value={editForm.feeIndian} onChange={(e) => setEditForm({ ...editForm, feeIndian: Number(e.target.value) })}
-                          className="w-24 px-2 py-1 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                          className="w-24 px-2 py-1 border rounded text-sm" />
                       </td>
                       <td className="px-4 py-3">
                         <input type="number" value={editForm.feeForeign} onChange={(e) => setEditForm({ ...editForm, feeForeign: Number(e.target.value) })}
-                          className="w-24 px-2 py-1 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                          className="w-24 px-2 py-1 border rounded text-sm" />
                       </td>
                       <td className="px-4 py-3">
                         <select value={editForm.approvalRole} onChange={(e) => setEditForm({ ...editForm, approvalRole: e.target.value })}
-                          className="px-2 py-1 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                          className="px-2 py-1 border rounded text-sm">
                           {Object.entries(ROLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                         </select>
                       </td>
                       <td className="px-4 py-3">
                         <input type="number" value={editForm.processingDays} onChange={(e) => setEditForm({ ...editForm, processingDays: Number(e.target.value) })}
-                          className="w-16 px-2 py-1 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                          className="w-16 px-2 py-1 border rounded text-sm" />
                       </td>
                       <td className="px-4 py-3">
                         <input type="checkbox" checked={editForm.isActive} onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })} className="rounded" />
@@ -296,7 +296,7 @@ export default function CertificateApplications() {
                   ) : (
                     <>
                       <td className="px-4 py-3">
-                        <div className="font-medium text-gray-900 dark:text-white">{config.label}</div>
+                        <div className="font-medium text-gray-900">{config.label}</div>
                       </td>
                       <td className="px-4 py-3">₹{config.feeIndian}</td>
                       <td className="px-4 py-3">${config.feeForeign}</td>
@@ -306,7 +306,7 @@ export default function CertificateApplications() {
                         <span className={`w-2 h-2 inline-block rounded-full ${config.isActive ? "bg-green-500" : "bg-red-400"}`} />
                       </td>
                       <td className="px-4 py-3">
-                        <button onClick={() => startEditFee(config)} className="p-1.5 text-gray-400 hover:text-indigo-600 rounded">
+                        <button onClick={() => startEditFee(config)} className="p-1.5 text-gray-400 hover:text-blue-600 rounded">
                           <Edit3 className="w-4 h-4" />
                         </button>
                       </td>
@@ -330,9 +330,9 @@ export default function CertificateApplications() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {Object.entries(stats.byType || {}).map(([type, count]) => (
-              <div key={type} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+              <div key={type} className="bg-white rounded-xl border border-gray-200 p-4">
                 <p className="text-sm text-gray-500 capitalize">{type.replace(/_/g, " ")}</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{count}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{count}</p>
               </div>
             ))}
           </div>
@@ -342,20 +342,20 @@ export default function CertificateApplications() {
       {/* Detail Modal */}
       {selectedApp && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b dark:border-gray-700 flex items-start justify-between">
+          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b flex items-start justify-between">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{selectedApp.certificateLabel}</h2>
+                <h2 className="text-xl font-bold text-gray-900">{selectedApp.certificateLabel}</h2>
                 <p className="text-sm text-gray-500 font-mono mt-1">{selectedApp.applicationNumber}</p>
               </div>
               <button onClick={() => setSelectedApp(null)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div><p className="text-xs text-gray-500">Student</p><p className="font-medium dark:text-white">{selectedApp.studentName}</p></div>
-                <div><p className="text-xs text-gray-500">Roll Number</p><p className="font-medium dark:text-white">{selectedApp.rollNumber}</p></div>
-                <div><p className="text-xs text-gray-500">Program</p><p className="font-medium dark:text-white">{selectedApp.programName}</p></div>
-                <div><p className="text-xs text-gray-500">Fee</p><p className="font-medium dark:text-white">{selectedApp.feeCurrency === "INR" ? "₹" : "$"}{selectedApp.feeAmount}</p></div>
+                <div><p className="text-xs text-gray-500">Student</p><p className="font-medium">{selectedApp.studentName}</p></div>
+                <div><p className="text-xs text-gray-500">Roll Number</p><p className="font-medium">{selectedApp.rollNumber}</p></div>
+                <div><p className="text-xs text-gray-500">Program</p><p className="font-medium">{selectedApp.programName}</p></div>
+                <div><p className="text-xs text-gray-500">Fee</p><p className="font-medium">{selectedApp.feeCurrency === "INR" ? "₹" : "$"}{selectedApp.feeAmount}</p></div>
                 <div><p className="text-xs text-gray-500">Payment</p>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${selectedApp.paymentStatus === "paid" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
                     {selectedApp.paymentStatus}
@@ -366,16 +366,16 @@ export default function CertificateApplications() {
                     {selectedApp.status.replace(/_/g, " ")}
                   </span>
                 </div>
-                <div><p className="text-xs text-gray-500">Applied On</p><p className="font-medium dark:text-white">{new Date(selectedApp.createdAt).toLocaleDateString("en-IN")}</p></div>
-                <div><p className="text-xs text-gray-500">Est. Completion</p><p className="font-medium dark:text-white">{selectedApp.estimatedCompletionDate ? new Date(selectedApp.estimatedCompletionDate).toLocaleDateString("en-IN") : "-"}</p></div>
-                {selectedApp.assignedRole && <div><p className="text-xs text-gray-500">Assigned Role</p><p className="font-medium dark:text-white">{ROLE_LABELS[selectedApp.assignedRole] || selectedApp.assignedRole}</p></div>}
-                {selectedApp.additionalDetails && <div className="col-span-2"><p className="text-xs text-gray-500">Additional Details</p><p className="font-medium dark:text-white">{selectedApp.additionalDetails}</p></div>}
-                {selectedApp.subjects?.length > 0 && <div className="col-span-2"><p className="text-xs text-gray-500">Subjects</p><p className="font-medium dark:text-white">{selectedApp.subjects.join(", ")}</p></div>}
-                {selectedApp.reviewRemarks && <div className="col-span-2"><p className="text-xs text-gray-500">Review Remarks</p><p className="font-medium dark:text-white">{selectedApp.reviewRemarks}</p></div>}
+                <div><p className="text-xs text-gray-500">Applied On</p><p className="font-medium">{new Date(selectedApp.createdAt).toLocaleDateString("en-IN")}</p></div>
+                <div><p className="text-xs text-gray-500">Est. Completion</p><p className="font-medium">{selectedApp.estimatedCompletionDate ? new Date(selectedApp.estimatedCompletionDate).toLocaleDateString("en-IN") : "-"}</p></div>
+                {selectedApp.assignedRole && <div><p className="text-xs text-gray-500">Assigned Role</p><p className="font-medium">{ROLE_LABELS[selectedApp.assignedRole] || selectedApp.assignedRole}</p></div>}
+                {selectedApp.additionalDetails && <div className="col-span-2"><p className="text-xs text-gray-500">Additional Details</p><p className="font-medium">{selectedApp.additionalDetails}</p></div>}
+                {selectedApp.subjects?.length > 0 && <div className="col-span-2"><p className="text-xs text-gray-500">Subjects</p><p className="font-medium">{selectedApp.subjects.join(", ")}</p></div>}
+                {selectedApp.reviewRemarks && <div className="col-span-2"><p className="text-xs text-gray-500">Review Remarks</p><p className="font-medium">{selectedApp.reviewRemarks}</p></div>}
                 {selectedApp.rejectionReason && <div className="col-span-2 p-3 bg-red-50 rounded-lg"><p className="text-xs text-red-600 font-medium">Rejection Reason</p><p className="text-sm text-red-700">{selectedApp.rejectionReason}</p></div>}
               </div>
               {["submitted", "under_review"].includes(selectedApp.status) && (
-                <div className="flex gap-3 pt-4 border-t dark:border-gray-700">
+                <div className="flex gap-3 pt-4 border-t">
                   <button onClick={() => handleReview(selectedApp._id, "approved", "")}
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                     <CheckCircle className="w-4 h-4" /> Approve & Issue Certificate
@@ -403,7 +403,7 @@ export default function CertificateApplications() {
 
 function StatCard({ label, value, color }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+    <div className="bg-white rounded-xl border border-gray-200 p-4">
       <p className="text-sm text-gray-500">{label}</p>
       <p className={`text-2xl font-bold mt-1 ${color}`}>{value}</p>
     </div>

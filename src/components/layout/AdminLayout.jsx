@@ -77,14 +77,7 @@ const AdminLayout = () => {
     if (typeof window === 'undefined') return true;
     return window.innerWidth >= 768;
   });
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      return window.localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === 'true';
-    } catch {
-      return false;
-    }
-  });
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -129,13 +122,7 @@ const AdminLayout = () => {
     }
   }, [isDesktop]);
 
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(SIDEBAR_COLLAPSE_KEY, String(Boolean(isCollapsed)));
-    } catch {
-      // ignore localStorage failures
-    }
-  }, [isCollapsed]);
+  // Hover-based collapse doesn't need localStorage persistence
 
   // Auto-expand group when navigating to a child route
   useEffect(() => {
@@ -293,42 +280,44 @@ const AdminLayout = () => {
       )}
 
       {/* Sidebar */}
-      <div className={`
-        fixed md:static inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform
-        ${isCollapsed ? 'md:w-[72px]' : 'md:w-64'}
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        md:translate-x-0 transition-all duration-300 ease-in-out
-      `}>
+      <div
+        className={`
+          fixed md:static inset-y-0 left-0 z-50 bg-white shadow-xl transform
+          ${isCollapsed ? 'md:w-20' : 'md:w-64'} w-64
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0 transition-all duration-300 ease-in-out flex flex-col
+        `}
+        onMouseEnter={() => { if (isDesktop) setIsCollapsed(false); }}
+        onMouseLeave={() => { if (isDesktop) setIsCollapsed(true); }}
+      >
         {/* Sidebar Header */}
-        <div className={`relative flex items-center justify-between border-b border-gray-200 ${isCollapsed ? 'p-3' : 'p-6'}`}>
-          <div className={`flex items-center ${isCollapsed ? 'justify-center w-full' : ''}`}>
-            <img src="/logo_full.png" alt="KIITX" className={isCollapsed ? 'h-8 w-8 object-contain' : 'h-12'} />
+        <div className="flex items-center justify-center border-b border-gray-200 px-4 py-5">
+          <div className="flex items-center justify-center">
+            {isCollapsed ? (
+              <img
+                src="/logo.png"
+                alt="KIITX"
+                className="h-10 w-10 object-contain transition-all duration-300"
+              />
+            ) : (
+              <img
+                src="/logo_full.png"
+                alt="KIITX"
+                className="h-12 object-contain transition-all duration-300"
+              />
+            )}
           </div>
-          <div className={`flex items-center ${isCollapsed ? 'absolute right-2 top-2' : ''}`}>
-            <button
-              onClick={handleSidebarCollapseToggle}
-              className="hidden md:inline-flex p-2 rounded-md hover:bg-gray-100"
-              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {isCollapsed ? (
-                <ChevronRight className="w-5 h-5 text-gray-500" />
-              ) : (
-                <ChevronRight className="w-5 h-5 text-gray-500 rotate-180" />
-              )}
-            </button>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="md:hidden p-1 rounded-md hover:bg-gray-100"
-              aria-label="Close sidebar"
-            >
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
-          </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="md:hidden absolute right-3 top-5 p-1 rounded-md hover:bg-gray-100"
+            aria-label="Close sidebar"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
         </div>
 
         {/* Navigation */}
-        <nav className={`flex flex-1 flex-col ${isCollapsed ? 'p-2' : 'p-4'} gap-1 overflow-y-auto`}>
+        <nav className="flex-1 flex flex-col px-2 py-3 gap-0.5 overflow-y-auto overflow-x-hidden">
           {visibleSidebarItems.map((item) => {
             const Icon = item.icon;
 
@@ -337,54 +326,40 @@ const AdminLayout = () => {
               const isExpanded = expandedGroups[item.id];
               const isGroupActive = item.children?.some(child => isActiveRoute(child.path));
 
-              if (isCollapsed) {
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      setIsCollapsed(false);
-                      setExpandedGroups((prev) => ({ ...prev, [item.id]: true }));
-                    }}
-                    className={`
-                      w-full flex items-center justify-center px-2 py-3 rounded-lg text-sm font-medium transition-colors
-                      ${isGroupActive
-                        ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                      }
-                    `}
-                    title={item.name}
-                    aria-label={item.name}
-                  >
-                    <Icon className={`w-5 h-5 ${isGroupActive ? 'text-blue-600' : 'text-gray-400'}`} />
-                  </button>
-                );
-              }
-
               return (
                 <div key={item.id}>
                   <button
                     type="button"
                     onClick={() => toggleGroup(item.id)}
                     className={`
-                      w-full flex items-center px-3 py-3 rounded-lg text-sm font-medium transition-colors
+                      w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
                       ${isGroupActive
                         ? 'bg-blue-50 text-blue-700'
                         : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                       }
                     `}
+                    title={isCollapsed ? item.name : undefined}
                   >
-                    <Icon className={`w-5 h-5 mr-3 ${isGroupActive ? 'text-blue-600' : 'text-gray-400'}`} />
-                    {item.name}
-                    <span className="ml-auto">
-                      {isExpanded
-                        ? <ChevronDown className="w-4 h-4" />
-                        : <ChevronRight className="w-4 h-4" />
-                      }
+                    <span className={`flex justify-center w-6 flex-shrink-0 ${isGroupActive ? 'text-blue-600' : 'text-gray-400'}`}>
+                      <Icon className="w-5 h-5" />
                     </span>
+                    <span
+                      className={`whitespace-nowrap transition-opacity duration-300 flex-1 text-left ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
+                      style={{ transitionDelay: isCollapsed ? '0ms' : '300ms' }}
+                    >
+                      {item.name}
+                    </span>
+                    {!isCollapsed && (
+                      <span className="flex-shrink-0">
+                        {isExpanded
+                          ? <ChevronDown className="w-4 h-4" />
+                          : <ChevronRight className="w-4 h-4" />
+                        }
+                      </span>
+                    )}
                   </button>
-                  {isExpanded && (
-                    <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-200 pl-2">
+                  {isExpanded && !isCollapsed && (
+                    <div className="ml-4 mt-1 space-y-0.5 border-l-2 border-gray-200 pl-2">
                       {item.children.map((child) => {
                         const ChildIcon = child.icon;
                         const isChildActive = isActiveRoute(child.path);
@@ -394,14 +369,16 @@ const AdminLayout = () => {
                             to={child.path}
                             onClick={() => setSidebarOpen(false)}
                             className={`
-                              flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                              flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
                               ${isChildActive
                                 ? 'bg-blue-50 text-blue-700'
                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                               }
                             `}
                           >
-                            <ChildIcon className={`w-4 h-4 mr-3 ${isChildActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                            <span className={`flex justify-center w-5 flex-shrink-0 ${isChildActive ? 'text-blue-600' : 'text-gray-400'}`}>
+                              <ChildIcon className="w-4 h-4" />
+                            </span>
                             {child.name}
                           </Link>
                         );
@@ -416,19 +393,21 @@ const AdminLayout = () => {
               return (
                 <div
                   key={item.id}
-                  className={`flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-3 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed opacity-60`}
-                  title={isCollapsed ? item.name : undefined}
-                  aria-label={item.name}
+                  className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed opacity-60"
+                  title={item.name}
                 >
-                  <Icon className={`w-5 h-5 ${isCollapsed ? '' : 'mr-3'} text-gray-300`} />
-                  {!isCollapsed && (
-                    <>
-                      {item.name}
-                      <span className="ml-auto text-[10px] font-semibold uppercase bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded">
-                        Soon
-                      </span>
-                    </>
-                  )}
+                  <span className="flex justify-center w-6 flex-shrink-0 text-gray-300">
+                    <Icon className="w-5 h-5" />
+                  </span>
+                  <span
+                    className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
+                    style={{ transitionDelay: isCollapsed ? '0ms' : '300ms' }}
+                  >
+                    {item.name}
+                    <span className="ml-2 text-[10px] font-semibold uppercase bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded">
+                      Soon
+                    </span>
+                  </span>
                 </div>
               );
             }
@@ -440,60 +419,81 @@ const AdminLayout = () => {
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
                 className={`
-                  flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-3 rounded-lg text-sm font-medium transition-colors
-                  ${item.id === 'helpdesk' ? 'mt-auto border-t border-gray-200 pt-4' : ''}
+                  flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
                   ${isActive
-                    ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
+                    ? 'bg-blue-50 text-blue-700'
                     : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                   }
                 `}
                 title={isCollapsed ? item.name : undefined}
-                aria-label={item.name}
               >
-                <Icon className={`w-5 h-5 ${isCollapsed ? '' : 'mr-3'} ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
-                {!isCollapsed && item.name}
+                <span className={`flex justify-center w-6 flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-400'}`}>
+                  <Icon className="w-5 h-5" />
+                </span>
+                <span
+                  className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
+                  style={{ transitionDelay: isCollapsed ? '0ms' : '300ms' }}
+                >
+                  {item.name}
+                </span>
               </Link>
             );
           })}
         </nav>
 
         {/* User Profile Section */}
-        <div className={`${isCollapsed ? 'p-2' : 'p-4'} border-t border-gray-200`}>
+        <div className="px-2 py-3 border-t border-gray-200">
           <button
             type="button"
             onClick={openMyProfile}
-            className={`mb-3 flex w-full items-center rounded-lg ${isCollapsed ? 'justify-center px-2 py-2' : 'px-1 py-1 text-left'} transition-colors hover:bg-gray-50`}
+            className="mb-2 flex w-full items-center gap-3 px-4 py-2 rounded-lg transition-colors hover:bg-gray-50"
             title="Open My Profile"
             aria-label="Open My Profile"
           >
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-medium">{profileBadge}</span>
+            <div className="w-9 h-9 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-sm font-medium">{profileBadge}</span>
             </div>
-            {!isCollapsed && (
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                <p className="text-xs text-gray-500">{user?.role}</p>
-              </div>
-            )}
+            <span
+              className={`whitespace-nowrap transition-opacity duration-300 text-left min-w-0 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
+              style={{ transitionDelay: isCollapsed ? '0ms' : '300ms' }}
+            >
+              <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
+              <p className="text-xs text-gray-500 truncate">{user?.role}</p>
+            </span>
           </button>
           <button
             onClick={handleLogout}
-            className={`flex items-center w-full ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 text-sm text-red-600 rounded-lg hover:bg-red-50 transition-colors`}
-            title={isCollapsed ? 'Sign Out' : undefined}
+            className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+            title="Sign Out"
             aria-label="Sign Out"
           >
-            <LogOut className={`w-4 h-4 ${isCollapsed ? '' : 'mr-2'}`} />
-            {!isCollapsed && 'Sign Out'}
+            <span className="flex justify-center w-6 flex-shrink-0">
+              <LogOut className="w-5 h-5" />
+            </span>
+            <span
+              className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
+              style={{ transitionDelay: isCollapsed ? '0ms' : '300ms' }}
+            >
+              Sign Out
+            </span>
           </button>
           {isDevMode && (
             <button
               onClick={handleProbeBackend}
               disabled={probeLoading}
-              className={`mt-2 flex items-center w-full ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 text-xs text-blue-700 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-60`}
-              title={isCollapsed ? 'Probe Backend' : undefined}
+              className="mt-1 flex items-center gap-3 w-full px-4 py-2 text-xs text-blue-700 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-60"
+              title="Probe Backend"
               aria-label="Probe Backend"
             >
-              {isCollapsed ? (probeLoading ? '...' : 'Probe') : (probeLoading ? 'Probing...' : 'Probe Backend')}
+              <span className="flex justify-center w-6 flex-shrink-0">
+                <Eye className="w-4 h-4" />
+              </span>
+              <span
+                className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
+                style={{ transitionDelay: isCollapsed ? '0ms' : '300ms' }}
+              >
+                {probeLoading ? 'Probing...' : 'Probe Backend'}
+              </span>
             </button>
           )}
         </div>
@@ -514,19 +514,6 @@ const AdminLayout = () => {
                 <Menu className="w-5 h-5 text-gray-600" />
               </button>
 
-              <button
-                onClick={handleSidebarCollapseToggle}
-                className="hidden md:inline-flex p-2 rounded-md hover:bg-gray-100"
-                aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              >
-                {isCollapsed ? (
-                  <ChevronRight className="w-5 h-5 text-gray-600" />
-                ) : (
-                  <ChevronRight className="w-5 h-5 text-gray-600 rotate-180" />
-                )}
-              </button>
-              
               {/* Search Bar */}
               <div className="relative ml-4" ref={searchRef}>
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />

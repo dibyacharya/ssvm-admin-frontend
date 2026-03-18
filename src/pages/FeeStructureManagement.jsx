@@ -73,10 +73,10 @@ const FeeStructureManagement = () => {
   );
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to deactivate this fee structure?')) return;
+    if (!window.confirm('Are you sure you want to delete this fee structure? This cannot be undone.')) return;
     try {
       await deleteFeeStructure(id);
-      setToast({ type: 'success', message: 'Fee structure deactivated' });
+      setToast({ type: 'success', message: 'Fee structure deleted' });
       fetchData();
     } catch (err) {
       setToast({ type: 'error', message: err.response?.data?.error || 'Failed to delete' });

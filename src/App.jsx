@@ -43,6 +43,8 @@ import ResultManagement from './pages/ResultManagement';
 import ResultCommitteeManagement from './pages/ResultCommitteeManagement';
 import CertificateManagement from './pages/CertificateManagement';
 import ExamSettingsPage from './pages/ExamSettings';
+import CertificateApplications from './pages/CertificateApplications';
+import HelpdeskConfig from './pages/HelpdeskConfig';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -148,6 +150,7 @@ function App() {
                   </HelpdeskErrorBoundary>
                 }
               />
+              <Route path="helpdesk/config" element={<HelpdeskConfig />} />
               {/* Backward-compatible aliases */}
               <Route path="course-management" element={<Navigate to="/courses" replace />} />
               <Route path="course-management/:courseId" element={<CourseManagementDetails />} />
@@ -184,6 +187,7 @@ function App() {
               <Route path="exams/result-committee" element={<ResultCommitteeManagement />} />
               <Route path="exams/certificates" element={<CertificateManagement />} />
               <Route path="exams/settings" element={<ExamSettingsPage />} />
+              <Route path="exams/cert-applications" element={<CertificateApplications />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="certificates" element={<Certificates />} />
               <Route path="forums" element={<Forums />} />

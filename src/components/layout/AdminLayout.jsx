@@ -51,8 +51,12 @@ const sidebarItems = [
     { id: 'result-committee', name: 'Result Committee', icon: Gavel, path: '/exams/result-committee' },
     { id: 'certificates', name: 'Certificates', icon: Award, path: '/exams/certificates' },
     { id: 'exam-settings', name: 'Settings', icon: Settings, path: '/exams/settings' },
+    { id: 'cert-applications', name: 'Cert Applications', icon: FileText, path: '/exams/cert-applications' },
   ]},
-  { id: 'helpdesk', name: 'Helpdesk', icon: MessageSquare, path: '/helpdesk' }
+  { id: 'helpdesk', name: 'Helpdesk', icon: MessageSquare, type: 'group', path: '/helpdesk', children: [
+    { id: 'helpdesk-tickets', name: 'Tickets', icon: MessageSquare, path: '/helpdesk' },
+    { id: 'helpdesk-config', name: 'Configuration', icon: Settings, path: '/helpdesk/config' },
+  ]}
 ];
 const RBAC_VISIBILITY_ROLES = [
   'ADMIN',

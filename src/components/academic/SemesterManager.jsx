@@ -47,7 +47,7 @@ import { formatDateKey } from '../../utils/timetableUtils';
 
 const statusColors = {
   active: 'bg-green-100 text-green-800',
-  upcoming: 'bg-blue-100 text-blue-800',
+  upcoming: 'bg-purple-100 text-purple-800',
   completed: 'bg-purple-100 text-purple-800',
 };
 
@@ -1847,8 +1847,8 @@ const SemesterManager = ({
       <div className="space-y-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="text-center py-12">
-            <RefreshCw className="w-16 h-16 text-blue-400 mx-auto mb-4 animate-spin" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading {periodLabel} Data</h2>
+            <RefreshCw className="w-16 h-16 text-purple-400 mx-auto mb-4 animate-spin" />
+            <h2 className="text-xl font-semibold text-[#1E293B] mb-2">Loading {periodLabel} Data</h2>
             <p className="text-gray-600">Please wait while we fetch the scheduling information...</p>
           </div>
         </div>
@@ -1861,9 +1861,9 @@ const SemesterManager = ({
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Calendar className="w-8 h-8 text-blue-600" />
+            <Calendar className="w-8 h-8 text-purple-600" />
             <div>
-              <h2 className="text-xl font-bold text-gray-900">{periodLabel}s</h2>
+              <h2 className="text-xl font-bold text-[#1E293B]">{periodLabel}s</h2>
               <p className="text-gray-600">Manage {periodLabel.toLowerCase()}s for this batch</p>
             </div>
           </div>
@@ -1871,7 +1871,7 @@ const SemesterManager = ({
             {allowSemesterCreation && (
               <button
                 onClick={() => setShowCreateForm(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add {periodLabel}</span>
@@ -1886,13 +1886,13 @@ const SemesterManager = ({
           <div className="flex items-center justify-between text-sm mb-2">
             <span className="text-gray-600">
               Program Credits:{' '}
-              <span className="font-semibold text-gray-900">{programTotalCredits}</span>
+              <span className="font-semibold text-[#1E293B]">{programTotalCredits}</span>
             </span>
             <span className="text-gray-600">
               Assigned:{' '}
               <span
                 className={`font-semibold ${
-                  assignedCredits > programTotalCredits ? 'text-red-600' : 'text-gray-900'
+                  assignedCredits > programTotalCredits ? 'text-red-600' : 'text-[#1E293B]'
                 }`}
               >
                 {assignedCredits}
@@ -1944,7 +1944,7 @@ const SemesterManager = ({
                       disabled={!detailedView}
                       className={`mt-0.5 p-1 rounded transition-colors ${
                         detailedView
-                          ? 'text-gray-500 hover:text-blue-700 hover:bg-blue-50'
+                          ? 'text-gray-500 hover:text-purple-700 hover:bg-purple-50'
                           : 'text-gray-300 cursor-not-allowed'
                       }`}
                       title={detailedView ? 'Expand details' : 'Detailed view available in Batch details'}
@@ -1961,7 +1961,7 @@ const SemesterManager = ({
                     </button>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-lg font-semibold text-gray-900">{semester.name}</h3>
+                        <h3 className="text-lg font-semibold text-[#1E293B]">{semester.name}</h3>
                         {semester.semNumber && (
                           <span className="text-sm text-gray-500">{periodLabel} #{semester.semNumber}</span>
                         )}
@@ -1998,7 +1998,7 @@ const SemesterManager = ({
                   <div className="flex items-center space-x-1">
                     <button
                       onClick={() => handleEditClick(semester)}
-                      className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                      className="p-2 text-gray-400 hover:text-purple-600 transition-colors"
                       title="Edit"
                     >
                       <Edit3 className="w-4 h-4" />
@@ -2022,8 +2022,8 @@ const SemesterManager = ({
                       onClick={() => handleSemesterTabChange(semester._id, 'COURSE')}
                       className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                         activeSemesterTab === 'COURSE'
-                          ? 'bg-white text-blue-700 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
+                          ? 'bg-white text-purple-700 shadow-sm'
+                          : 'text-gray-600 hover:text-[#1E293B]'
                       }`}
                     >
                       <span className="inline-flex items-center gap-2">
@@ -2036,8 +2036,8 @@ const SemesterManager = ({
                       onClick={() => handleSemesterTabChange(semester._id, 'TIMETABLE')}
                       className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                         activeSemesterTab === 'TIMETABLE'
-                          ? 'bg-white text-blue-700 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
+                          ? 'bg-white text-purple-700 shadow-sm'
+                          : 'text-gray-600 hover:text-[#1E293B]'
                       }`}
                     >
                       <span className="inline-flex items-center gap-2">
@@ -2096,12 +2096,12 @@ const SemesterManager = ({
                                   return (
                                     <tr key={course._id} className="hover:bg-gray-50 align-top">
                                       <td className="px-3 py-2 text-gray-600">{index + 1}</td>
-                                      <td className="px-3 py-2 text-gray-900 font-medium">{course.title || '-'}</td>
+                                      <td className="px-3 py-2 text-[#1E293B] font-medium">{course.title || '-'}</td>
                                       <td className="px-3 py-2 font-mono text-gray-700">{course.courseCode || '-'}</td>
                                       <td className="px-2 py-2 text-center text-gray-700">{Number(course?.creditPoints?.lecture) || 0}</td>
                                       <td className="px-2 py-2 text-center text-gray-700">{Number(course?.creditPoints?.tutorial) || 0}</td>
                                       <td className="px-2 py-2 text-center text-gray-700">{Number(course?.creditPoints?.practical) || 0}</td>
-                                      <td className="px-2 py-2 text-center font-semibold text-gray-900">{sumCourseCredits(course)}</td>
+                                      <td className="px-2 py-2 text-center font-semibold text-[#1E293B]">{sumCourseCredits(course)}</td>
                                       <td className="px-3 py-2">
                                         <div className="flex flex-col gap-2">
                                           {/* Assigned teachers list */}
@@ -2116,17 +2116,17 @@ const SemesterManager = ({
                                                 return (
                                                   <div
                                                     key={`${course._id}-teacher-${tIdx}`}
-                                                    className="flex items-center gap-2 rounded-md bg-blue-50 border border-blue-200 px-2 py-1.5"
+                                                    className="flex items-center gap-2 rounded-md bg-purple-50 border border-purple-200 px-2 py-1.5"
                                                   >
                                                     <div className="flex-1 min-w-0">
-                                                      <div className="text-xs font-medium text-gray-900 truncate">
+                                                      <div className="text-xs font-medium text-[#1E293B] truncate">
                                                         {getTeacherDisplayName(teacher) || 'Unknown'}
                                                       </div>
                                                       <div className="flex items-center gap-2 text-[10px]">
                                                         {empId && (
                                                           <span className="text-gray-500 font-mono">ID: {empId}</span>
                                                         )}
-                                                        <span className="text-blue-600">{teacher?.roleLabel || 'Teacher'}</span>
+                                                        <span className="text-purple-600">{teacher?.roleLabel || 'Teacher'}</span>
                                                       </div>
                                                     </div>
                                                     <button
@@ -2175,7 +2175,7 @@ const SemesterManager = ({
                                           </div>
 
                                           {assigningByCourse[selectionKey] && (
-                                            <span className="text-[11px] text-blue-700">Saving...</span>
+                                            <span className="text-[11px] text-purple-700">Saving...</span>
                                           )}
                                           {!hasAssignedTeacher && !assigningByCourse[selectionKey] && (
                                             <span className="text-[10px] text-gray-400 italic">No teacher assigned</span>
@@ -2228,22 +2228,22 @@ const SemesterManager = ({
                           </div>
 
                           {/* Date Range */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border border-blue-100 bg-blue-50 rounded-lg p-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border border-purple-100 bg-purple-50 rounded-lg p-3">
                             <div>
-                              <p className="text-[11px] uppercase tracking-wide text-blue-700 font-semibold">
+                              <p className="text-[11px] uppercase tracking-wide text-purple-700 font-semibold">
                                 {periodLabel} Start Date
                               </p>
-                              <p className="text-sm text-blue-900 font-medium">
+                              <p className="text-sm text-purple-900 font-medium">
                                 {formatDate(
                                   timetableEntry?.semesterRange?.startDate || semester?.startDate
                                 )}
                               </p>
                             </div>
                             <div>
-                              <p className="text-[11px] uppercase tracking-wide text-blue-700 font-semibold">
+                              <p className="text-[11px] uppercase tracking-wide text-purple-700 font-semibold">
                                 {periodLabel} End Date
                               </p>
-                              <p className="text-sm text-blue-900 font-medium">
+                              <p className="text-sm text-purple-900 font-medium">
                                 {formatDate(
                                   timetableEntry?.semesterRange?.endDate || semester?.endDate
                                 )}
@@ -2483,7 +2483,7 @@ const SemesterManager = ({
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="text-center py-12">
             <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">No {periodLabel}s Found</h2>
+            <h2 className="text-xl font-semibold text-[#1E293B] mb-2">No {periodLabel}s Found</h2>
             <p className="text-gray-600 mb-4">
               {allowSemesterCreation
                 ? `Get started by creating your first ${periodLabel.toLowerCase()}.`
@@ -2492,7 +2492,7 @@ const SemesterManager = ({
             {allowSemesterCreation && (
               <button
                 onClick={() => setShowCreateForm(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
               >
                 Create {periodLabel}
               </button>
@@ -2505,7 +2505,7 @@ const SemesterManager = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Create New {periodLabel}</h2>
+              <h2 className="text-xl font-semibold text-[#1E293B]">Create New {periodLabel}</h2>
               <button
                 onClick={() => {
                   setShowCreateForm(false);
@@ -2527,7 +2527,7 @@ const SemesterManager = ({
                   onChange={handleInputChange}
                   required
                   placeholder="e.g., Spring 2025"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -2540,7 +2540,7 @@ const SemesterManager = ({
                   onChange={handleInputChange}
                   min="1"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -2552,7 +2552,7 @@ const SemesterManager = ({
                   value={formData.startDate}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -2569,7 +2569,7 @@ const SemesterManager = ({
                   value={formData.endDate}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -2580,7 +2580,7 @@ const SemesterManager = ({
                   name="midTermExamDate"
                   value={formData.midTermExamDate}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -2591,7 +2591,7 @@ const SemesterManager = ({
                   name="endTermExamDate"
                   value={formData.endTermExamDate}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -2605,7 +2605,7 @@ const SemesterManager = ({
                   min="0"
                   max={remainingCredits != null && remainingCredits > 0 ? remainingCredits : undefined}
                   placeholder={remainingCredits != null ? `max ${remainingCredits}` : 'e.g., 24'}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -2624,7 +2624,7 @@ const SemesterManager = ({
                   type="submit"
                   disabled={creating}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-md text-white transition-colors ${
-                    creating ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                    creating ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'
                   }`}
                 >
                   <Save className="w-4 h-4" />
@@ -2640,7 +2640,7 @@ const SemesterManager = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Edit {periodLabel}</h2>
+              <h2 className="text-xl font-semibold text-[#1E293B]">Edit {periodLabel}</h2>
               <button
                 onClick={() => {
                   setShowEditForm(false);
@@ -2661,7 +2661,7 @@ const SemesterManager = ({
                   value={editFormData.name}
                   onChange={handleEditInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -2674,7 +2674,7 @@ const SemesterManager = ({
                   onChange={handleEditInputChange}
                   min="1"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -2686,7 +2686,7 @@ const SemesterManager = ({
                   value={editFormData.startDate}
                   onChange={handleEditInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -2698,7 +2698,7 @@ const SemesterManager = ({
                   value={editFormData.endDate}
                   onChange={handleEditInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -2709,7 +2709,7 @@ const SemesterManager = ({
                   name="midTermExamDate"
                   value={editFormData.midTermExamDate}
                   onChange={handleEditInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -2720,7 +2720,7 @@ const SemesterManager = ({
                   name="endTermExamDate"
                   value={editFormData.endTermExamDate}
                   onChange={handleEditInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -2732,7 +2732,7 @@ const SemesterManager = ({
                   value={editFormData.totalCredits}
                   onChange={handleEditInputChange}
                   min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -2751,7 +2751,7 @@ const SemesterManager = ({
                   type="submit"
                   disabled={updating}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-md text-white transition-colors ${
-                    updating ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                    updating ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'
                   }`}
                 >
                   <Save className="w-4 h-4" />
@@ -2768,7 +2768,7 @@ const SemesterManager = ({
           <div className="bg-white rounded-lg shadow-xl max-w-sm w-full">
             <div className="p-6 text-center">
               <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete {periodLabel}?</h3>
+              <h3 className="text-lg font-semibold text-[#1E293B] mb-2">Delete {periodLabel}?</h3>
               <p className="text-sm text-gray-600 mb-6">
                 This will delete the {periodLabel.toLowerCase()} and related course links.
               </p>

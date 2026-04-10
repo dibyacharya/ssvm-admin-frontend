@@ -185,13 +185,13 @@ const StepBatchSetup = ({ state, dispatch, goNext, goBack }) => {
   };
 
   const inputClass =
-    "w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition";
+    "w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition";
   const labelClass =
     "block text-xs uppercase tracking-widest text-gray-500 font-medium mb-1.5";
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
+      <h1 className="text-2xl font-semibold tracking-tight text-[#1E293B]">
         Batch Setup
       </h1>
       <p className="mt-1 text-sm text-gray-500">
@@ -199,13 +199,13 @@ const StepBatchSetup = ({ state, dispatch, goNext, goBack }) => {
       </p>
 
       {programData && (
-        <div className="mt-4 flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
-          <GraduationCap className="w-5 h-5 text-blue-600 flex-shrink-0" />
+        <div className="mt-4 flex items-center gap-3 bg-purple-50 border border-purple-200 rounded-lg px-4 py-3">
+          <GraduationCap className="w-5 h-5 text-purple-600 flex-shrink-0" />
           <div className="text-sm">
-            <span className="font-medium text-blue-900">{programData.name}</span>
-            <span className="text-blue-600 ml-2">({programData.code})</span>
+            <span className="font-medium text-purple-900">{programData.name}</span>
+            <span className="text-purple-600 ml-2">({programData.code})</span>
             {programData.totalSemesters && (
-              <span className="text-blue-500 ml-2">
+              <span className="text-purple-500 ml-2">
                 &middot; {programData.totalSemesters}{" "}
                 {getPeriodLabel(programData.periodType).toLowerCase()}s
               </span>
@@ -227,19 +227,19 @@ const StepBatchSetup = ({ state, dispatch, goNext, goBack }) => {
               relative p-5 rounded-xl border-2 text-left transition-all
               ${
                 mode === "create"
-                  ? "border-blue-600 bg-blue-50"
+                  ? "border-purple-600 bg-purple-50"
                   : "border-gray-200 bg-white hover:border-gray-300"
               }
             `}
           >
             <Plus
               className={`w-5 h-5 mb-2 ${
-                mode === "create" ? "text-blue-600" : "text-gray-400"
+                mode === "create" ? "text-purple-600" : "text-gray-400"
               }`}
             />
             <div
               className={`text-sm font-semibold ${
-                mode === "create" ? "text-blue-900" : "text-gray-700"
+                mode === "create" ? "text-purple-900" : "text-gray-700"
               }`}
             >
               Create New Batch
@@ -255,19 +255,19 @@ const StepBatchSetup = ({ state, dispatch, goNext, goBack }) => {
               relative p-5 rounded-xl border-2 text-left transition-all
               ${
                 mode === "existing"
-                  ? "border-blue-600 bg-blue-50"
+                  ? "border-purple-600 bg-purple-50"
                   : "border-gray-200 bg-white hover:border-gray-300"
               }
             `}
           >
             <Layers
               className={`w-5 h-5 mb-2 ${
-                mode === "existing" ? "text-blue-600" : "text-gray-400"
+                mode === "existing" ? "text-purple-600" : "text-gray-400"
               }`}
             />
             <div
               className={`text-sm font-semibold ${
-                mode === "existing" ? "text-blue-900" : "text-gray-700"
+                mode === "existing" ? "text-purple-900" : "text-gray-700"
               }`}
             >
               Use Existing Batch
@@ -355,7 +355,7 @@ const StepBatchSetup = ({ state, dispatch, goNext, goBack }) => {
           <motion.div variants={fadeUp} className="flex items-center justify-between pt-4">
             <button
               onClick={goBack}
-              className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition"
+              className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-[#1E293B] transition"
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
               Back
@@ -363,7 +363,7 @@ const StepBatchSetup = ({ state, dispatch, goNext, goBack }) => {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+              className="inline-flex items-center px-6 py-3 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
             >
               {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               {isEditingCurrentBatch ? "Save Batch & Continue" : "Create Batch & Continue"}
@@ -402,7 +402,7 @@ const StepBatchSetup = ({ state, dispatch, goNext, goBack }) => {
               variants={fadeUp}
               className="bg-gray-50 border border-gray-200 rounded-lg p-5 space-y-2"
             >
-              <div className="text-sm font-semibold text-gray-900">
+              <div className="text-sm font-semibold text-[#1E293B]">
                 {selectedBatch.name}
               </div>
               <div className="text-xs text-gray-500 space-y-1">
@@ -425,7 +425,7 @@ const StepBatchSetup = ({ state, dispatch, goNext, goBack }) => {
           <motion.div variants={fadeUp} className="flex items-center justify-between pt-4">
             <button
               onClick={goBack}
-              className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition"
+              className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-[#1E293B] transition"
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
               Back
@@ -433,7 +433,7 @@ const StepBatchSetup = ({ state, dispatch, goNext, goBack }) => {
             <button
               onClick={handleSelectAndContinue}
               disabled={submitting || !selectedBatchId}
-              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+              className="inline-flex items-center px-6 py-3 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
             >
               {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Continue with Batch

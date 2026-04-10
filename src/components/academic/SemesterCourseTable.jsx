@@ -849,7 +849,7 @@ const CoursePickerModal = ({
       <div className="mx-auto w-full max-w-2xl rounded-lg bg-white shadow-lg">
         <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 py-3">
           <div>
-            <div className="text-base font-semibold text-gray-900">{title}</div>
+            <div className="text-base font-semibold text-[#1E293B]">{title}</div>
             {subtitle ? (
               <div className="mt-1 text-xs text-gray-500">{subtitle}</div>
             ) : null}
@@ -872,7 +872,7 @@ const CoursePickerModal = ({
               if (onClearError) onClearError();
             }}
             placeholder="Search by code or course name..."
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
         </div>
 
@@ -897,7 +897,7 @@ const CoursePickerModal = ({
                   className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-gray-50"
                 >
                   <div className="min-w-0">
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-[#1E293B]">
                       {safeDisplay(course?.courseCode)}
                     </div>
                     <div className="truncate text-xs text-gray-500">
@@ -2653,7 +2653,7 @@ const SemesterCourseTable = ({
   if (loading && !courses.length) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600" />
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-purple-600" />
       </div>
     );
   }
@@ -2689,7 +2689,7 @@ const SemesterCourseTable = ({
           <div className="mx-auto w-full max-w-2xl rounded-lg bg-white shadow-lg">
             <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 py-3">
               <div>
-                <div className="text-base font-semibold text-gray-900">
+                <div className="text-base font-semibold text-[#1E293B]">
                   {addMode === "existing" ? "Add Existing Course" : "New Course"}
                 </div>
                 <div className="mt-1 text-xs text-gray-500">
@@ -2748,7 +2748,7 @@ const SemesterCourseTable = ({
                       <div className="text-xs font-semibold uppercase tracking-widest text-emerald-700">
                         Course Found
                       </div>
-                      <div className="mt-1 text-sm font-medium text-gray-900">
+                      <div className="mt-1 text-sm font-medium text-[#1E293B]">
                         {safeDisplay(existingCourse?.title)}
                       </div>
                       <div className="mt-1 text-xs text-gray-700">
@@ -2995,7 +2995,7 @@ const SemesterCourseTable = ({
           <div className="mx-auto w-full max-w-2xl rounded-lg bg-white shadow-lg">
             <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 py-3">
               <div>
-                <div className="text-base font-semibold text-gray-900">Edit Course Assignment</div>
+                <div className="text-base font-semibold text-[#1E293B]">Edit Course Assignment</div>
                 <div className="mt-1 text-xs text-gray-500">
                   {safeDisplay(editingCourse?.courseCode)} | {safeDisplay(editingCourse?.title)}
                 </div>
@@ -3225,7 +3225,7 @@ const SemesterCourseTable = ({
       <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="text-base font-semibold text-gray-900">
+            <h3 className="text-base font-semibold text-[#1E293B]">
               Course Assignment (Slot Draft Builder)
             </h3>
             <p className="text-xs text-gray-500">
@@ -3247,7 +3247,7 @@ const SemesterCourseTable = ({
             type="button"
             onClick={saveCourseAssignment}
             disabled={disableSaveAssignment}
-            className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="inline-flex items-center gap-1 rounded-lg bg-purple-600 px-3 py-2 text-xs font-medium text-white hover:bg-purple-700 disabled:opacity-50"
             title={disableSaveAssignment ? (!programId ? "Program is required" : !assignmentSource ? "No changes to save" : "") : ""}
           >
             <Save size={14} />
@@ -3256,7 +3256,7 @@ const SemesterCourseTable = ({
         </div>
 
 	        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-	          <div className="mb-3 text-sm font-semibold text-gray-900">Define Structure</div>
+	          <div className="mb-3 text-sm font-semibold text-[#1E293B]">Define Structure</div>
 	          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5">
 	            <div>
 	              <label className="mb-1 block text-[11px] uppercase tracking-widest text-gray-500">
@@ -3343,7 +3343,7 @@ const SemesterCourseTable = ({
                   event.target.checked
                 )
               }
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
             />
             Enforce Credit Target
           </label>
@@ -3446,7 +3446,7 @@ const SemesterCourseTable = ({
 	        </div>
 
 	        <div className="flex flex-wrap items-center gap-2 text-xs">
-	          <span className="rounded border border-blue-200 bg-blue-50 px-2 py-1 text-blue-800">
+	          <span className="rounded border border-purple-200 bg-purple-50 px-2 py-1 text-purple-800">
 	            Total Credits: {creditTargetStatus.totalSelectedCredits}
 	          </span>
 	          {(creditTargetStatus.totalTargetDerived !== null ||
@@ -3492,7 +3492,7 @@ const SemesterCourseTable = ({
               }`}
             >
               <div className="rounded-lg border border-gray-200 p-3">
-                <div className="mb-1 text-sm font-semibold text-gray-900">Compulsory Slots</div>
+                <div className="mb-1 text-sm font-semibold text-[#1E293B]">Compulsory Slots</div>
                 <div className="mb-2 text-xs text-gray-500">
                   Filled {selectedCompulsoryCount}/{requiredCompulsory}
                 </div>
@@ -3535,7 +3535,7 @@ const SemesterCourseTable = ({
                                     openEditCourseModal(course);
                                   }}
                                   disabled={!course}
-                                  className="text-[11px] text-gray-500 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="text-[11px] text-gray-500 hover:text-purple-600 disabled:cursor-not-allowed disabled:opacity-50"
                                   style={{ pointerEvents: 'auto' }}
                                 >
                                   Edit
@@ -3548,7 +3548,7 @@ const SemesterCourseTable = ({
                             <>
                               <div className="mt-2 flex items-center justify-between gap-2">
                                 <div className="min-w-0">
-                                  <div className="text-sm font-medium text-gray-900">
+                                  <div className="text-sm font-medium text-[#1E293B]">
                                     {safeDisplay(course?.courseCode) || courseId}
                                   </div>
                                   <div className="truncate text-xs text-gray-500">
@@ -3569,11 +3569,11 @@ const SemesterCourseTable = ({
                                     {badges.map((badge, badgeIdx) => (
                                       <span
                                         key={`comp-teacher-${slotIndex}-${badgeIdx}`}
-                                        className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-700"
+                                        className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2 py-0.5 text-[10px] text-purple-700"
                                         title={badge.role}
                                       >
                                         <span className="font-medium">{badge.label}</span>
-                                        <span className="text-indigo-400">({badge.role})</span>
+                                        <span className="text-purple-400">({badge.role})</span>
                                       </span>
                                     ))}
                                   </div>
@@ -3617,7 +3617,7 @@ const SemesterCourseTable = ({
                                 setPendingAssignTarget({ kind: "compulsory", slotIndex });
                                 openAddPanel("new");
                               }}
-                              className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                              className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-medium text-purple-700 hover:bg-purple-100"
                             >
                               + New Course
                             </button>
@@ -3636,7 +3636,7 @@ const SemesterCourseTable = ({
               </div>
 
               <div className="rounded-lg border border-gray-200 p-3">
-                <div className="mb-2 text-sm font-semibold text-gray-900">Elective Blocks</div>
+                <div className="mb-2 text-sm font-semibold text-[#1E293B]">Elective Blocks</div>
                 <div className="mb-2 text-[11px] text-gray-500">
                   Compulsory and elective pools are strictly disjoint. Courses used in one pool are not eligible for the other.
                 </div>
@@ -3719,7 +3719,7 @@ const SemesterCourseTable = ({
                                     >
                                       <div className="flex items-center justify-between gap-2">
                                         <div className="min-w-0">
-                                          <div className="font-medium text-gray-900">
+                                          <div className="font-medium text-[#1E293B]">
                                             {safeDisplay(course?.courseCode) || normalizedId}
                                           </div>
                                           <div className="truncate text-[11px] text-gray-500">
@@ -3738,7 +3738,7 @@ const SemesterCourseTable = ({
                                               openEditCourseModal(course);
                                             }}
                                             disabled={!course}
-                                            className="text-gray-400 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                            className="text-gray-400 hover:text-purple-600 disabled:cursor-not-allowed disabled:opacity-50"
                                             title="Edit candidate"
                                             style={{ pointerEvents: 'auto' }}
                                           >
@@ -3765,11 +3765,11 @@ const SemesterCourseTable = ({
                                             {badges.map((badge, badgeIdx) => (
                                               <span
                                                 key={`elec-teacher-${blockIndex}-${normalizedId}-${badgeIdx}`}
-                                                className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-700"
+                                                className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2 py-0.5 text-[10px] text-purple-700"
                                                 title={badge.role}
                                               >
                                                 <span className="font-medium">{badge.label}</span>
-                                                <span className="text-indigo-400">({badge.role})</span>
+                                                <span className="text-purple-400">({badge.role})</span>
                                               </span>
                                             ))}
                                           </div>
@@ -3813,7 +3813,7 @@ const SemesterCourseTable = ({
                                 setPendingAssignTarget({ kind: "elective", blockIndex });
                                 openAddPanel("new");
                               }}
-                              className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                              className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-medium text-purple-700 hover:bg-purple-100"
                             >
                               + New Course
                             </button>
@@ -3851,7 +3851,7 @@ const SemesterCourseTable = ({
             </div>
 
             <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-		              <div className="mb-2 text-sm font-semibold text-gray-900">Elective Preview</div>
+		              <div className="mb-2 text-sm font-semibold text-[#1E293B]">Elective Preview</div>
 		              <div className="space-y-2 text-xs text-gray-700">
 			                {(normalizedDraft.electiveBlocks || []).map((block, blockIndex) => {
 			                  const previewCandidates = (block.options || [])

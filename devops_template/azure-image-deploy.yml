@@ -103,7 +103,7 @@ steps:
         EOF)
         echo "repository: ${{ parameters.imageRepository }}"
         echo "containerapp_name: $containerapp_name"
-        echo "resource_group: rg-kiit-lms-${{ parameters.env }}"
+        echo "resource_group: rg-ssvm-lms-${{ parameters.env }}"
         echo "containerapp_environment: $containerapp_environment"
         echo "env: ${{ parameters.env }}"
         echo "min_replicas: ${min_replicas:-}"
@@ -115,7 +115,7 @@ steps:
     
         echo "==========================="
 
-        RESOURCE_GROUP="rg-kiit-lms-${{ parameters.env }}"
+        RESOURCE_GROUP="rg-ssvm-lms-${{ parameters.env }}"
         ENVIRONMENT="$containerapp_environment"
 
         echo "Deploying container app..."

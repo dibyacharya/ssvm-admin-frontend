@@ -455,7 +455,7 @@ const StepReviewComplete = ({
         >
           <CheckCircle className="w-10 h-10 text-green-500" />
         </motion.div>
-        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
+        <h1 className="text-2xl font-semibold tracking-tight text-[#1E293B]">
           {isEditMode
             ? "Program Updated Successfully"
             : "Program Setup Complete"}
@@ -475,14 +475,14 @@ const StepReviewComplete = ({
         <div className="mt-8 flex items-center justify-center gap-3">
           <Link
             to="/programs"
-            className="inline-flex items-center px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition"
+            className="inline-flex items-center px-6 py-3 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition"
           >
             Go to Program Management
           </Link>
           {!isEditMode && (
             <button
               onClick={() => dispatch({ type: "RESET" })}
-              className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition"
+              className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-[#1E293B] transition"
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               Create Another
@@ -495,7 +495,7 @@ const StepReviewComplete = ({
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
+      <h1 className="text-2xl font-semibold tracking-tight text-[#1E293B]">
         Review & Complete
       </h1>
       <p className="mt-1 text-sm text-gray-500">
@@ -514,12 +514,12 @@ const StepReviewComplete = ({
         {/* Program Details */}
         <section className="bg-white border border-gray-200 rounded-lg p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-gray-900">
+            <h2 className="text-sm font-semibold text-[#1E293B]">
               Program Details
             </h2>
             <button
               onClick={jumpToEditStep}
-              className="inline-flex items-center text-xs text-blue-600 hover:text-blue-700"
+              className="inline-flex items-center text-xs text-purple-600 hover:text-purple-700"
             >
               <PencilLine className="w-3.5 h-3.5 mr-1" />
               Edit
@@ -564,12 +564,12 @@ const StepReviewComplete = ({
         {semesters.length > 0 && (
           <section className="bg-white border border-gray-200 rounded-lg p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-gray-900">
+              <h2 className="text-sm font-semibold text-[#1E293B]">
                 {periodLabel} Structure ({semesters.length})
               </h2>
               <button
                 onClick={jumpToEditStep}
-                className="inline-flex items-center text-xs text-blue-600 hover:text-blue-700"
+                className="inline-flex items-center text-xs text-purple-600 hover:text-purple-700"
               >
                 <PencilLine className="w-3.5 h-3.5 mr-1" />
                 Edit
@@ -581,7 +581,7 @@ const StepReviewComplete = ({
                   key={semester._id || semester.tempId || index}
                   className="border border-gray-100 rounded-lg px-4 py-3 text-sm flex items-center justify-between"
                 >
-                  <div className="font-medium text-gray-900">
+                  <div className="font-medium text-[#1E293B]">
                     {semester.name}
                   </div>
                   <div className="text-gray-500">
@@ -604,12 +604,12 @@ const StepReviewComplete = ({
         {/* Course Assignment Summary */}
         <section className="bg-white border border-gray-200 rounded-lg p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-gray-900">
+            <h2 className="text-sm font-semibold text-[#1E293B]">
               Course Assignment
             </h2>
             <button
               onClick={jumpToCourseStep}
-              className="inline-flex items-center text-xs text-blue-600 hover:text-blue-700"
+              className="inline-flex items-center text-xs text-purple-600 hover:text-purple-700"
             >
               <PencilLine className="w-3.5 h-3.5 mr-1" />
               Edit
@@ -619,7 +619,7 @@ const StepReviewComplete = ({
             {totalCourses > 0 ? (
               <div>
                 <span>
-                  <span className="font-medium text-gray-900">{totalCourses}</span>{" "}
+                  <span className="font-medium text-[#1E293B]">{totalCourses}</span>{" "}
                   course{totalCourses !== 1 ? "s" : ""} assigned across{" "}
                   {configuredSemesters} {periodLabel.toLowerCase()}
                   {configuredSemesters !== 1 ? "s" : ""}.
@@ -686,7 +686,7 @@ const StepReviewComplete = ({
                                   <td className="px-3 py-1.5">
                                     <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
                                       course.type === "Compulsory"
-                                        ? "bg-blue-50 text-blue-600"
+                                        ? "bg-purple-50 text-purple-600"
                                         : "bg-purple-50 text-purple-600"
                                     }`}>
                                       {course.type}
@@ -723,7 +723,7 @@ const StepReviewComplete = ({
       <div className="flex items-center justify-between pt-8">
         <button
           onClick={goBack}
-          className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition"
+          className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-[#1E293B] transition"
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
           Back

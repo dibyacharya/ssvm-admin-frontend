@@ -359,7 +359,7 @@ const BatchOnboarding = () => {
   };
 
   const inputClass =
-    "w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition";
+    "w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition";
   const labelClass =
     "block text-xs uppercase tracking-widest text-gray-500 font-medium mb-1.5";
 
@@ -398,9 +398,9 @@ const BatchOnboarding = () => {
                         transition-colors duration-300
                         ${
                           isCompleted || isPast
-                            ? "bg-blue-600 text-white"
+                            ? "bg-purple-600 text-white"
                             : isCurrent
-                              ? "bg-blue-600 text-white ring-4 ring-blue-100"
+                              ? "bg-purple-600 text-white ring-4 ring-purple-100"
                               : "bg-gray-200 text-gray-500"
                         }
                       `}
@@ -416,7 +416,7 @@ const BatchOnboarding = () => {
                     <span
                       className={`
                         mt-2 text-[10px] uppercase tracking-widest font-medium
-                        ${isCurrent ? "text-blue-600" : isPast || isCompleted ? "text-gray-500" : "text-gray-400"}
+                        ${isCurrent ? "text-purple-600" : isPast || isCompleted ? "text-gray-500" : "text-gray-400"}
                       `}
                     >
                       {step.label}
@@ -425,7 +425,7 @@ const BatchOnboarding = () => {
                   {index < steps.length - 1 && (
                     <div className="flex-1 mx-3 h-0.5 bg-gray-200 rounded-full relative -mt-5">
                       <motion.div
-                        className="absolute inset-y-0 left-0 bg-blue-600 rounded-full"
+                        className="absolute inset-y-0 left-0 bg-purple-600 rounded-full"
                         initial={{ width: "0%" }}
                         animate={{
                           width: step.number < currentStep ? "100%" : "0%",
@@ -448,7 +448,7 @@ const BatchOnboarding = () => {
     if (loadingBatch) {
       return (
         <div className="text-center py-16">
-          <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto mb-4" />
+          <Loader2 className="w-8 h-8 text-purple-500 animate-spin mx-auto mb-4" />
           <p className="text-sm text-gray-500">Loading batch details...</p>
         </div>
       );
@@ -457,7 +457,7 @@ const BatchOnboarding = () => {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
+          <h1 className="text-2xl font-semibold tracking-tight text-[#1E293B]">
             {isEditMode ? "Edit Batch" : "Batch Setup"}
           </h1>
           <p className="mt-1 text-sm text-gray-500">
@@ -514,20 +514,20 @@ const BatchOnboarding = () => {
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+              className="bg-purple-50 border border-purple-200 rounded-lg p-4"
             >
               <div className="flex items-center gap-2 mb-2">
-                <GraduationCap className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-semibold text-blue-900">
+                <GraduationCap className="w-4 h-4 text-purple-600" />
+                <span className="text-sm font-semibold text-purple-900">
                   {selectedProgram.name}
                 </span>
                 {selectedProgram.code && (
-                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
                     {selectedProgram.code}
                   </span>
                 )}
               </div>
-              <div className="grid grid-cols-3 gap-2 text-xs text-blue-800">
+              <div className="grid grid-cols-3 gap-2 text-xs text-purple-800">
                 <div>
                   Period Type:{" "}
                   <span className="font-medium">{periodLabel}</span>
@@ -630,7 +630,7 @@ const BatchOnboarding = () => {
           <button
             onClick={goNext}
             disabled={!canContinueStep1}
-            className="inline-flex items-center px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+            className="inline-flex items-center px-6 py-3 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
           >
             Continue
             <ChevronRight className="w-4 h-4 ml-2" />
@@ -644,8 +644,8 @@ const BatchOnboarding = () => {
   const renderStep2 = () => (
     <div>
       <div className="flex items-center gap-2 mb-1">
-        <Calendar className="w-5 h-5 text-blue-600" />
-        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
+        <Calendar className="w-5 h-5 text-purple-600" />
+        <h1 className="text-2xl font-semibold tracking-tight text-[#1E293B]">
           {periodLabel} Schedule
         </h1>
       </div>
@@ -678,7 +678,7 @@ const BatchOnboarding = () => {
                   border rounded-lg transition-all cursor-pointer
                   ${
                     isActive
-                      ? "border-blue-500 bg-blue-50 ring-1 ring-blue-200"
+                      ? "border-purple-500 bg-purple-50 ring-1 ring-purple-200"
                       : "border-gray-200 bg-white hover:border-gray-300"
                   }
                 `}
@@ -695,7 +695,7 @@ const BatchOnboarding = () => {
                     <span className="text-xs text-gray-400 font-mono w-6 text-right">
                       {index + 1}
                     </span>
-                    <span className="text-sm font-medium text-gray-900">
+                    <span className="text-sm font-medium text-[#1E293B]">
                       {slot.name}
                     </span>
                   </div>
@@ -728,7 +728,7 @@ const BatchOnboarding = () => {
                       transition={{ duration: 0.2 }}
                       className="overflow-hidden"
                     >
-                      <div className="px-4 pb-4 pt-1 border-t border-blue-100">
+                      <div className="px-4 pb-4 pt-1 border-t border-purple-100">
                         <div className="grid grid-cols-2 gap-4 mt-3">
                           <div>
                             <label className="text-[10px] uppercase tracking-widest text-gray-500 font-medium mb-1 block">
@@ -744,7 +744,7 @@ const BatchOnboarding = () => {
                                   e.target.value
                                 )
                               }
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                             />
                           </div>
                           <div>
@@ -761,7 +761,7 @@ const BatchOnboarding = () => {
                                   e.target.value
                                 )
                               }
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                             />
                           </div>
                         </div>
@@ -781,7 +781,7 @@ const BatchOnboarding = () => {
                                   e.target.value
                                 )
                               }
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                             />
                           </div>
                           <div>
@@ -798,7 +798,7 @@ const BatchOnboarding = () => {
                                   e.target.value
                                 )
                               }
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                             />
                           </div>
                         </div>
@@ -818,7 +818,7 @@ const BatchOnboarding = () => {
                                   e.target.value
                                 )
                               }
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                             />
                           </div>
                           <div>
@@ -835,7 +835,7 @@ const BatchOnboarding = () => {
                                   e.target.value
                                 )
                               }
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                             />
                           </div>
                         </div>
@@ -853,14 +853,14 @@ const BatchOnboarding = () => {
       <div className="flex items-center justify-between pt-8">
         <button
           onClick={goBack}
-          className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition"
+          className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-[#1E293B] transition"
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
           Back
         </button>
         <button
           onClick={goNext}
-          className="inline-flex items-center px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition"
+          className="inline-flex items-center px-6 py-3 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition"
         >
           Continue
           <ChevronRight className="w-4 h-4 ml-2" />
@@ -882,7 +882,7 @@ const BatchOnboarding = () => {
           >
             <CheckCircle className="w-10 h-10 text-green-500" />
           </motion.div>
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
+          <h1 className="text-2xl font-semibold tracking-tight text-[#1E293B]">
             {isEditMode
               ? "Batch Updated Successfully"
               : "Batch Created Successfully"}
@@ -895,14 +895,14 @@ const BatchOnboarding = () => {
           <div className="mt-8 flex items-center justify-center gap-3">
             <button
               onClick={() => navigate("/batches")}
-              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition"
+              className="inline-flex items-center px-6 py-3 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition"
             >
               Go to Batch Management
             </button>
             {!isEditMode && (
               <button
                 onClick={resetWizard}
-                className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition"
+                className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-[#1E293B] transition"
               >
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Create Another
@@ -915,7 +915,7 @@ const BatchOnboarding = () => {
 
     return (
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
+        <h1 className="text-2xl font-semibold tracking-tight text-[#1E293B]">
           {isEditMode ? "Review & Update" : "Review & Create"}
         </h1>
         <p className="mt-1 text-sm text-gray-500">
@@ -936,14 +936,14 @@ const BatchOnboarding = () => {
           {/* Program Info */}
           <section className="bg-white border border-gray-200 rounded-lg p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-gray-900">Program</h2>
+              <h2 className="text-sm font-semibold text-[#1E293B]">Program</h2>
               {!isEditMode && (
                 <button
                   onClick={() => {
                     setDirection(-1);
                     setCurrentStep(1);
                   }}
-                  className="inline-flex items-center text-xs text-blue-600 hover:text-blue-700"
+                  className="inline-flex items-center text-xs text-purple-600 hover:text-purple-700"
                 >
                   <PencilLine className="w-3.5 h-3.5 mr-1" />
                   Edit
@@ -973,7 +973,7 @@ const BatchOnboarding = () => {
           {/* Batch Details */}
           <section className="bg-white border border-gray-200 rounded-lg p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-gray-900">
+              <h2 className="text-sm font-semibold text-[#1E293B]">
                 Batch Details
               </h2>
               <button
@@ -981,7 +981,7 @@ const BatchOnboarding = () => {
                   setDirection(-1);
                   setCurrentStep(1);
                 }}
-                className="inline-flex items-center text-xs text-blue-600 hover:text-blue-700"
+                className="inline-flex items-center text-xs text-purple-600 hover:text-purple-700"
               >
                 <PencilLine className="w-3.5 h-3.5 mr-1" />
                 Edit
@@ -1032,7 +1032,7 @@ const BatchOnboarding = () => {
           {semesterDates.length > 0 && (
             <section className="bg-white border border-gray-200 rounded-lg p-5">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-gray-900">
+                <h2 className="text-sm font-semibold text-[#1E293B]">
                   {periodLabel} Schedule ({semesterDates.length})
                 </h2>
                 <button
@@ -1040,7 +1040,7 @@ const BatchOnboarding = () => {
                     setDirection(-1);
                     setCurrentStep(2);
                   }}
-                  className="inline-flex items-center text-xs text-blue-600 hover:text-blue-700"
+                  className="inline-flex items-center text-xs text-purple-600 hover:text-purple-700"
                 >
                   <PencilLine className="w-3.5 h-3.5 mr-1" />
                   Edit
@@ -1067,7 +1067,7 @@ const BatchOnboarding = () => {
                       className="border border-gray-100 rounded-lg px-4 py-3 text-sm"
                     >
                       <div className="flex items-center justify-between">
-                        <div className="font-medium text-gray-900">{slot.name}</div>
+                        <div className="font-medium text-[#1E293B]">{slot.name}</div>
                         <div className="text-gray-500 text-xs">
                           {fmtDate(slot.startDate) || "—"} →{" "}
                           {fmtDate(slot.endDate) || "—"}
@@ -1099,7 +1099,7 @@ const BatchOnboarding = () => {
         <div className="flex items-center justify-between pt-8">
           <button
             onClick={goBack}
-            className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition"
+            className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-[#1E293B] transition"
           >
             <ChevronLeft className="w-4 h-4 mr-1" />
             Back
@@ -1110,7 +1110,7 @@ const BatchOnboarding = () => {
               disabled={submitting}
               className={`inline-flex items-center px-6 py-3 text-white text-sm font-medium rounded-lg transition disabled:opacity-50 ${
                 isEditMode
-                  ? "bg-blue-600 hover:bg-blue-700"
+                  ? "bg-purple-600 hover:bg-purple-700"
                   : "bg-green-600 hover:bg-green-700"
               }`}
             >
@@ -1152,7 +1152,7 @@ const BatchOnboarding = () => {
   return (
     <div className="min-h-full -m-6 bg-gray-50">
       <div className="px-6 pt-6">
-        <Link to="/batches" className="flex items-center text-gray-600 hover:text-gray-900">
+        <Link to="/batches" className="flex items-center text-gray-600 hover:text-[#1E293B]">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Batches
         </Link>

@@ -734,7 +734,7 @@ const OnboardingWizard = ({ editProgramId = null }) => {
   return (
     <div className="min-h-full -m-6 bg-gray-50">
       <div className="px-6 pt-6">
-        <Link to="/programs" className="flex items-center text-gray-600 hover:text-gray-900">
+        <Link to="/programs" className="flex items-center text-gray-600 hover:text-[#1E293B]">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Programs
         </Link>

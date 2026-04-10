@@ -52,7 +52,7 @@ const ForgotPassword = () => {
       <div className="w-full max-w-md rounded-xl bg-white shadow-sm border border-gray-200 p-8">
         {!submitted ? (
           <>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-[#1E293B]">
               Forgot Password
             </h1>
             <p className="mt-2 text-sm text-gray-600">
@@ -120,7 +120,7 @@ const ForgotPassword = () => {
               <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
                 <CheckCircle className="h-7 w-7 text-emerald-600" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-[#1E293B]">
                 Check Your Email
               </h1>
               <p className="mt-3 text-sm text-gray-600 leading-relaxed">

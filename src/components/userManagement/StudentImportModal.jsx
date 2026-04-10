@@ -102,7 +102,7 @@ const extractCrmPreviewRow = (record = {}) => {
       "fullname",
       "name",
     ]),
-    email: pickCrmValue(map, ["emailid", "email", "emailaddress", "kiitmailid", "personalemailid"]),
+    email: pickCrmValue(map, ["emailid", "email", "emailaddress", "ssvmmailid", "personalemailid"]),
     rollNumber: pickCrmValue(map, ["rollno", "rollnumber", "studentrollnumber"]),
     enrollmentNumber: pickCrmValue(map, [
       "enrollmentnumber",
@@ -608,8 +608,8 @@ const StudentImportModal = ({
       <div className="relative w-full max-w-2xl bg-white rounded-lg shadow-xl border border-gray-200 max-h-[85vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
           <div className="flex items-center gap-2">
-            <Upload className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">
+            <Upload className="w-5 h-5 text-purple-600" />
+            <h2 className="text-lg font-semibold text-[#1E293B]">
               {supportsBulkImport
                 ? `Bulk Import Students (${normalizedStudentMode})`
                 : "Online Students: CRM Pull"}
@@ -696,7 +696,7 @@ const StudentImportModal = ({
                     setResult(null);
                   }}
                   disabled={submitting}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
                 >
                   {bulkModeOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -715,7 +715,7 @@ const StudentImportModal = ({
                     type="file"
                     accept=".csv,.xlsx,.xls"
                     onChange={(e) => handleFileChange(e.target.files?.[0])}
-                    className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
                   />
                   {file && (
                     <div className="mt-2 text-xs text-gray-600 flex items-center gap-2">
@@ -738,7 +738,7 @@ const StudentImportModal = ({
                       setResult(null);
                     }}
                     disabled={loadingPrograms || submitting}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
                   >
                     <option value="">Select Program ({normalizedStudentMode})</option>
                     {filteredPrograms.map((program) => (
@@ -763,7 +763,7 @@ const StudentImportModal = ({
                       setResult(null);
                     }}
                     disabled={!selectedProgramId || loadingBatches || submitting}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
                   >
                     <option value="">
                       {!selectedProgramId
@@ -833,7 +833,7 @@ const StudentImportModal = ({
                     loadingPrograms ||
                     loadingBatches
                       ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-700"
+                      : "bg-purple-600 hover:bg-purple-700"
                   }`}
                 >
                   <Upload className="w-4 h-4 mr-2" />
@@ -871,7 +871,7 @@ const StudentImportModal = ({
                       setCrmImportError("");
                     }}
                     disabled={loadingPrograms || pullingCrm || crmImporting}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
                   >
                     <option value="">Select Program (ONLINE)</option>
                     {filteredPrograms.map((program) => (
@@ -893,7 +893,7 @@ const StudentImportModal = ({
                       setCrmImportError("");
                     }}
                     disabled={!selectedProgramId || loadingBatches || pullingCrm || crmImporting}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
                   >
                     <option value="">
                       {!selectedProgramId
@@ -916,7 +916,7 @@ const StudentImportModal = ({
                   <select
                     value={crmSessionCode}
                     onChange={(e) => setCrmSessionCode(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   >
                     <option value="SP">SP (Spring)</option>
                     <option value="AU">AU (Autumn)</option>
@@ -932,7 +932,7 @@ const StudentImportModal = ({
                     max="2100"
                     value={crmAdmissionYear}
                     onChange={(e) => setCrmAdmissionYear(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -954,7 +954,7 @@ const StudentImportModal = ({
                     setCrmPullError("");
                   }}
                   placeholder="YYYY-MM-DD 00:00:00"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>
               <button
@@ -964,7 +964,7 @@ const StudentImportModal = ({
                 className={`inline-flex items-center px-4 py-2 rounded-lg text-white transition-colors ${
                   pullingCrm
                     ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-indigo-600 hover:bg-indigo-700"
+                    : "bg-purple-600 hover:bg-purple-700"
                 }`}
               >
                 <Upload className="w-4 h-4 mr-2" />
@@ -1015,7 +1015,7 @@ const StudentImportModal = ({
                         selectedCrmItems.length === 0 ||
                         crmVerification.errors.length > 0
                           ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-blue-600 hover:bg-blue-700"
+                          : "bg-purple-600 hover:bg-purple-700"
                       }`}
                     >
                       {crmImporting ? "Approving..." : "Approve & Create Users"}

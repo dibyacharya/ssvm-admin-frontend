@@ -86,7 +86,7 @@ const emptyDescription = {
   categoryId: "",
   subcategoryIds: [],
   courseCredits: 1,
-  kiitxCourseCode: "",
+  ssvmxCourseCode: "",
   offeredBySchool: "",
   mediumOfInstruction: "English",
   developedFor: "",
@@ -1058,7 +1058,7 @@ const CourseManagementDetails = () => {
         ncrfLevel: parsedNcrfLevel,
         courseType: description.courseType,
         courseCredits: safeCredits,
-        kiitxCourseCode: description.kiitxCourseCode,
+        ssvmxCourseCode: description.ssvmxCourseCode,
         offeredBySchool: description.offeredBySchool,
         mediumOfInstruction: description.mediumOfInstruction,
         developedFor: description.developedFor,
@@ -1428,8 +1428,8 @@ const CourseManagementDetails = () => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <p className="text-sm text-gray-500">Loading course details...</p>
+      <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-6">
+        <p className="text-sm text-[#94A3B8]">Loading course details...</p>
       </div>
     );
   }
@@ -1460,10 +1460,10 @@ const CourseManagementDetails = () => {
       `}</style>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs text-gray-500 uppercase tracking-widest">
+          <p className="text-xs text-[#94A3B8] uppercase tracking-widest">
             Course Management
           </p>
-          <h1 className="text-xl font-semibold text-gray-900">
+          <h1 className="text-xl font-semibold text-[#1E293B]">
             {description.nameOfCourse || "Course"}
           </h1>
         </div>
@@ -1472,14 +1472,14 @@ const CourseManagementDetails = () => {
             <button
               type="button"
               onClick={() => setShowPreviewModal(true)}
-              className="px-3 py-2 rounded border border-blue-300 text-sm text-blue-700 hover:bg-blue-50"
+              className="px-3 py-2 rounded border border-[rgba(249,115,22,0.3)] text-sm text-[#F97316] hover:bg-[rgba(249,115,22,0.1)]"
             >
               Preview / Print
             </button>
           )}
           <Link
             to="/courses/list"
-            className="px-3 py-2 rounded border border-gray-300 text-sm text-gray-700 hover:bg-gray-50"
+            className="px-3 py-2 rounded border border-[rgba(0,0,0,0.08)] text-sm text-[#94A3B8] hover:bg-white"
           >
             Back to Course List
           </Link>
@@ -1487,7 +1487,7 @@ const CourseManagementDetails = () => {
       </div>
 
       {error && (
-        <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="rounded border border-[rgba(239,68,68,0.2)] bg-[rgba(220,38,38,0.08)] px-3 py-2 text-sm text-[#EF4444]">
           <p>{error}</p>
           {descriptionErrorDetails.length > 0 && (
             <ul className="mt-1 list-disc list-inside text-xs">
@@ -1499,13 +1499,13 @@ const CourseManagementDetails = () => {
         </div>
       )}
       {success && (
-        <div className="rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        <div className="rounded border border-[rgba(16,185,129,0.2)] bg-[rgba(16,185,129,0.1)] px-3 py-2 text-sm text-[#10B981]">
           {success}
         </div>
       )}
 
       <div className="w-full max-w-4xl mx-auto">
-        <div className="grid grid-cols-3 gap-4 p-3 rounded-lg border border-slate-200 bg-slate-50 shadow-sm">
+        <div className="grid grid-cols-3 gap-4 p-3 rounded-lg border border-[rgba(0,0,0,0.08)] bg-white">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -1513,8 +1513,8 @@ const CourseManagementDetails = () => {
               onClick={() => handleTabChange(tab.id)}
               className={`w-full px-4 py-3 text-base font-semibold rounded-md border transition-colors ${
                 activeTab === tab.id
-                  ? "bg-blue-700 text-white border-blue-800"
-                  : "bg-blue-100 text-slate-700 border-blue-200 hover:bg-blue-200"
+                  ? "bg-[#EA580C] text-white border-[#C2410C]"
+                  : "bg-[rgba(249,115,22,0.15)] text-[#94A3B8] border-[rgba(249,115,22,0.2)] hover:bg-[rgba(249,115,22,0.2)]"
               }`}
             >
               {tab.label}
@@ -1524,32 +1524,32 @@ const CourseManagementDetails = () => {
       </div>
 
       {activeTab === "description" && (
-        <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
+        <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <label className="text-sm">
-              <span className="font-semibold text-gray-800">Name of the Course</span>
+              <span className="font-semibold text-[#1E293B]">Name of the Course</span>
               <input
                 value={description.nameOfCourse || ""}
                 onChange={(e) => handleDescriptionField("nameOfCourse", e.target.value)}
                 disabled={!canEditDescription}
-                className="mt-1 w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                className="mt-1 w-full border border-[rgba(0,0,0,0.08)] rounded px-3 py-2 text-sm"
               />
             </label>
             <label className="text-sm">
-              <span className="font-semibold text-gray-800">Course Code</span>
+              <span className="font-semibold text-[#1E293B]">Course Code</span>
               <input
                 value={description.courseCode || ""}
                 readOnly
-                className="mt-1 w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                className="mt-1 w-full border border-[rgba(0,0,0,0.08)] rounded px-3 py-2 text-sm"
               />
             </label>
             <label className="text-sm">
-              <span className="font-semibold text-gray-800">NCrF Level</span>
+              <span className="font-semibold text-[#1E293B]">NCrF Level</span>
               <select
                 value={description.ncrfLevel ?? ""}
                 onChange={(e) => handleDescriptionField("ncrfLevel", e.target.value)}
                 disabled={!canEditDescription}
-                className="mt-1 w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                className="mt-1 w-full border border-[rgba(0,0,0,0.08)] rounded px-3 py-2 text-sm"
               >
                 <option value="">Select NCrF level</option>
                 {TOP_LEVEL_NCRF_LEVEL_OPTIONS.map((option) => (
@@ -1560,12 +1560,12 @@ const CourseManagementDetails = () => {
               </select>
             </label>
             <label className="text-sm">
-              <span className="font-semibold text-gray-800">Course Type</span>
+              <span className="font-semibold text-[#1E293B]">Course Type</span>
               <select
                 value={description.courseType || "theory"}
                 onChange={(e) => handleDescriptionField("courseType", e.target.value)}
                 disabled={!canEditDescription}
-                className="mt-1 w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                className="mt-1 w-full border border-[rgba(0,0,0,0.08)] rounded px-3 py-2 text-sm"
               >
                 <option value="theory">Theory</option>
                 <option value="practical">Practical</option>
@@ -1574,14 +1574,14 @@ const CourseManagementDetails = () => {
               </select>
             </label>
             <label className="text-sm">
-              <span className="font-semibold text-gray-800">
-                Category <span className="text-red-600 text-xs">(required)</span>
+              <span className="font-semibold text-[#1E293B]">
+                Category <span className="text-[#EF4444] text-xs">(required)</span>
               </span>
               <select
                 value={normalizeObjectIdValue(description.categoryId)}
                 onChange={(e) => handleCategoryChange(e.target.value)}
                 disabled={!canEditDescription}
-                className="mt-1 w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                className="mt-1 w-full border border-[rgba(0,0,0,0.08)] rounded px-3 py-2 text-sm"
               >
                 <option value="">Select Category</option>
                 {(categoryOptions || []).map((option) => (
@@ -1591,12 +1591,12 @@ const CourseManagementDetails = () => {
                 ))}
               </select>
               {descriptionFieldError === "categoryId" && error && (
-                <p className="mt-1 text-xs text-red-600">{error}</p>
+                <p className="mt-1 text-xs text-[#EF4444]">{error}</p>
               )}
             </label>
             <label className="text-sm">
-              <span className="font-semibold text-gray-800">
-                Subcategory <span className="text-red-600 text-xs">(required)</span>
+              <span className="font-semibold text-[#1E293B]">
+                Subcategory <span className="text-[#EF4444] text-xs">(required)</span>
               </span>
               <select
                 multiple
@@ -1611,7 +1611,7 @@ const CourseManagementDetails = () => {
                   !normalizeObjectIdValue(description.categoryId) ||
                   taxonomyLoading
                 }
-                className="mt-1 h-28 w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                className="mt-1 h-28 w-full border border-[rgba(0,0,0,0.08)] rounded px-3 py-2 text-sm"
               >
                 {(subcategoryOptions || []).map((option) => (
                   <option key={`course-subcategory-${option?._id}`} value={option?._id}>
@@ -1620,14 +1620,14 @@ const CourseManagementDetails = () => {
                 ))}
               </select>
               {canEditDescription && (
-                <p className="mt-1 text-[11px] text-gray-500">Hold Ctrl/Cmd to select multiple.</p>
+                <p className="mt-1 text-[11px] text-[#94A3B8]">Hold Ctrl/Cmd to select multiple.</p>
               )}
               {descriptionFieldError === "subcategoryIds" && error && (
-                <p className="mt-1 text-xs text-red-600">{error}</p>
+                <p className="mt-1 text-xs text-[#EF4444]">{error}</p>
               )}
             </label>
             <label className="text-sm">
-              <span className="font-semibold text-gray-800">Course Credits</span>
+              <span className="font-semibold text-[#1E293B]">Course Credits</span>
               <input
                 type="number"
                 min="1"
@@ -1642,30 +1642,30 @@ const CourseManagementDetails = () => {
                   );
                 }}
                 disabled={!canEditDescription}
-                className="mt-1 w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                className="mt-1 w-full border border-[rgba(0,0,0,0.08)] rounded px-3 py-2 text-sm"
               />
               {descriptionFieldError === "courseCredits" && error && (
-                <p className="mt-1 text-xs text-red-600">{error}</p>
+                <p className="mt-1 text-xs text-[#EF4444]">{error}</p>
               )}
             </label>
             <label className="text-sm">
-              <span className="font-semibold text-gray-800">Offered by the School</span>
+              <span className="font-semibold text-[#1E293B]">Offered by the School</span>
               <input
                 value={description.offeredBySchool || ""}
                 onChange={(e) => handleDescriptionField("offeredBySchool", e.target.value)}
                 disabled={!canEditDescription}
-                className="mt-1 w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                className="mt-1 w-full border border-[rgba(0,0,0,0.08)] rounded px-3 py-2 text-sm"
               />
             </label>
             <label className="text-sm">
-              <span className="font-semibold text-gray-800">Medium of Instruction</span>
+              <span className="font-semibold text-[#1E293B]">Medium of Instruction</span>
               <select
                 value={description.mediumOfInstruction || "English"}
                 onChange={(e) =>
                   handleDescriptionField("mediumOfInstruction", e.target.value)
                 }
                 disabled={!canEditDescription}
-                className="mt-1 w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                className="mt-1 w-full border border-[rgba(0,0,0,0.08)] rounded px-3 py-2 text-sm"
               >
                 <option value="English">English</option>
                 <option value="Hindi">Hindi</option>
@@ -1673,43 +1673,43 @@ const CourseManagementDetails = () => {
               </select>
             </label>
             <label className="text-sm">
-              <span className="font-semibold text-gray-800">Course Developed For</span>
+              <span className="font-semibold text-[#1E293B]">Course Developed For</span>
               <input
                 value={description.developedFor || ""}
                 onChange={(e) => handleDescriptionField("developedFor", e.target.value)}
                 disabled={!canEditDescription}
-                className="mt-1 w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                className="mt-1 w-full border border-[rgba(0,0,0,0.08)] rounded px-3 py-2 text-sm"
               />
             </label>
             <label className="text-sm md:col-span-2">
-              <span className="font-semibold text-gray-800">Course Coordinator</span>
+              <span className="font-semibold text-[#1E293B]">Course Coordinator</span>
               <input
                 value={description.coordinator?.name || ""}
                 readOnly
-                className="mt-1 w-full border border-gray-200 bg-gray-50 rounded px-3 py-2 text-sm"
+                className="mt-1 w-full border border-[rgba(0,0,0,0.08)] bg-white rounded px-3 py-2 text-sm"
               />
             </label>
           </div>
 
           <label className="text-sm block">
-            <span className="font-semibold text-gray-800">Introduction</span>
+            <span className="font-semibold text-[#1E293B]">Introduction</span>
             <textarea
               value={description.introduction || ""}
               onChange={(e) => handleDescriptionField("introduction", e.target.value)}
               disabled={!canEditDescription}
               rows={3}
-              className="mt-1 w-full border border-gray-300 rounded px-3 py-2 text-sm"
+              className="mt-1 w-full border border-[rgba(0,0,0,0.08)] rounded px-3 py-2 text-sm"
             />
           </label>
 
           <div>
             <div className="flex items-center justify-between">
-              <p className="font-semibold text-gray-800 text-sm">Prerequisite Course (if any)</p>
+              <p className="font-semibold text-[#1E293B] text-sm">Prerequisite Course (if any)</p>
               {canEditDescription && (
                 <button
                   type="button"
                   onClick={addPrerequisite}
-                  className="text-xs text-blue-600 hover:text-blue-700"
+                  className="text-xs text-[#F97316] hover:text-[#F97316]"
                 >
                   + Add
                 </button>
@@ -1722,13 +1722,13 @@ const CourseManagementDetails = () => {
                     value={item}
                     onChange={(e) => handlePrerequisiteChange(index, e.target.value)}
                     disabled={!canEditDescription}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    className="w-full border border-[rgba(0,0,0,0.08)] rounded px-3 py-2 text-sm"
                   />
                   {canEditDescription && (
                     <button
                       type="button"
                       onClick={() => removePrerequisite(index)}
-                      className="text-xs text-red-600"
+                      className="text-xs text-[#EF4444]"
                     >
                       Remove
                     </button>
@@ -1736,16 +1736,16 @@ const CourseManagementDetails = () => {
                 </div>
               ))}
               {(!description.prerequisites || description.prerequisites.length === 0) && (
-                <p className="text-xs text-gray-400">No prerequisites listed.</p>
+                <p className="text-xs text-[#94A3B8]">No prerequisites listed.</p>
               )}
             </div>
           </div>
 
           <div>
-            <p className="font-semibold text-gray-800 text-sm mb-2">Course Outcome</p>
-            <div className="overflow-x-auto border border-gray-200 rounded">
+            <p className="font-semibold text-[#1E293B] text-sm mb-2">Course Outcome</p>
+            <div className="overflow-x-auto border border-[rgba(0,0,0,0.08)] rounded">
               <table className="min-w-full text-sm">
-                <thead className="bg-blue-700 text-white">
+                <thead className="bg-[#EA580C] text-white">
                   <tr>
                     <th className="px-2 py-2 text-left">CO</th>
                     <th className="px-2 py-2 text-left">Course Outcome (Bloom)</th>
@@ -1762,8 +1762,8 @@ const CourseManagementDetails = () => {
 	                      : [];
 	                    return (
 	                      <React.Fragment key={`co-row-${index}`}>
-                        <tr className="border-t border-gray-100">
-                          <td className="px-2 py-2 text-gray-700">
+                        <tr className="border-t border-[rgba(0,0,0,0.08)]">
+                          <td className="px-2 py-2 text-[#94A3B8]">
                             {row.code || `CO${index + 1}`}
                           </td>
 	                          <td className="px-2 py-2">
@@ -1773,7 +1773,7 @@ const CourseManagementDetails = () => {
 	                                handleOutcomeChange(index, "outcome", e.target.value)
 	                              }
 	                              disabled={!canEditDescription}
-	                              className="w-full min-w-[420px] border border-gray-300 rounded px-2 py-1 text-sm"
+	                              className="w-full min-w-[420px] border border-[rgba(0,0,0,0.08)] rounded px-2 py-1 text-sm"
 	                            />
 	                          </td>
 	                          <td className="px-2 py-2">
@@ -1793,7 +1793,7 @@ const CourseManagementDetails = () => {
                                 )
                               }
                               disabled={!canEditDescription}
-                              className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+                              className="w-full border border-[rgba(0,0,0,0.08)] rounded px-2 py-1 text-sm"
                             >
                               <option value="">Select NCrF</option>
 	                              {NCRF_LEVEL_OPTIONS.map((level) => (
@@ -1810,7 +1810,7 @@ const CourseManagementDetails = () => {
 	                                handleOutcomeChange(index, "weightage", e.target.value)
 	                              }
 	                              disabled={!canEditDescription}
-	                              className="w-28 border border-gray-300 rounded px-2 py-1 text-sm"
+	                              className="w-28 border border-[rgba(0,0,0,0.08)] rounded px-2 py-1 text-sm"
 	                            >
 	                              <option value="">Select</option>
 	                              {COURSE_OUTCOME_WEIGHTAGE_OPTIONS.map((value) => (
@@ -1822,8 +1822,8 @@ const CourseManagementDetails = () => {
 	                          </td>
 	                        </tr>
                         {rowErrors.length > 0 && (
-                          <tr className="border-t border-red-100 bg-red-50/50">
-                            <td colSpan={4} className="px-2 py-2 text-xs text-red-600">
+                          <tr className="border-t border-red-100 bg-[rgba(220,38,38,0.08)]/50">
+                            <td colSpan={4} className="px-2 py-2 text-xs text-[#EF4444]">
                               {rowErrors.map((rowError, rowErrorIndex) => (
                                 <p key={`co-row-${index}-error-${rowErrorIndex}`}>{rowError}</p>
                               ))}
@@ -1837,23 +1837,23 @@ const CourseManagementDetails = () => {
               </table>
             </div>
             {descriptionFieldError === "courseOutcomes" && error && (
-              <p className="mt-2 text-xs text-red-600">{error}</p>
+              <p className="mt-2 text-xs text-[#EF4444]">{error}</p>
             )}
-            <div className="mt-3 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-3">
-              <p className="text-sm font-semibold text-indigo-900">Course NCrF Summary</p>
-              <p className="mt-1 text-xs text-indigo-800">
+            <div className="mt-3 rounded-lg border border-[rgba(249,115,22,0.2)] bg-[rgba(249,115,22,0.1)] px-3 py-3">
+              <p className="text-sm font-semibold text-[#FB923C]">Course NCrF Summary</p>
+              <p className="mt-1 text-xs text-[#FB923C]">
                 Formula: (Σ NCrF × Weightage) / Σ Weightage
               </p>
               <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-	                <div className="rounded border border-indigo-200 bg-white px-2 py-2">
-	                  <p className="text-indigo-700">Calculated Avg NCrF</p>
-	                  <p className="text-base font-semibold text-indigo-900">
+	                <div className="rounded border border-[rgba(249,115,22,0.2)] bg-white px-2 py-2">
+	                  <p className="text-[#F97316]">Calculated Avg NCrF</p>
+	                  <p className="text-base font-semibold text-[#FB923C]">
 	                    {Number(ncrfSummary.averageValue || 0).toFixed(4)}
 	                  </p>
 	                </div>
-	                <div className="rounded border border-indigo-200 bg-white px-2 py-2">
-	                  <p className="text-indigo-700">Round off</p>
-	                  <p className="text-base font-semibold text-indigo-900">
+	                <div className="rounded border border-[rgba(249,115,22,0.2)] bg-white px-2 py-2">
+	                  <p className="text-[#F97316]">Round off</p>
+	                  <p className="text-base font-semibold text-[#FB923C]">
 	                    {ncrfSummary.averageDisplay}
 	                  </p>
 	                </div>
@@ -1863,12 +1863,12 @@ const CourseManagementDetails = () => {
 
           <div ref={moduleOutcomesSectionRef}>
             <div className="flex items-center justify-between mb-2">
-              <p className="font-semibold text-gray-800 text-sm">Module Outcomes</p>
-              <p className="text-xs text-gray-500">MO1..MO6 with CO mapping</p>
+              <p className="font-semibold text-[#1E293B] text-sm">Module Outcomes</p>
+              <p className="text-xs text-[#94A3B8]">MO1..MO6 with CO mapping</p>
             </div>
-            <div className="overflow-x-auto border border-gray-200 rounded">
+            <div className="overflow-x-auto border border-[rgba(0,0,0,0.08)] rounded">
               <table className="min-w-full text-sm">
-                <thead className="bg-gray-50 text-gray-700">
+                <thead className="bg-white text-[#94A3B8]">
                   <tr>
                     <th className="px-2 py-2 text-left">MO Code</th>
                     <th className="px-2 py-2 text-left">Module Outcome Text</th>
@@ -1879,15 +1879,15 @@ const CourseManagementDetails = () => {
                   {defaultMoCodes.map((code) => {
                     const row = getModuleOutcomeRow(code);
                     return (
-                      <tr key={`mo-row-${code}`} className="border-t border-gray-100">
-                        <td className="px-2 py-2 text-gray-700">{code}</td>
+                      <tr key={`mo-row-${code}`} className="border-t border-[rgba(0,0,0,0.08)]">
+                        <td className="px-2 py-2 text-[#94A3B8]">{code}</td>
                         <td className="px-2 py-2">
                           <textarea
                             value={row.text}
                             onChange={(e) => handleModuleOutcomeTextChange(code, e.target.value)}
                             disabled={!canEditDescription}
                             rows={2}
-                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+                            className="w-full border border-[rgba(0,0,0,0.08)] rounded px-2 py-1 text-sm"
                           />
                         </td>
                         <td className="px-2 py-2">
@@ -1895,7 +1895,7 @@ const CourseManagementDetails = () => {
                             {coMappingOptions.map((coCode) => (
                               <label
                                 key={`${code}-${coCode}`}
-                                className="inline-flex items-center gap-1 text-xs text-gray-700"
+                                className="inline-flex items-center gap-1 text-xs text-[#94A3B8]"
                               >
                                 <input
                                   type="checkbox"
@@ -1922,29 +1922,29 @@ const CourseManagementDetails = () => {
               </table>
             </div>
             {descriptionFieldError === "moduleOutcomes" && error && (
-              <p className="mt-2 text-xs text-red-600">{error}</p>
+              <p className="mt-2 text-xs text-[#EF4444]">{error}</p>
             )}
           </div>
 
 	          <div ref={syllabusSectionRef}>
 	            <div className="flex items-center justify-between mb-2">
-	              <p className="font-semibold text-gray-800 text-sm">Syllabus</p>
+	              <p className="font-semibold text-[#1E293B] text-sm">Syllabus</p>
 	              {canEditDescription && (
                 <button
                   type="button"
                   onClick={addSyllabusRow}
-                  className="text-xs text-blue-600 hover:text-blue-700"
+                  className="text-xs text-[#F97316] hover:text-[#F97316]"
                 >
                   + Add Row
                 </button>
 	              )}
 	            </div>
-	            <p className="text-xs text-gray-500 mb-2">
+	            <p className="text-xs text-[#94A3B8] mb-2">
 	              Module title, details, and time weightage (0.05 to 1.00).
 	            </p>
-	            <div className="overflow-x-auto border border-gray-200 rounded">
+	            <div className="overflow-x-auto border border-[rgba(0,0,0,0.08)] rounded">
 	              <table className="min-w-full text-sm">
-	                <thead className="bg-gray-50 text-gray-700">
+	                <thead className="bg-white text-[#94A3B8]">
 	                  <tr>
 	                    <th className="px-2 py-2 text-left">Module No</th>
 	                    <th className="px-2 py-2 text-left">Module Title</th>
@@ -1958,7 +1958,7 @@ const CourseManagementDetails = () => {
 	                    <tr>
 	                      <td
 	                        colSpan={canEditDescription ? 5 : 4}
-	                        className="px-2 py-3 text-center text-xs text-gray-500"
+	                        className="px-2 py-3 text-center text-xs text-[#94A3B8]"
 	                      >
 	                        No syllabus rows added.
 	                      </td>
@@ -1971,7 +1971,7 @@ const CourseManagementDetails = () => {
 	                      return (
 	                        <tr
 	                          key={`syllabus-row-${index}`}
-	                          className="border-t border-gray-100"
+	                          className="border-t border-[rgba(0,0,0,0.08)]"
 	                        >
 	                        <td className="px-2 py-2">
 	                          <input
@@ -1982,7 +1982,7 @@ const CourseManagementDetails = () => {
                               handleSyllabusChange(index, "moduleNo", e.target.value)
                             }
                             disabled={!canEditDescription}
-	                            className="w-24 border border-gray-300 rounded px-2 py-1 text-sm"
+	                            className="w-24 border border-[rgba(0,0,0,0.08)] rounded px-2 py-1 text-sm"
 	                          />
 	                        </td>
 	                        <td className="px-2 py-2">
@@ -1992,7 +1992,7 @@ const CourseManagementDetails = () => {
 	                              handleSyllabusChange(index, "moduleTitle", e.target.value)
 	                            }
 	                            disabled={!canEditDescription}
-	                            className="w-full min-w-[220px] border border-gray-300 rounded px-2 py-1 text-sm"
+	                            className="w-full min-w-[220px] border border-[rgba(0,0,0,0.08)] rounded px-2 py-1 text-sm"
 	                          />
 	                        </td>
 	                        <td className="px-2 py-2">
@@ -2003,7 +2003,7 @@ const CourseManagementDetails = () => {
                             }
                             disabled={!canEditDescription}
                             rows={2}
-	                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+	                            className="w-full border border-[rgba(0,0,0,0.08)] rounded px-2 py-1 text-sm"
 	                          />
 	                        </td>
 	                        <td className="px-2 py-2">
@@ -2013,7 +2013,7 @@ const CourseManagementDetails = () => {
 	                              handleSyllabusChange(index, "timeWeightage", e.target.value)
 	                            }
 	                            disabled={!canEditDescription}
-	                            className="w-28 border border-gray-300 rounded px-2 py-1 text-sm"
+	                            className="w-28 border border-[rgba(0,0,0,0.08)] rounded px-2 py-1 text-sm"
 	                          >
 	                            <option value="">Select</option>
 	                            {COURSE_OUTCOME_WEIGHTAGE_OPTIONS.map((value) => (
@@ -2028,7 +2028,7 @@ const CourseManagementDetails = () => {
 	                            <button
                               type="button"
                               onClick={() => removeSyllabusRow(index)}
-                              className="text-xs text-red-600"
+                              className="text-xs text-[#EF4444]"
                             >
                               Remove
                             </button>
@@ -2042,29 +2042,29 @@ const CourseManagementDetails = () => {
 	              </table>
 	            </div>
             {descriptionFieldError === "syllabus" && error && (
-              <p className="mt-2 text-xs text-red-600">{error}</p>
+              <p className="mt-2 text-xs text-[#EF4444]">{error}</p>
             )}
           </div>
 
           <div ref={referenceBooksSectionRef}>
             <div className="flex items-center justify-between mb-2">
-              <p className="font-semibold text-gray-800 text-sm">Reference Books</p>
+              <p className="font-semibold text-[#1E293B] text-sm">Reference Books</p>
               {canEditDescription && (
                 <button
                   type="button"
                   onClick={addReferenceBookRow}
-                  className="text-xs text-blue-600 hover:text-blue-700"
+                  className="text-xs text-[#F97316] hover:text-[#F97316]"
                 >
                   + Add Row
                 </button>
               )}
             </div>
-            <div className="overflow-x-auto border border-gray-200 rounded">
+            <div className="overflow-x-auto border border-[rgba(0,0,0,0.08)] rounded">
               <table className="min-w-full text-sm">
-                <thead className="bg-gray-50 text-gray-700">
+                <thead className="bg-white text-[#94A3B8]">
                   <tr>
                     <th className="px-2 py-2 text-left">
-                      Title <span className="text-red-600 text-xs">(required)</span>
+                      Title <span className="text-[#EF4444] text-xs">(required)</span>
                     </th>
                     <th className="px-2 py-2 text-left">Author</th>
                     <th className="px-2 py-2 text-left">Publisher</th>
@@ -2077,14 +2077,14 @@ const CourseManagementDetails = () => {
                     <tr>
                       <td
                         colSpan={canEditDescription ? 5 : 4}
-                        className="px-2 py-3 text-center text-xs text-gray-500"
+                        className="px-2 py-3 text-center text-xs text-[#94A3B8]"
                       >
                         No reference books added.
                       </td>
                     </tr>
                   ) : (
                     (description.referenceBooks || []).map((row, index) => (
-                      <tr key={`book-row-${index}`} className="border-t border-gray-100">
+                      <tr key={`book-row-${index}`} className="border-t border-[rgba(0,0,0,0.08)]">
                         <td className="px-2 py-2">
                           <input
                             value={row?.title || ""}
@@ -2092,7 +2092,7 @@ const CourseManagementDetails = () => {
                               handleReferenceBookChange(index, "title", e.target.value)
                             }
                             disabled={!canEditDescription}
-                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+                            className="w-full border border-[rgba(0,0,0,0.08)] rounded px-2 py-1 text-sm"
                           />
                         </td>
                         <td className="px-2 py-2">
@@ -2102,7 +2102,7 @@ const CourseManagementDetails = () => {
                               handleReferenceBookChange(index, "author", e.target.value)
                             }
                             disabled={!canEditDescription}
-                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+                            className="w-full border border-[rgba(0,0,0,0.08)] rounded px-2 py-1 text-sm"
                           />
                         </td>
                         <td className="px-2 py-2">
@@ -2112,7 +2112,7 @@ const CourseManagementDetails = () => {
                               handleReferenceBookChange(index, "publisher", e.target.value)
                             }
                             disabled={!canEditDescription}
-                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+                            className="w-full border border-[rgba(0,0,0,0.08)] rounded px-2 py-1 text-sm"
                           />
                         </td>
                         <td className="px-2 py-2">
@@ -2122,7 +2122,7 @@ const CourseManagementDetails = () => {
                               handleReferenceBookChange(index, "yearEdition", e.target.value)
                             }
                             disabled={!canEditDescription}
-                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+                            className="w-full border border-[rgba(0,0,0,0.08)] rounded px-2 py-1 text-sm"
                           />
                         </td>
                         {canEditDescription && (
@@ -2130,7 +2130,7 @@ const CourseManagementDetails = () => {
                             <button
                               type="button"
                               onClick={() => removeReferenceBookRow(index)}
-                              className="text-xs text-red-600"
+                              className="text-xs text-[#EF4444]"
                             >
                               Remove
                             </button>
@@ -2143,18 +2143,18 @@ const CourseManagementDetails = () => {
               </table>
             </div>
             {descriptionFieldError === "referenceBooks" && error && (
-              <p className="mt-2 text-xs text-red-600">{error}</p>
+              <p className="mt-2 text-xs text-[#EF4444]">{error}</p>
             )}
           </div>
 
           <div ref={journalsSectionRef}>
             <div className="flex items-center justify-between mb-2">
-              <p className="font-semibold text-gray-800 text-sm">Journals</p>
+              <p className="font-semibold text-[#1E293B] text-sm">Journals</p>
               {canEditDescription && (
                 <button
                   type="button"
                   onClick={addJournalRow}
-                  className="text-xs text-blue-600 hover:text-blue-700"
+                  className="text-xs text-[#F97316] hover:text-[#F97316]"
                 >
                   + Add Row
                 </button>
@@ -2162,7 +2162,7 @@ const CourseManagementDetails = () => {
             </div>
             <div className="space-y-2">
               {(description.journals || []).length === 0 && (
-                <p className="text-xs text-gray-500">No journals added.</p>
+                <p className="text-xs text-[#94A3B8]">No journals added.</p>
               )}
               {(description.journals || []).map((row, index) => (
                 <div key={`journal-row-${index}`} className="flex items-center gap-2">
@@ -2170,13 +2170,13 @@ const CourseManagementDetails = () => {
                     value={row?.name || ""}
                     onChange={(e) => handleJournalChange(index, e.target.value)}
                     disabled={!canEditDescription}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    className="w-full border border-[rgba(0,0,0,0.08)] rounded px-3 py-2 text-sm"
                   />
                   {canEditDescription && (
                     <button
                       type="button"
                       onClick={() => removeJournalRow(index)}
-                      className="text-xs text-red-600"
+                      className="text-xs text-[#EF4444]"
                     >
                       Remove
                     </button>
@@ -2185,27 +2185,27 @@ const CourseManagementDetails = () => {
               ))}
             </div>
             {descriptionFieldError === "journals" && error && (
-              <p className="mt-2 text-xs text-red-600">{error}</p>
+              <p className="mt-2 text-xs text-[#EF4444]">{error}</p>
             )}
           </div>
 
           <div ref={onlineResourcesSectionRef}>
             <div className="flex items-center justify-between mb-2">
-              <p className="font-semibold text-gray-800 text-sm">Online Resources</p>
+              <p className="font-semibold text-[#1E293B] text-sm">Online Resources</p>
               {canEditDescription && (
                 <button
                   type="button"
                   onClick={() => addUrlListRow("onlineResources")}
-                  className="text-xs text-blue-600 hover:text-blue-700"
+                  className="text-xs text-[#F97316] hover:text-[#F97316]"
                 >
                   + Add Row
                 </button>
               )}
             </div>
-            <p className="text-xs text-gray-500 mb-2">Must start with http(s).</p>
+            <p className="text-xs text-[#94A3B8] mb-2">Must start with http(s).</p>
             <div className="space-y-2">
               {(description.onlineResources || []).length === 0 && (
-                <p className="text-xs text-gray-500">No online resources added.</p>
+                <p className="text-xs text-[#94A3B8]">No online resources added.</p>
               )}
               {(description.onlineResources || []).map((row, index) => (
                 <div key={`online-row-${index}`} className="flex items-center gap-2">
@@ -2215,13 +2215,13 @@ const CourseManagementDetails = () => {
                       handleUrlListChange("onlineResources", index, e.target.value)
                     }
                     disabled={!canEditDescription}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    className="w-full border border-[rgba(0,0,0,0.08)] rounded px-3 py-2 text-sm"
                   />
                   {canEditDescription && (
                     <button
                       type="button"
                       onClick={() => removeUrlListRow("onlineResources", index)}
-                      className="text-xs text-red-600"
+                      className="text-xs text-[#EF4444]"
                     >
                       Remove
                     </button>
@@ -2230,27 +2230,27 @@ const CourseManagementDetails = () => {
               ))}
             </div>
             {descriptionFieldError === "onlineResources" && error && (
-              <p className="mt-2 text-xs text-red-600">{error}</p>
+              <p className="mt-2 text-xs text-[#EF4444]">{error}</p>
             )}
           </div>
 
           <div ref={moocsSectionRef}>
             <div className="flex items-center justify-between mb-2">
-              <p className="font-semibold text-gray-800 text-sm">MOOCs</p>
+              <p className="font-semibold text-[#1E293B] text-sm">MOOCs</p>
               {canEditDescription && (
                 <button
                   type="button"
                   onClick={() => addUrlListRow("moocs")}
-                  className="text-xs text-blue-600 hover:text-blue-700"
+                  className="text-xs text-[#F97316] hover:text-[#F97316]"
                 >
                   + Add Row
                 </button>
               )}
             </div>
-            <p className="text-xs text-gray-500 mb-2">Must start with http(s).</p>
+            <p className="text-xs text-[#94A3B8] mb-2">Must start with http(s).</p>
             <div className="space-y-2">
               {(description.moocs || []).length === 0 && (
-                <p className="text-xs text-gray-500">No MOOCs added.</p>
+                <p className="text-xs text-[#94A3B8]">No MOOCs added.</p>
               )}
               {(description.moocs || []).map((row, index) => (
                 <div key={`mooc-row-${index}`} className="flex items-center gap-2">
@@ -2258,13 +2258,13 @@ const CourseManagementDetails = () => {
                     value={row?.url || ""}
                     onChange={(e) => handleUrlListChange("moocs", index, e.target.value)}
                     disabled={!canEditDescription}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    className="w-full border border-[rgba(0,0,0,0.08)] rounded px-3 py-2 text-sm"
                   />
                   {canEditDescription && (
                     <button
                       type="button"
                       onClick={() => removeUrlListRow("moocs", index)}
-                      className="text-xs text-red-600"
+                      className="text-xs text-[#EF4444]"
                     >
                       Remove
                     </button>
@@ -2273,7 +2273,7 @@ const CourseManagementDetails = () => {
               ))}
             </div>
             {descriptionFieldError === "moocs" && error && (
-              <p className="mt-2 text-xs text-red-600">{error}</p>
+              <p className="mt-2 text-xs text-[#EF4444]">{error}</p>
             )}
           </div>
 
@@ -2283,7 +2283,7 @@ const CourseManagementDetails = () => {
                 type="button"
                 onClick={handleSaveDescription}
                 disabled={saving}
-                className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+                className="px-4 py-2 bg-[#F97316] text-white rounded text-sm hover:bg-[#EA580C] disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save Description"}
               </button>
@@ -2293,32 +2293,32 @@ const CourseManagementDetails = () => {
       )}
 
       {activeTab === "material" && (
-        <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
+        <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-4 space-y-4">
           {!canViewMaterials ? (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-[#94A3B8]">
               You do not have access to Course Materials for this course.
             </p>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-              <aside className="lg:col-span-3 border border-gray-200 rounded-lg p-3 bg-gray-50">
+              <aside className="lg:col-span-3 border border-[rgba(0,0,0,0.08)] rounded-lg p-3 bg-white">
                 <div className="mb-2 flex items-center justify-between gap-2">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">Modules</p>
+                  <p className="text-xs uppercase tracking-wide text-[#94A3B8]">Modules</p>
                   {canManageMaterials && (
                     <button
                       type="button"
                       onClick={handleAddModule}
                       disabled={moduleSaving}
-                      className="rounded border border-blue-300 px-2 py-1 text-xs text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                      className="rounded border border-[rgba(249,115,22,0.3)] px-2 py-1 text-xs text-[#F97316] hover:bg-[rgba(249,115,22,0.1)] disabled:opacity-50"
                     >
                       {moduleSaving ? "Saving..." : "+ Add Module"}
                     </button>
                   )}
                 </div>
                 {materialsLoading ? (
-                  <p className="text-sm text-gray-500">Loading modules...</p>
+                  <p className="text-sm text-[#94A3B8]">Loading modules...</p>
                 ) : materialModules.length === 0 ? (
                   <div className="space-y-2">
-                    <p className="text-sm text-gray-500">No module materials yet.</p>
+                    <p className="text-sm text-[#94A3B8]">No module materials yet.</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -2336,8 +2336,8 @@ const CourseManagementDetails = () => {
                           key={`material-module-${module._id || module.moduleNo}`}
                           className={`w-full rounded border px-3 py-2 transition-colors ${
                             isSelected
-                              ? "bg-blue-600 border-blue-700 text-white"
-                              : "bg-white border-gray-200 text-gray-700 hover:border-blue-300"
+                              ? "bg-[#F97316] border-[#EA580C] text-white"
+                              : "bg-white border-[rgba(0,0,0,0.08)] text-[#94A3B8] hover:border-[rgba(249,115,22,0.3)]"
                           }`}
                         >
                           <button
@@ -2350,7 +2350,7 @@ const CourseManagementDetails = () => {
                             </p>
                             <p
                               className={`text-xs ${
-                                isSelected ? "text-blue-100" : "text-gray-500"
+                                isSelected ? "text-[#FDBA74]" : "text-[#94A3B8]"
                               }`}
                             >
                               {totalCount} item{totalCount === 1 ? "" : "s"}
@@ -2363,8 +2363,8 @@ const CourseManagementDetails = () => {
                                 onClick={() => handleRenameModule(module)}
                                 className={`rounded border px-2 py-0.5 text-[11px] ${
                                   isSelected
-                                    ? "border-blue-200 text-blue-100 hover:bg-blue-500"
-                                    : "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                                    ? "border-[rgba(249,115,22,0.2)] text-[#FDBA74] hover:bg-[#F97316]"
+                                    : "border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.1)] text-[#F59E0B] hover:bg-[rgba(217,119,6,0.1)]"
                                 }`}
                               >
                                 Rename
@@ -2374,8 +2374,8 @@ const CourseManagementDetails = () => {
                                 onClick={() => handleDeleteModule(module)}
                                 className={`rounded border px-2 py-0.5 text-[11px] ${
                                   isSelected
-                                    ? "border-blue-200 text-blue-100 hover:bg-blue-500"
-                                    : "border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
+                                    ? "border-[rgba(249,115,22,0.2)] text-[#FDBA74] hover:bg-[#F97316]"
+                                    : "border-[rgba(239,68,68,0.3)] bg-[rgba(220,38,38,0.08)] text-[#EF4444] hover:bg-[rgba(239,68,68,0.15)]"
                                 }`}
                               >
                                 Delete
@@ -2392,10 +2392,10 @@ const CourseManagementDetails = () => {
               <section className="lg:col-span-9 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-gray-500">
+                    <p className="text-xs uppercase tracking-wide text-[#94A3B8]">
                       Course Material
                     </p>
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-lg font-semibold text-[#1E293B]">
                       {selectedMaterialModule
                         ? selectedMaterialModule.title ||
                           selectedMaterialModule.moduleTitle ||
@@ -2404,7 +2404,7 @@ const CourseManagementDetails = () => {
                     </h3>
                   </div>
                   {!canManageMaterials && (
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-[#94A3B8]">
                       View-only access. Admin can add/edit/delete materials.
                     </p>
                   )}
@@ -2428,16 +2428,16 @@ const CourseManagementDetails = () => {
                   return (
                     <div
                       key={`material-category-${category.type}`}
-                      className="rounded-lg border border-gray-200 p-3 space-y-3"
+                      className="rounded-lg border border-[rgba(0,0,0,0.08)] p-3 space-y-3"
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-semibold text-gray-900">
+                          <p className="text-sm font-semibold text-[#1E293B]">
                             {category.label}
                           </p>
-                          <p className="text-xs text-gray-500">{category.helper}</p>
+                          <p className="text-xs text-[#94A3B8]">{category.helper}</p>
                         </div>
-                        <span className="rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                        <span className="rounded-full bg-[rgba(249,115,22,0.1)] border border-[rgba(249,115,22,0.2)] px-2 py-0.5 text-xs font-semibold text-[#F97316]">
                           {categoryCount}
                         </span>
                       </div>
@@ -2455,8 +2455,8 @@ const CourseManagementDetails = () => {
                                 }}
                                 className={`rounded px-3 py-1 text-xs font-medium ${
                                   videoInputMode === "file"
-                                    ? "bg-blue-600 text-white"
-                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                    ? "bg-[#F97316] text-white"
+                                    : "bg-white text-[#94A3B8] hover:bg-[#F8FAFC]"
                                 }`}
                               >
                                 Upload File
@@ -2469,8 +2469,8 @@ const CourseManagementDetails = () => {
                                 }}
                                 className={`rounded px-3 py-1 text-xs font-medium ${
                                   videoInputMode === "url"
-                                    ? "bg-blue-600 text-white"
-                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                    ? "bg-[#F97316] text-white"
+                                    : "bg-white text-[#94A3B8] hover:bg-[#F8FAFC]"
                                 }`}
                               >
                                 Add URL
@@ -2484,7 +2484,7 @@ const CourseManagementDetails = () => {
                                 setMaterialDraftField(category.type, "title", e.target.value)
                               }
                               placeholder={`${category.label.slice(0, -1)} title`}
-                              className="md:col-span-4 border border-gray-300 rounded px-2 py-2 text-sm"
+                              className="md:col-span-4 border border-[rgba(0,0,0,0.08)] rounded px-2 py-2 text-sm"
                             />
                             {category.isFile || (category.supportsBoth && videoInputMode === "file") ? (
                               <input
@@ -2497,7 +2497,7 @@ const CourseManagementDetails = () => {
                                     e.target.files?.[0] || null
                                   )
                                 }
-                                className="md:col-span-6 border border-gray-300 rounded px-2 py-2 text-sm"
+                                className="md:col-span-6 border border-[rgba(0,0,0,0.08)] rounded px-2 py-2 text-sm"
                               />
                             ) : (
                               <input
@@ -2510,14 +2510,14 @@ const CourseManagementDetails = () => {
                                     ? "https://youtube.com/..."
                                     : "https://example.com/resource"
                                 }
-                                className="md:col-span-6 border border-gray-300 rounded px-2 py-2 text-sm"
+                                className="md:col-span-6 border border-[rgba(0,0,0,0.08)] rounded px-2 py-2 text-sm"
                               />
                             )}
                             <button
                               type="button"
                               onClick={() => handleAddMaterialItem(category.type)}
                               disabled={materialSaving}
-                              className="md:col-span-2 rounded bg-blue-600 text-white text-sm px-3 py-2 hover:bg-blue-700 disabled:opacity-50"
+                              className="md:col-span-2 rounded bg-[#F97316] text-white text-sm px-3 py-2 hover:bg-[#EA580C] disabled:opacity-50"
                             >
                               {materialSaving ? "Saving..." : "Add"}
                             </button>
@@ -2526,7 +2526,7 @@ const CourseManagementDetails = () => {
                       )}
 
                       {categoryItems.length === 0 ? (
-                        <p className="text-sm text-gray-500">No {category.label.toLowerCase()} added.</p>
+                        <p className="text-sm text-[#94A3B8]">No {category.label.toLowerCase()} added.</p>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {categoryItems.map((item) => {
@@ -2535,14 +2535,14 @@ const CourseManagementDetails = () => {
                             return (
                               <div
                                 key={`material-item-${item._id}`}
-                                className="rounded border border-gray-200 bg-gray-50 p-3 space-y-2"
+                                className="rounded border border-[rgba(0,0,0,0.08)] bg-white p-3 space-y-2"
                               >
                                 {!isEditing ? (
                                   <>
-                                    <p className="text-sm font-semibold text-gray-900">
+                                    <p className="text-sm font-semibold text-[#1E293B]">
                                       {item.title || "-"}
                                     </p>
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-[#94A3B8]">
                                       {category.isFile || (category.supportsBoth && item.sizeBytes > 0)
                                         ? `${formatBytes(item.sizeBytes)} | ${formatMaterialDate(
                                             item.uploadedAt || item.createdAt
@@ -2555,7 +2555,7 @@ const CourseManagementDetails = () => {
                                           href={viewUrl}
                                           target="_blank"
                                           rel="noreferrer"
-                                          className="inline-flex items-center gap-1 rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-100"
+                                          className="inline-flex items-center gap-1 rounded border border-[rgba(0,0,0,0.08)] bg-white px-2 py-1 text-xs text-[#94A3B8] hover:bg-white"
                                         >
                                           <svg
                                             xmlns="http://www.w3.org/2000/svg"
@@ -2575,7 +2575,7 @@ const CourseManagementDetails = () => {
                                         <button
                                           type="button"
                                           onClick={() => startEditingMaterial(item)}
-                                          className="rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-700 hover:bg-amber-100"
+                                          className="rounded border border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.1)] px-2 py-1 text-xs text-[#F59E0B] hover:bg-[rgba(217,119,6,0.1)]"
                                         >
                                           Edit
                                         </button>
@@ -2584,7 +2584,7 @@ const CourseManagementDetails = () => {
                                         <button
                                           type="button"
                                           onClick={() => handleDeleteMaterial(item)}
-                                          className="rounded border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-700 hover:bg-red-100"
+                                          className="rounded border border-[rgba(239,68,68,0.3)] bg-[rgba(220,38,38,0.08)] px-2 py-1 text-xs text-[#EF4444] hover:bg-[rgba(239,68,68,0.15)]"
                                         >
                                           Delete
                                         </button>
@@ -2601,7 +2601,7 @@ const CourseManagementDetails = () => {
                                           title: e.target.value,
                                         }))
                                       }
-                                      className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+                                      className="w-full border border-[rgba(0,0,0,0.08)] rounded px-2 py-1.5 text-sm"
                                     />
                                     {(item.type === "video" || item.type === "link") && (
                                       <input
@@ -2612,7 +2612,7 @@ const CourseManagementDetails = () => {
                                             url: e.target.value,
                                           }))
                                         }
-                                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+                                        className="w-full border border-[rgba(0,0,0,0.08)] rounded px-2 py-1.5 text-sm"
                                       />
                                     )}
                                     {(item.type === "pdf" || item.type === "presentation") && (
@@ -2629,7 +2629,7 @@ const CourseManagementDetails = () => {
                                             file: e.target.files?.[0] || null,
                                           }))
                                         }
-                                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+                                        className="w-full border border-[rgba(0,0,0,0.08)] rounded px-2 py-1.5 text-sm"
                                       />
                                     )}
                                     <div className="flex items-center gap-2">
@@ -2637,14 +2637,14 @@ const CourseManagementDetails = () => {
                                         type="button"
                                         onClick={() => handleUpdateMaterial(item)}
                                         disabled={materialSaving}
-                                        className="rounded bg-blue-600 px-2.5 py-1 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
+                                        className="rounded bg-[#F97316] px-2.5 py-1 text-xs text-white hover:bg-[#EA580C] disabled:opacity-50"
                                       >
                                         {materialSaving ? "Saving..." : "Save"}
                                       </button>
                                       <button
                                         type="button"
                                         onClick={cancelEditingMaterial}
-                                        className="rounded border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-100"
+                                        className="rounded border border-[rgba(0,0,0,0.08)] bg-white px-2.5 py-1 text-xs text-[#94A3B8] hover:bg-white"
                                       >
                                         Cancel
                                       </button>
@@ -2667,14 +2667,14 @@ const CourseManagementDetails = () => {
       )}
 
       {activeTab === "students" && (
-        <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
+        <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-4 space-y-4">
           {canViewStudents ? (
             <>
               <div className="grid grid-cols-2 md:grid-cols-7 gap-2">
                 <select
                   value={filters.program}
                   onChange={(e) => setFilters((prev) => ({ ...prev, program: e.target.value }))}
-                  className="border border-gray-300 rounded px-2 py-2 text-xs"
+                  className="border border-[rgba(0,0,0,0.08)] rounded px-2 py-2 text-xs"
                 >
                   <option value="">Program</option>
                   {optionSets.programs.map((item) => (
@@ -2686,7 +2686,7 @@ const CourseManagementDetails = () => {
                 <select
                   value={filters.stream}
                   onChange={(e) => setFilters((prev) => ({ ...prev, stream: e.target.value }))}
-                  className="border border-gray-300 rounded px-2 py-2 text-xs"
+                  className="border border-[rgba(0,0,0,0.08)] rounded px-2 py-2 text-xs"
                 >
                   <option value="">Stream</option>
                   {optionSets.streams.map((value) => (
@@ -2698,7 +2698,7 @@ const CourseManagementDetails = () => {
                 <select
                   value={filters.batch}
                   onChange={(e) => setFilters((prev) => ({ ...prev, batch: e.target.value }))}
-                  className="border border-gray-300 rounded px-2 py-2 text-xs"
+                  className="border border-[rgba(0,0,0,0.08)] rounded px-2 py-2 text-xs"
                 >
                   <option value="">Batch</option>
                   {optionSets.batches.map((item) => (
@@ -2710,7 +2710,7 @@ const CourseManagementDetails = () => {
                 <select
                   value={filters.semester}
                   onChange={(e) => setFilters((prev) => ({ ...prev, semester: e.target.value }))}
-                  className="border border-gray-300 rounded px-2 py-2 text-xs"
+                  className="border border-[rgba(0,0,0,0.08)] rounded px-2 py-2 text-xs"
                 >
                   <option value="">{studentPeriodLabel}</option>
                   {optionSets.semesters.map((item) => (
@@ -2722,7 +2722,7 @@ const CourseManagementDetails = () => {
                 <select
                   value={filters.stage}
                   onChange={(e) => setFilters((prev) => ({ ...prev, stage: e.target.value }))}
-                  className="border border-gray-300 rounded px-2 py-2 text-xs"
+                  className="border border-[rgba(0,0,0,0.08)] rounded px-2 py-2 text-xs"
                 >
                   <option value="">Stage</option>
                   {optionSets.stages.map((value) => (
@@ -2734,7 +2734,7 @@ const CourseManagementDetails = () => {
                 <select
                   value={filters.status}
                   onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
-                  className="border border-gray-300 rounded px-2 py-2 text-xs"
+                  className="border border-[rgba(0,0,0,0.08)] rounded px-2 py-2 text-xs"
                 >
                   <option value="">Status</option>
                   {optionSets.statuses.map((value) => (
@@ -2746,7 +2746,7 @@ const CourseManagementDetails = () => {
                 <select
                   value={filters.teacher}
                   onChange={(e) => setFilters((prev) => ({ ...prev, teacher: e.target.value }))}
-                  className="border border-gray-300 rounded px-2 py-2 text-xs"
+                  className="border border-[rgba(0,0,0,0.08)] rounded px-2 py-2 text-xs"
                 >
                   <option value="">Teacher</option>
                   {optionSets.teachers.map((value) => (
@@ -2760,21 +2760,21 @@ const CourseManagementDetails = () => {
                 <button
                   type="button"
                   onClick={clearStudentFilters}
-                  className="px-3 py-1.5 rounded border border-gray-300 text-xs text-gray-700 hover:bg-gray-50"
+                  className="px-3 py-1.5 rounded border border-[rgba(0,0,0,0.08)] text-xs text-[#94A3B8] hover:bg-white"
                 >
                   Clear
                 </button>
                 <button
                   type="button"
                   onClick={applyStudentFilters}
-                  className="px-3 py-1.5 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+                  className="px-3 py-1.5 rounded bg-[#F97316] text-white text-xs hover:bg-[#EA580C]"
                 >
                   Apply Filters
                 </button>
               </div>
-              <div className="overflow-x-auto border border-gray-200 rounded">
+              <div className="overflow-x-auto border border-[rgba(0,0,0,0.08)] rounded">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-blue-700 text-white">
+                  <thead className="bg-[#EA580C] text-white">
                     <tr>
                       <th className="px-3 py-2 text-left">Sl. No.</th>
                       <th className="px-3 py-2 text-left">Name</th>
@@ -2790,19 +2790,19 @@ const CourseManagementDetails = () => {
                   <tbody>
                     {studentsLoading ? (
                       <tr>
-                        <td colSpan={9} className="px-3 py-4 text-center text-gray-500">
+                        <td colSpan={9} className="px-3 py-4 text-center text-[#94A3B8]">
                           Loading students...
                         </td>
                       </tr>
                     ) : students.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="px-3 py-4 text-center text-gray-500">
+                        <td colSpan={9} className="px-3 py-4 text-center text-[#94A3B8]">
                           No course student rows found for selected filters.
                         </td>
                       </tr>
                     ) : (
                       students.map((row) => (
-                        <tr key={`${row.studentId}-${row.slNo}`} className="border-t border-gray-100">
+                        <tr key={`${row.studentId}-${row.slNo}`} className="border-t border-[rgba(0,0,0,0.08)]">
                           <td className="px-3 py-2">{row.slNo}</td>
                           <td className="px-3 py-2">{row.name || "-"}</td>
                           <td className="px-3 py-2">{row.program?.name || "-"}</td>
@@ -2820,7 +2820,7 @@ const CourseManagementDetails = () => {
               </div>
             </>
           ) : (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-[#94A3B8]">
               You do not have access to Course Students for this course.
             </p>
           )}
@@ -2829,11 +2829,11 @@ const CourseManagementDetails = () => {
 
       {showPreviewModal && (
         <div className="fixed inset-0 z-50 bg-black/50 p-4 overflow-y-auto">
-          <div className="mx-auto w-full max-w-6xl rounded-lg border border-gray-200 bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 preview-print-hidden">
+          <div className="mx-auto w-full max-w-6xl rounded-lg border border-[rgba(0,0,0,0.08)] bg-white shadow-lg">
+            <div className="flex items-center justify-between border-b border-[rgba(0,0,0,0.08)] px-5 py-3 preview-print-hidden">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Course Description Preview</h2>
-                <p className="text-xs text-gray-500">
+                <h2 className="text-lg font-semibold text-[#1E293B]">Course Description Preview</h2>
+                <p className="text-xs text-[#94A3B8]">
                   Review the printable layout before exporting.
                 </p>
               </div>
@@ -2841,95 +2841,95 @@ const CourseManagementDetails = () => {
                 <button
                   type="button"
                   onClick={handlePreviewPrint}
-                  className="rounded border border-blue-300 bg-blue-50 px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-100"
+                  className="rounded border border-[rgba(249,115,22,0.3)] bg-[rgba(249,115,22,0.1)] px-3 py-1.5 text-sm text-[#F97316] hover:bg-[rgba(249,115,22,0.15)]"
                 >
                   Print
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowPreviewModal(false)}
-                  className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                  className="rounded border border-[rgba(0,0,0,0.08)] px-3 py-1.5 text-sm text-[#94A3B8] hover:bg-white"
                 >
                   Close
                 </button>
               </div>
             </div>
 
-            <div id="course-description-preview-print" className="space-y-6 p-6 text-sm text-gray-800">
-              <div className="border-b border-gray-200 pb-3">
-                <h3 className="text-2xl font-semibold text-gray-900">
+            <div id="course-description-preview-print" className="space-y-6 p-6 text-sm text-[#1E293B]">
+              <div className="border-b border-[rgba(0,0,0,0.08)] pb-3">
+                <h3 className="text-2xl font-semibold text-[#1E293B]">
                   {description.nameOfCourse || "Course Description"}
                 </h3>
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-[#94A3B8]">
                   Generated from Course Management / Description.
                 </p>
               </div>
 
               <section className="space-y-2">
-                <h4 className="text-base font-semibold text-gray-900">Course Meta</h4>
+                <h4 className="text-base font-semibold text-[#1E293B]">Course Meta</h4>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  <div className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
-                    <p className="text-xs text-gray-500">Name of Course</p>
+                  <div className="rounded border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2">
+                    <p className="text-xs text-[#94A3B8]">Name of Course</p>
                     <p className="font-medium">{description.nameOfCourse || "-"}</p>
                   </div>
-                  <div className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
-                    <p className="text-xs text-gray-500">NCrF Level</p>
+                  <div className="rounded border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2">
+                    <p className="text-xs text-[#94A3B8]">NCrF Level</p>
                     <p className="font-medium">{description.ncrfLevel || "-"}</p>
                   </div>
-                  <div className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
-                    <p className="text-xs text-gray-500">Course Type</p>
+                  <div className="rounded border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2">
+                    <p className="text-xs text-[#94A3B8]">Course Type</p>
                     <p className="font-medium">{description.courseType || "-"}</p>
                   </div>
-                  <div className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
-                    <p className="text-xs text-gray-500">Category</p>
+                  <div className="rounded border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2">
+                    <p className="text-xs text-[#94A3B8]">Category</p>
                     <p className="font-medium">{selectedCategoryLabel || "-"}</p>
                   </div>
-                  <div className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
-                    <p className="text-xs text-gray-500">Subcategory</p>
+                  <div className="rounded border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2">
+                    <p className="text-xs text-[#94A3B8]">Subcategory</p>
                     <p className="font-medium">
                       {selectedSubcategoryLabels.length > 0
                         ? selectedSubcategoryLabels.join(", ")
                         : "-"}
                     </p>
                   </div>
-                  <div className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
-                    <p className="text-xs text-gray-500">Course Credits</p>
+                  <div className="rounded border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2">
+                    <p className="text-xs text-[#94A3B8]">Course Credits</p>
                     <p className="font-medium">{safeCredits}</p>
                   </div>
-                  <div className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
-                    <p className="text-xs text-gray-500">Course Code</p>
+                  <div className="rounded border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2">
+                    <p className="text-xs text-[#94A3B8]">Course Code</p>
                     <p className="font-medium">{description.courseCode || "-"}</p>
                   </div>
-                  <div className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
-                    <p className="text-xs text-gray-500">Offered by School</p>
+                  <div className="rounded border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2">
+                    <p className="text-xs text-[#94A3B8]">Offered by School</p>
                     <p className="font-medium">{description.offeredBySchool || "-"}</p>
                   </div>
-                  <div className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
-                    <p className="text-xs text-gray-500">Medium of Instruction</p>
+                  <div className="rounded border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2">
+                    <p className="text-xs text-[#94A3B8]">Medium of Instruction</p>
                     <p className="font-medium">{description.mediumOfInstruction || "-"}</p>
                   </div>
-                  <div className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
-                    <p className="text-xs text-gray-500">Developed For</p>
+                  <div className="rounded border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2">
+                    <p className="text-xs text-[#94A3B8]">Developed For</p>
                     <p className="font-medium">{description.developedFor || "-"}</p>
                   </div>
-                  <div className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
-                    <p className="text-xs text-gray-500">Coordinator</p>
+                  <div className="rounded border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2">
+                    <p className="text-xs text-[#94A3B8]">Coordinator</p>
                     <p className="font-medium">{description?.coordinator?.name || "-"}</p>
                   </div>
                 </div>
               </section>
 
               <section className="space-y-2">
-                <h4 className="text-base font-semibold text-gray-900">Introduction</h4>
-                <p className="whitespace-pre-wrap rounded border border-gray-200 bg-gray-50 px-3 py-2">
+                <h4 className="text-base font-semibold text-[#1E293B]">Introduction</h4>
+                <p className="whitespace-pre-wrap rounded border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2">
                   {description.introduction || "-"}
                 </p>
               </section>
 
               <section className="space-y-2">
-                <h4 className="text-base font-semibold text-gray-900">Prerequisites</h4>
+                <h4 className="text-base font-semibold text-[#1E293B]">Prerequisites</h4>
                 {previewPrerequisites.length === 0 ? (
-                  <p className="text-gray-500">No prerequisites listed.</p>
+                  <p className="text-[#94A3B8]">No prerequisites listed.</p>
                 ) : (
                   <ul className="list-disc pl-5 space-y-1">
                     {previewPrerequisites.map((item, index) => (
@@ -2940,10 +2940,10 @@ const CourseManagementDetails = () => {
               </section>
 
               <section className="space-y-2">
-                <h4 className="text-base font-semibold text-gray-900">Course Outcomes</h4>
-                <div className="overflow-x-auto rounded border border-gray-200">
+                <h4 className="text-base font-semibold text-[#1E293B]">Course Outcomes</h4>
+                <div className="overflow-x-auto rounded border border-[rgba(0,0,0,0.08)]">
                   <table className="min-w-full text-sm">
-                    <thead className="bg-gray-100 text-gray-700">
+                    <thead className="bg-white text-[#94A3B8]">
                       <tr>
                         <th className="px-2 py-2 text-left">CO</th>
                         <th className="px-2 py-2 text-left">Outcome</th>
@@ -2954,7 +2954,7 @@ const CourseManagementDetails = () => {
                     </thead>
                     <tbody>
                       {courseOutcomesForPreview.map((row, index) => (
-                        <tr key={`preview-co-${index}`} className="border-t border-gray-200">
+                        <tr key={`preview-co-${index}`} className="border-t border-[rgba(0,0,0,0.08)]">
                           <td className="px-2 py-2">{row.code}</td>
                           <td className="px-2 py-2">{row.outcome || "-"}</td>
                           <td className="px-2 py-2">{row.bloomLevel || "-"}</td>
@@ -2967,21 +2967,21 @@ const CourseManagementDetails = () => {
                 </div>
               </section>
 
-              <section className="rounded-lg border border-indigo-200 bg-indigo-50 p-3">
-                <h4 className="text-base font-semibold text-indigo-900">Course NCrF Summary</h4>
-                <p className="mt-1 text-xs text-indigo-800">
+              <section className="rounded-lg border border-[rgba(249,115,22,0.2)] bg-[rgba(249,115,22,0.1)] p-3">
+                <h4 className="text-base font-semibold text-[#FB923C]">Course NCrF Summary</h4>
+                <p className="mt-1 text-xs text-[#FB923C]">
                   Formula: (Σ NCrF × Weightage) / Σ Weightage
                 </p>
                 <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-	                  <div className="rounded border border-indigo-200 bg-white px-3 py-2">
-	                    <p className="text-xs text-indigo-700">Calculated Avg NCrF</p>
-	                    <p className="text-lg font-semibold text-indigo-900">
+	                  <div className="rounded border border-[rgba(249,115,22,0.2)] bg-white px-3 py-2">
+	                    <p className="text-xs text-[#F97316]">Calculated Avg NCrF</p>
+	                    <p className="text-lg font-semibold text-[#FB923C]">
 	                      {Number(ncrfSummary.averageValue || 0).toFixed(4)}
 	                    </p>
 	                  </div>
-	                  <div className="rounded border border-indigo-200 bg-white px-3 py-2">
-	                    <p className="text-xs text-indigo-700">Round off</p>
-	                    <p className="text-lg font-semibold text-indigo-900">
+	                  <div className="rounded border border-[rgba(249,115,22,0.2)] bg-white px-3 py-2">
+	                    <p className="text-xs text-[#F97316]">Round off</p>
+	                    <p className="text-lg font-semibold text-[#FB923C]">
 	                      {ncrfSummary.averageDisplay}
 	                    </p>
 	                  </div>
@@ -2989,10 +2989,10 @@ const CourseManagementDetails = () => {
 	              </section>
 
               <section className="space-y-2">
-                <h4 className="text-base font-semibold text-gray-900">Module Outcomes</h4>
-                <div className="overflow-x-auto rounded border border-gray-200">
+                <h4 className="text-base font-semibold text-[#1E293B]">Module Outcomes</h4>
+                <div className="overflow-x-auto rounded border border-[rgba(0,0,0,0.08)]">
                   <table className="min-w-full text-sm">
-                    <thead className="bg-gray-100 text-gray-700">
+                    <thead className="bg-white text-[#94A3B8]">
                       <tr>
                         <th className="px-2 py-2 text-left">MO Code</th>
                         <th className="px-2 py-2 text-left">Module Outcome</th>
@@ -3001,7 +3001,7 @@ const CourseManagementDetails = () => {
                     </thead>
                     <tbody>
                       {moduleOutcomesForPreview.map((row, index) => (
-                        <tr key={`preview-mo-${index}`} className="border-t border-gray-200">
+                        <tr key={`preview-mo-${index}`} className="border-t border-[rgba(0,0,0,0.08)]">
                           <td className="px-2 py-2">{row.code}</td>
                           <td className="px-2 py-2">{row.text || "-"}</td>
                           <td className="px-2 py-2">
@@ -3015,11 +3015,11 @@ const CourseManagementDetails = () => {
               </section>
 
 	              <section className="space-y-2">
-	                <h4 className="text-base font-semibold text-gray-900">Syllabus</h4>
-	                <p className="text-xs text-gray-500">Time weightage: 0.05 to 1.00</p>
-	                <div className="overflow-x-auto rounded border border-gray-200">
+	                <h4 className="text-base font-semibold text-[#1E293B]">Syllabus</h4>
+	                <p className="text-xs text-[#94A3B8]">Time weightage: 0.05 to 1.00</p>
+	                <div className="overflow-x-auto rounded border border-[rgba(0,0,0,0.08)]">
 	                  <table className="min-w-full text-sm">
-	                    <thead className="bg-gray-100 text-gray-700">
+	                    <thead className="bg-white text-[#94A3B8]">
 	                      <tr>
 	                        <th className="px-2 py-2 text-left">Module No</th>
 	                        <th className="px-2 py-2 text-left">Module Title</th>
@@ -3030,13 +3030,13 @@ const CourseManagementDetails = () => {
 	                    <tbody>
 	                      {previewSyllabusRows.length === 0 ? (
 	                        <tr>
-	                          <td colSpan={4} className="px-2 py-3 text-center text-gray-500">
+	                          <td colSpan={4} className="px-2 py-3 text-center text-[#94A3B8]">
 	                            No syllabus rows added.
 	                          </td>
 	                        </tr>
 	                      ) : (
 	                        previewSyllabusRows.map((row, index) => (
-	                          <tr key={`preview-syllabus-${index}`} className="border-t border-gray-200">
+	                          <tr key={`preview-syllabus-${index}`} className="border-t border-[rgba(0,0,0,0.08)]">
 	                            <td className="px-2 py-2">{row?.moduleNo || "-"}</td>
 	                            <td className="px-2 py-2">{row?.moduleTitle || "-"}</td>
 	                            <td className="px-2 py-2">{row?.moduleDetails || "-"}</td>
@@ -3052,10 +3052,10 @@ const CourseManagementDetails = () => {
 	              </section>
 
               <section className="space-y-2">
-                <h4 className="text-base font-semibold text-gray-900">Reference Books</h4>
-                <div className="overflow-x-auto rounded border border-gray-200">
+                <h4 className="text-base font-semibold text-[#1E293B]">Reference Books</h4>
+                <div className="overflow-x-auto rounded border border-[rgba(0,0,0,0.08)]">
                   <table className="min-w-full text-sm">
-                    <thead className="bg-gray-100 text-gray-700">
+                    <thead className="bg-white text-[#94A3B8]">
                       <tr>
                         <th className="px-2 py-2 text-left">Title</th>
                         <th className="px-2 py-2 text-left">Author</th>
@@ -3066,13 +3066,13 @@ const CourseManagementDetails = () => {
                     <tbody>
                       {(description.referenceBooks || []).length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="px-2 py-3 text-center text-gray-500">
+                          <td colSpan={4} className="px-2 py-3 text-center text-[#94A3B8]">
                             No reference books added.
                           </td>
                         </tr>
                       ) : (
                         (description.referenceBooks || []).map((row, index) => (
-                          <tr key={`preview-book-${index}`} className="border-t border-gray-200">
+                          <tr key={`preview-book-${index}`} className="border-t border-[rgba(0,0,0,0.08)]">
                             <td className="px-2 py-2">{row?.title || "-"}</td>
                             <td className="px-2 py-2">{row?.author || "-"}</td>
                             <td className="px-2 py-2">{row?.publisher || "-"}</td>
@@ -3086,9 +3086,9 @@ const CourseManagementDetails = () => {
               </section>
 
               <section className="space-y-2">
-                <h4 className="text-base font-semibold text-gray-900">Journals</h4>
+                <h4 className="text-base font-semibold text-[#1E293B]">Journals</h4>
                 {(description.journals || []).length === 0 ? (
-                  <p className="text-gray-500">No journals added.</p>
+                  <p className="text-[#94A3B8]">No journals added.</p>
                 ) : (
                   <ul className="list-disc pl-5 space-y-1">
                     {(description.journals || []).map((row, index) => (
@@ -3099,9 +3099,9 @@ const CourseManagementDetails = () => {
               </section>
 
               <section className="space-y-2">
-                <h4 className="text-base font-semibold text-gray-900">Online Resources</h4>
+                <h4 className="text-base font-semibold text-[#1E293B]">Online Resources</h4>
                 {(description.onlineResources || []).length === 0 ? (
-                  <p className="text-gray-500">No online resources added.</p>
+                  <p className="text-[#94A3B8]">No online resources added.</p>
                 ) : (
                   <ul className="list-disc pl-5 space-y-1">
                     {(description.onlineResources || []).map((row, index) => (
@@ -3111,7 +3111,7 @@ const CourseManagementDetails = () => {
                             href={row.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-blue-700 underline"
+                            className="text-[#F97316] underline"
                           >
                             {row.url}
                           </a>
@@ -3125,9 +3125,9 @@ const CourseManagementDetails = () => {
               </section>
 
               <section className="space-y-2">
-                <h4 className="text-base font-semibold text-gray-900">MOOCs</h4>
+                <h4 className="text-base font-semibold text-[#1E293B]">MOOCs</h4>
                 {(description.moocs || []).length === 0 ? (
-                  <p className="text-gray-500">No MOOCs added.</p>
+                  <p className="text-[#94A3B8]">No MOOCs added.</p>
                 ) : (
                   <ul className="list-disc pl-5 space-y-1">
                     {(description.moocs || []).map((row, index) => (
@@ -3137,7 +3137,7 @@ const CourseManagementDetails = () => {
                             href={row.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-blue-700 underline"
+                            className="text-[#F97316] underline"
                           >
                             {row.url}
                           </a>

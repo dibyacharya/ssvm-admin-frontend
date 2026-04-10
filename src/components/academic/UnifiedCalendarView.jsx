@@ -232,7 +232,7 @@ const UnifiedCalendarView = ({
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-gray-600" />
-          <h4 className="font-semibold text-gray-900 text-sm">
+          <h4 className="font-semibold text-[#1E293B] text-sm">
             {periodLabel} Schedule
           </h4>
         </div>
@@ -241,7 +241,7 @@ const UnifiedCalendarView = ({
             type="button"
             onClick={() => onSaveWeekly && onSaveWeekly(semesterId)}
             disabled={saving}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 transition"
           >
             <Save className="w-3.5 h-3.5" />
             {saving ? 'Saving...' : 'Save Schedule'}
@@ -353,23 +353,23 @@ const UnifiedCalendarView = ({
                   isOff
                     ? 'bg-red-50'
                     : isToday
-                    ? 'bg-blue-100 ring-2 ring-inset ring-blue-400'
+                    ? 'bg-purple-100 ring-2 ring-inset ring-purple-400'
                     : !isInRange
                     ? 'bg-gray-100'
                     : ''
                 }`}
               >
                 {isToday && (
-                  <div className="absolute top-0 left-0 right-0 h-[3px] bg-blue-500 rounded-b-sm" />
+                  <div className="absolute top-0 left-0 right-0 h-[3px] bg-purple-500 rounded-b-sm" />
                 )}
-                <div className={`text-xs font-medium ${isOff ? 'text-red-700' : isToday ? 'text-blue-800 font-bold' : 'text-gray-800'}`}>
+                <div className={`text-xs font-medium ${isOff ? 'text-red-700' : isToday ? 'text-purple-800 font-bold' : 'text-gray-800'}`}>
                   {getDayShortLabel(dayKey)}
                 </div>
-                <div className={`text-[10px] ${isOff ? 'text-red-600' : isToday ? 'text-blue-700 font-semibold' : 'text-gray-500'}`}>
+                <div className={`text-[10px] ${isOff ? 'text-red-600' : isToday ? 'text-purple-700 font-semibold' : 'text-gray-500'}`}>
                   {formatDateDisplay(date)}
                 </div>
                 {isToday && (
-                  <span className="inline-block mt-0.5 px-1.5 py-0 text-[8px] font-bold text-white bg-blue-500 rounded-full">
+                  <span className="inline-block mt-0.5 px-1.5 py-0 text-[8px] font-bold text-white bg-purple-500 rounded-full">
                     TODAY
                   </span>
                 )}
@@ -487,7 +487,7 @@ const UnifiedCalendarView = ({
                         <div
                           key={dk}
                           className={`border-r border-gray-200 last:border-r-0 p-1 ${
-                            isToday ? 'ring-1 ring-inset ring-blue-200' : ''
+                            isToday ? 'ring-1 ring-inset ring-purple-200' : ''
                           } ${examBg}`}
                           title={`${exam.title}${courseName ? ` — ${courseName}` : ''}\n${exam.mode || ''}`}
                         >
@@ -503,7 +503,7 @@ const UnifiedCalendarView = ({
                               {exam.mode === 'VIRTUAL' && <Video className="w-2.5 h-2.5 text-purple-600" />}
                               {exam.isVconfScheduled && <CheckCircle className="w-2.5 h-2.5 text-green-500" />}
                               <span className={`text-[8px] font-bold px-1 rounded ${
-                                exam.type === 'EXAM' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'
+                                exam.type === 'EXAM' ? 'bg-orange-100 text-orange-700' : 'bg-purple-100 text-purple-700'
                               }`}>
                                 {exam.type === 'EXAM' ? 'E' : 'EV'}
                               </span>
@@ -518,7 +518,7 @@ const UnifiedCalendarView = ({
                       <div
                         key={dk}
                         className={`border-r border-gray-200 last:border-r-0 p-1 ${examBg} ${
-                          isToday ? 'ring-1 ring-inset ring-blue-200' : ''
+                          isToday ? 'ring-1 ring-inset ring-purple-200' : ''
                         }`}
                       >
                         <div className="h-full flex items-center justify-center min-h-[2.5rem]">
@@ -613,8 +613,8 @@ const UnifiedCalendarView = ({
                       <div
                         key={dk}
                         className={`border-r border-gray-200 last:border-r-0 p-1 cursor-pointer transition ${
-                          isToday ? 'bg-blue-50 ring-1 ring-inset ring-blue-200' : 'bg-white'
-                        } hover:bg-blue-50`}
+                          isToday ? 'bg-purple-50 ring-1 ring-inset ring-purple-200' : 'bg-white'
+                        } hover:bg-purple-50`}
                         onClick={() => openAssignModal(date, slot, entry)}
                         title={`${courseName}${teacherName ? ` — ${teacherName}` : ''}\n${entry.mode || 'VIRTUAL'}${isWeekly ? ' (Recurring)' : ' (One-time)'}`}
                       >
@@ -631,7 +631,7 @@ const UnifiedCalendarView = ({
                             {entry.mode === 'PHYSICAL' ? (
                               <MapPin className="w-2.5 h-2.5 text-green-600" />
                             ) : (
-                              <Video className="w-2.5 h-2.5 text-blue-600" />
+                              <Video className="w-2.5 h-2.5 text-purple-600" />
                             )}
                             {entry.isVconfScheduled && (
                               <CheckCircle className="w-2.5 h-2.5 text-green-500" />
@@ -640,7 +640,7 @@ const UnifiedCalendarView = ({
                               className={`text-[8px] font-bold px-1 rounded ${
                                 isWeekly
                                   ? 'bg-amber-100 text-amber-700'
-                                  : 'bg-indigo-100 text-indigo-700'
+                                  : 'bg-purple-100 text-purple-700'
                               }`}
                             >
                               {isWeekly ? 'W' : 'D'}
@@ -656,7 +656,7 @@ const UnifiedCalendarView = ({
                     <div
                       key={dk}
                       className={`border-r border-gray-200 last:border-r-0 p-1 cursor-pointer transition ${
-                        isToday ? 'bg-blue-50/60 ring-1 ring-inset ring-blue-200' : 'bg-white'
+                        isToday ? 'bg-purple-50/60 ring-1 ring-inset ring-purple-200' : 'bg-white'
                       } hover:bg-gray-50`}
                       onClick={() => openAssignModal(date, slot)}
                     >
@@ -678,7 +678,7 @@ const UnifiedCalendarView = ({
           <span>Recurring (Weekly)</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="inline-block px-1 rounded bg-indigo-100 text-indigo-700 font-bold text-[8px]">D</span>
+          <span className="inline-block px-1 rounded bg-purple-100 text-purple-700 font-bold text-[8px]">D</span>
           <span>One-time (Date Override)</span>
         </div>
         <div className="flex items-center gap-1">
@@ -686,7 +686,7 @@ const UnifiedCalendarView = ({
           <span>Exam</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="inline-block px-1 rounded bg-blue-100 text-blue-700 font-bold text-[8px]">EV</span>
+          <span className="inline-block px-1 rounded bg-purple-100 text-purple-700 font-bold text-[8px]">EV</span>
           <span>Event</span>
         </div>
         <div className="flex items-center gap-1">

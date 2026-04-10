@@ -159,7 +159,7 @@ const TEACHER_PERSONAL_DETAILS_SECTIONS = [
     title: "Contact Details",
     fields: [
       "School Associated",
-      "KIIT mail ID",
+      "Official Email ID",
       "Personal Email ID",
       "Mobile Number",
       "WhatsApp Number",
@@ -279,7 +279,7 @@ const TEACHER_CANONICAL_ALIASES = {
   administrativeresponsibility: "Administrative Responsibility",
   administrativeresponsibity: "Administrative Responsibility",
   schoolassociated: "School Associated",
-  kiitmailid: "KIIT mail ID",
+  ssvmmailid: "Official Email ID",
   personalemailid: "Personal Email ID",
   mobile: "Mobile Number",
   mobilenumber: "Mobile Number",
@@ -489,15 +489,15 @@ const validatePersonalDetailsDraft = (draft, { isTeacher = false } = {}) => {
   };
 
   if (isTeacher) {
-    const kiitEmail = String(draft["KIIT mail ID"] || "").trim();
+    const ssvmEmail = String(draft["Official Email ID"] || "").trim();
     const personalEmail = String(draft["Personal Email ID"] || "").trim();
     const mobile = String(draft["Mobile Number"] || "").replace(/\D/g, "");
     const whatsapp = String(draft["WhatsApp Number"] || "").replace(/\D/g, "");
     const personalNumber = String(draft["Personal Number"] || "").replace(/\D/g, "");
     const dob = String(draft["Date of Birth"] || "").trim();
 
-    if (kiitEmail && !EMAIL_REGEX.test(kiitEmail)) {
-      return "KIIT mail ID is invalid.";
+    if (ssvmEmail && !EMAIL_REGEX.test(ssvmEmail)) {
+      return "Official email ID is invalid.";
     }
     if (personalEmail && !EMAIL_REGEX.test(personalEmail)) {
       return "Personal Email ID is invalid.";
@@ -1146,8 +1146,8 @@ export default function UserProfile() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-        <div className="rounded-xl border border-red-200 bg-white p-5 text-sm text-red-700">
+      <div className="min-h-screen bg-white p-4 md:p-6">
+        <div className="rounded-xl border border-[rgba(239,68,68,0.2)] bg-white p-5 text-sm text-[#EF4444]">
           Access denied. Admin only.
         </div>
       </div>
@@ -1156,9 +1156,9 @@ export default function UserProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-2 text-sm text-gray-700">
+      <div className="min-h-screen bg-white p-4 md:p-6">
+        <div className="rounded-xl border border-[rgba(0,0,0,0.08)] bg-white p-6">
+          <div className="flex items-center gap-2 text-sm text-[#94A3B8]">
             <Loader2 className="h-5 w-5 animate-spin" />
             Loading profile...
           </div>
@@ -1169,17 +1169,17 @@ export default function UserProfile() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-        <div className="rounded-xl border border-red-200 bg-white p-6 shadow-sm">
-          <div className="mb-3 flex items-center gap-2 text-base font-semibold text-red-700">
+      <div className="min-h-screen bg-white p-4 md:p-6">
+        <div className="rounded-xl border border-[rgba(239,68,68,0.2)] bg-white p-6">
+          <div className="mb-3 flex items-center gap-2 text-base font-semibold text-[#EF4444]">
             <AlertTriangle className="h-5 w-5" />
             Failed to load profile
           </div>
-          <p className="text-sm text-red-600">{error}</p>
+          <p className="text-sm text-[#EF4444]">{error}</p>
           <button
             type="button"
             onClick={loadPage}
-            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-semibold text-red-700"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-[rgba(239,68,68,0.3)] bg-white px-3 py-2 text-sm font-semibold text-[#EF4444]"
           >
             <RefreshCw className="h-4 w-4" />
             Retry
@@ -1190,13 +1190,13 @@ export default function UserProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="min-h-screen bg-white p-4 md:p-6">
       <div className="mx-auto w-full max-w-[1600px] space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"
             onClick={handleBack}
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            className="inline-flex items-center gap-2 rounded-lg border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-sm font-semibold text-[#94A3B8] hover:bg-white"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -1206,7 +1206,7 @@ export default function UserProfile() {
             <button
               type="button"
               onClick={handleEditToggle}
-              className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-blue-700 shadow-sm hover:bg-blue-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-[rgba(249,115,22,0.2)] bg-white px-3 py-2 text-sm font-semibold text-[#F97316] hover:bg-[rgba(249,115,22,0.1)]"
             >
               <Edit3 className="h-4 w-4" />
               Edit
@@ -1217,7 +1217,7 @@ export default function UserProfile() {
                 type="button"
                 onClick={handleCancelEdit}
                 disabled={saving}
-                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-sm font-semibold text-[#94A3B8] disabled:opacity-60"
               >
                 <X className="h-4 w-4" />
                 Cancel
@@ -1226,7 +1226,7 @@ export default function UserProfile() {
                 type="button"
                 onClick={handleSaveEdit}
                 disabled={saving}
-                className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-700 shadow-sm disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg border border-[rgba(16,185,129,0.2)] bg-white px-3 py-2 text-sm font-semibold text-[#10B981] disabled:opacity-60"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 Save
@@ -1239,17 +1239,17 @@ export default function UserProfile() {
           <div
             className={`rounded-lg border px-3 py-2 text-sm ${
               notice.type === "error"
-                ? "border-red-200 bg-white text-red-700"
-                : "border-emerald-200 bg-white text-emerald-700"
+                ? "border-[rgba(239,68,68,0.2)] bg-white text-[#EF4444]"
+                : "border-[rgba(16,185,129,0.2)] bg-white text-[#10B981]"
             }`}
           >
             {notice.message}
           </div>
         ) : null}
 
-        <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-100 px-5 py-4">
-            <h1 className="text-xl font-semibold text-gray-900">
+        <section className="rounded-xl border border-[rgba(0,0,0,0.08)] bg-white">
+          <div className="border-b border-[rgba(0,0,0,0.08)] px-5 py-4">
+            <h1 className="text-xl font-semibold text-[#1E293B]">
               {isTeacherProfile ? "Teacher Profile" : "Student Profile"}
             </h1>
           </div>
@@ -1271,8 +1271,8 @@ export default function UserProfile() {
                 const isEditableField = editMode && editConfig;
 
                 return (
-                  <div key={field.label} className="rounded-lg border border-gray-200 bg-white p-3">
-                    <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <div key={field.label} className="rounded-lg border border-[rgba(0,0,0,0.08)] bg-white p-3">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-[#94A3B8]">
                       {field.label}
                     </div>
                     {isEditableField ? (
@@ -1287,7 +1287,7 @@ export default function UserProfile() {
                               ...(editConfig.key === "programId" ? { batchId: "" } : {}),
                             }))
                           }
-                          className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-400 focus:outline-none"
+                          className="mt-1 w-full rounded-lg border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-sm text-[#1E293B] focus:border-[rgba(249,115,22,0.4)] focus:outline-none"
                         >
                           <option value="">Select {field.label}</option>
                           {(editConfig.options || []).map((opt) => (
@@ -1304,7 +1304,7 @@ export default function UserProfile() {
                               setAcademicDraft((prev) => ({ ...prev, academicYear: e.target.value }))
                             }
                             placeholder="Year"
-                            className="w-1/2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-400 focus:outline-none"
+                            className="w-1/2 rounded-lg border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-sm text-[#1E293B] focus:border-[rgba(249,115,22,0.4)] focus:outline-none"
                           />
                           <input
                             value={academicDraft.session || ""}
@@ -1312,7 +1312,7 @@ export default function UserProfile() {
                               setAcademicDraft((prev) => ({ ...prev, session: e.target.value }))
                             }
                             placeholder="Session"
-                            className="w-1/2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-400 focus:outline-none"
+                            className="w-1/2 rounded-lg border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-sm text-[#1E293B] focus:border-[rgba(249,115,22,0.4)] focus:outline-none"
                           />
                         </div>
                       ) : (
@@ -1322,7 +1322,7 @@ export default function UserProfile() {
                             setAcademicDraft((prev) => ({ ...prev, [editConfig.key]: e.target.value }))
                           }
                           placeholder={`Enter ${field.label}`}
-                          className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-400 focus:outline-none"
+                          className="mt-1 w-full rounded-lg border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-sm text-[#1E293B] focus:border-[rgba(249,115,22,0.4)] focus:outline-none"
                         />
                       )
                     ) : field.label === "Tags" && field.value ? (
@@ -1330,109 +1330,93 @@ export default function UserProfile() {
                         {String(field.value).split(", ").map((tag) => (
                           <span
                             key={tag}
-                            className="inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700"
+                            className="inline-block rounded-full bg-[rgba(5,150,105,0.1)] px-2.5 py-0.5 text-xs font-semibold text-[#10B981]"
                           >
                             {tag}
                           </span>
                         ))}
                       </div>
                     ) : (
-                      <div className="mt-1 text-sm font-medium text-gray-800">{toDisplay(field.value)}</div>
+                      <div className="mt-1 text-sm font-medium text-[#1E293B]">{toDisplay(field.value)}</div>
                     )}
                   </div>
                 );
               })}
             </div>
 
-            <div className="rounded-lg border border-gray-200 bg-white p-5">
-              <div className="mb-4 text-sm font-semibold text-gray-700">Profile Photo</div>
-              <div className="flex flex-col items-center gap-4">
-                <div className="relative group">
-                  {profilePhotoUrl ? (
-                    <img
-                      src={profilePhotoUrl}
-                      alt="Profile"
-                      className="h-32 w-32 rounded-full border-4 border-white shadow-lg object-cover ring-2 ring-gray-200"
-                    />
-                  ) : (
-                    <div className="flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500 shadow-lg ring-2 ring-gray-200">
-                      <span className="text-3xl font-bold text-white">
-                        {(profileData?.name || 'U').charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => photoInputRef.current?.click()}
-                    disabled={photoBusy}
-                    className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 group-hover:bg-black/40 transition-all cursor-pointer"
-                  >
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      {photoBusy ? <Loader2 className="h-6 w-6 text-white animate-spin" /> : <Camera className="h-6 w-6 text-white" />}
-                    </span>
-                  </button>
-                </div>
+            <div className="rounded-lg border border-[rgba(0,0,0,0.08)] bg-white p-4">
+              <div className="mb-3 text-sm font-semibold text-[#94A3B8]">Profile Photo</div>
+              <div className="mb-4 flex justify-center">
+                {profilePhotoUrl ? (
+                  <img
+                    src={profilePhotoUrl}
+                    alt="Profile"
+                    className="h-36 w-36 rounded-full border border-[rgba(0,0,0,0.08)] object-cover"
+                  />
+                ) : (
+                  <div className="flex h-36 w-36 items-center justify-center rounded-full border border-dashed border-[rgba(0,0,0,0.08)] bg-white text-sm text-[#94A3B8]">
+                    No Photo
+                  </div>
+                )}
+              </div>
 
-                <input
-                  ref={photoInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handlePhotoUpload}
-                />
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoUpload}
+              />
 
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => photoInputRef.current?.click()}
-                    disabled={photoBusy}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-60 transition-colors"
-                  >
-                    {photoBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
-                    Change Photo
-                  </button>
-                  {profilePhotoUrl && (
-                    <button
-                      type="button"
-                      onClick={handlePhotoDelete}
-                      disabled={photoBusy}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100 disabled:opacity-60 transition-colors"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Remove
-                    </button>
-                  )}
-                </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={photoBusy}
+                  className="inline-flex items-center gap-2 rounded-lg border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-sm font-medium text-[#94A3B8] disabled:opacity-60"
+                >
+                  {photoBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                  Upload
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePhotoDelete}
+                  disabled={photoBusy || !profilePhotoUrl}
+                  className="inline-flex items-center gap-2 rounded-lg border border-[rgba(239,68,68,0.2)] bg-white px-3 py-2 text-sm font-medium text-[#EF4444] disabled:opacity-60"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </button>
               </div>
             </div>
           </div>
         </section>
 
         {/* ── Reset Password Section ── */}
-        <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-100 px-5 py-4">
+        <section className="rounded-xl border border-[rgba(0,0,0,0.08)] bg-white">
+          <div className="border-b border-[rgba(0,0,0,0.08)] px-5 py-4">
             <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-gray-600" />
-              <h2 className="text-xl font-semibold text-gray-900">Reset Password</h2>
+              <Shield className="h-5 w-5 text-[#94A3B8]" />
+              <h2 className="text-xl font-semibold text-[#1E293B]">Reset Password</h2>
             </div>
           </div>
           <div className="space-y-3 p-5">
             {resetError && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <div className="rounded-lg border border-[rgba(239,68,68,0.2)] bg-[rgba(220,38,38,0.08)] px-3 py-2 text-sm text-[#EF4444]">
                 {resetError}
               </div>
             )}
 
             {resetResult?.tempPassword && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3">
-                <p className="text-sm font-medium text-amber-900">Temporary password generated</p>
-                <p className="mt-1 break-all font-mono text-sm text-amber-800">
+              <div className="rounded-lg border border-amber-200 bg-[rgba(245,158,11,0.1)] px-3 py-3">
+                <p className="text-sm font-medium text-[#F59E0B]">Temporary password generated</p>
+                <p className="mt-1 break-all font-mono text-sm text-[#F59E0B]">
                   {resetResult.tempPassword}
                 </p>
                 <button
                   type="button"
                   onClick={handleCopyGeneratedPassword}
-                  className="mt-2 inline-flex items-center rounded border border-amber-300 px-2 py-1 text-xs text-amber-800 hover:bg-amber-100"
+                  className="mt-2 inline-flex items-center rounded border border-[rgba(245,158,11,0.3)] px-2 py-1 text-xs text-[#F59E0B] hover:bg-[rgba(217,119,6,0.1)]"
                 >
                   {passwordCopied ? (
                     <><Check className="mr-1 h-3.5 w-3.5" /> Copied</>
@@ -1444,7 +1428,7 @@ export default function UserProfile() {
             )}
 
             {!resetResult?.tempPassword && resetResult?.success && (
-              <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+              <div className="rounded-lg border border-[rgba(16,185,129,0.2)] bg-[rgba(16,185,129,0.1)] px-3 py-2 text-sm text-[#10B981]">
                 Password reset completed.
               </div>
             )}
@@ -1455,14 +1439,14 @@ export default function UserProfile() {
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
                 placeholder="Enter new password"
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-sm focus:border-[#F97316] focus:outline-none"
               />
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => openResetConfirm("manual")}
                   disabled={resetLoading}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#F97316] px-3 py-2 text-sm font-medium text-white hover:bg-[#EA580C] disabled:opacity-60"
                 >
                   <KeyRound className="h-4 w-4" />
                   Set Password
@@ -1471,33 +1455,33 @@ export default function UserProfile() {
                   type="button"
                   onClick={() => openResetConfirm("generate")}
                   disabled={resetLoading}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-sm font-medium text-[#94A3B8] hover:bg-white disabled:opacity-60"
                 >
                   Generate Temp
                 </button>
               </div>
             </div>
 
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-[#94A3B8]">
               User will be required to change their password on next login.
             </p>
           </div>
         </section>
 
         {canManageRoleTags ? (
-          <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="border-b border-gray-100 px-5 py-4">
-              <h2 className="text-xl font-semibold text-gray-900">Role Tags</h2>
+          <section className="rounded-xl border border-[rgba(0,0,0,0.08)] bg-white">
+            <div className="border-b border-[rgba(0,0,0,0.08)] px-5 py-4">
+              <h2 className="text-xl font-semibold text-[#1E293B]">Role Tags</h2>
             </div>
             <div className="space-y-4 p-5">
               {roleTagError ? (
-                <div className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm text-red-700">
+                <div className="rounded-lg border border-[rgba(239,68,68,0.2)] bg-white px-3 py-2 text-sm text-[#EF4444]">
                   {roleTagError}
                 </div>
               ) : null}
 
               {roleTagLoading ? (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-sm text-[#94A3B8]">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Loading role tags...
                 </div>
@@ -1506,11 +1490,11 @@ export default function UserProfile() {
                   {roleTagOptions.map((option) => (
                     <label
                       key={option.value}
-                      className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800"
+                      className="flex items-center gap-2 rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 text-sm text-[#1E293B]"
                     >
                       <input
                         type="checkbox"
-                        className="h-4 w-4 rounded border-gray-300"
+                        className="h-4 w-4 rounded border-[rgba(0,0,0,0.08)]"
                         checked={roleTagDraft.includes(option.value)}
                         onChange={() => toggleRoleTag(option.value)}
                         disabled={roleTagSaving}
@@ -1520,7 +1504,7 @@ export default function UserProfile() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">No active role tags available.</p>
+                <p className="text-sm text-[#94A3B8]">No active role tags available.</p>
               )}
 
               <div className="flex justify-end">
@@ -1528,7 +1512,7 @@ export default function UserProfile() {
                   type="button"
                   onClick={handleSaveRoleTags}
                   disabled={roleTagSaving || roleTagLoading || roleTagOptions.length === 0}
-                  className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-blue-700 shadow-sm disabled:opacity-60"
+                  className="inline-flex items-center gap-2 rounded-lg border border-[rgba(249,115,22,0.2)] bg-white px-3 py-2 text-sm font-semibold text-[#F97316] disabled:opacity-60"
                 >
                   {roleTagSaving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -1543,13 +1527,13 @@ export default function UserProfile() {
         ) : null}
 
         {!isTeacherProfile ? (
-          <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="border-b border-gray-100 px-5 py-4">
-              <h2 className="text-xl font-semibold text-gray-900">Program Progress</h2>
+          <section className="rounded-xl border border-[rgba(0,0,0,0.08)] bg-white">
+            <div className="border-b border-[rgba(0,0,0,0.08)] px-5 py-4">
+              <h2 className="text-xl font-semibold text-[#1E293B]">Program Progress</h2>
             </div>
 
             {programProgressError ? (
-              <div className="mx-5 mt-4 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm text-red-700">
+              <div className="mx-5 mt-4 rounded-lg border border-[rgba(239,68,68,0.2)] bg-white px-3 py-2 text-sm text-[#EF4444]">
                 {programProgressError}
               </div>
             ) : null}
@@ -1557,15 +1541,15 @@ export default function UserProfile() {
             <div className="overflow-x-auto p-5">
               <table className="min-w-full border-collapse text-sm">
                 <thead>
-                  <tr className="bg-gray-50 text-gray-700">
-                    <th className="w-10 border border-gray-200 px-3 py-2" />
-                    <th className="border border-gray-200 px-3 py-2 text-left font-semibold">{getPeriodLabel(profileData?.academicSummary?.periodType)}</th>
-                    <th className="border border-gray-200 px-3 py-2 text-left font-semibold">Academic Year</th>
-                    <th className="border border-gray-200 px-3 py-2 text-left font-semibold">Academic Season</th>
-                    <th className="border border-gray-200 px-3 py-2 text-left font-semibold">Status</th>
-                    <th className="border border-gray-200 px-3 py-2 text-left font-semibold">Credit</th>
-                    <th className="border border-gray-200 px-3 py-2 text-left font-semibold">SGPA</th>
-                    <th className="border border-gray-200 px-3 py-2 text-left font-semibold">CGPA</th>
+                  <tr className="bg-white text-[#94A3B8]">
+                    <th className="w-10 border border-[rgba(0,0,0,0.08)] px-3 py-2" />
+                    <th className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-left font-semibold">{getPeriodLabel(profileData?.academicSummary?.periodType)}</th>
+                    <th className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-left font-semibold">Academic Year</th>
+                    <th className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-left font-semibold">Academic Season</th>
+                    <th className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-left font-semibold">Status</th>
+                    <th className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-left font-semibold">Credit</th>
+                    <th className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-left font-semibold">SGPA</th>
+                    <th className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-left font-semibold">CGPA</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1576,55 +1560,55 @@ export default function UserProfile() {
                         <React.Fragment key={`semester-${semester.semesterNo}`}>
                           <tr
                             className={`cursor-pointer ${
-                              semester.hasBacklog ? "bg-red-50" : "bg-white"
-                            } hover:bg-gray-50`}
+                              semester.hasBacklog ? "bg-[rgba(220,38,38,0.08)]" : "bg-white"
+                            } hover:bg-white`}
                             onClick={() => toggleSemester(semester.semesterNo)}
                           >
-                            <td className="border border-gray-200 px-3 py-2 text-gray-600">
+                            <td className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-[#94A3B8]">
                               {expanded ? (
                                 <ChevronDown className="h-4 w-4" />
                               ) : (
                                 <ChevronRight className="h-4 w-4" />
                               )}
                             </td>
-                            <td className="border border-gray-200 px-3 py-2 text-gray-800">
+                            <td className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-[#1E293B]">
                               {toSemesterLabel(semester.semesterNo)}
                             </td>
-                            <td className="border border-gray-200 px-3 py-2 text-gray-800">
+                            <td className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-[#1E293B]">
                               {toDisplay(semester.academicYear)}
                             </td>
-                            <td className="border border-gray-200 px-3 py-2 text-gray-800">
+                            <td className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-[#1E293B]">
                               {toDisplay(semester.season)}
                             </td>
-                            <td className="border border-gray-200 px-3 py-2 text-gray-800">
+                            <td className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-[#1E293B]">
                               {toDisplay(semester.status)}
                             </td>
-                            <td className="border border-gray-200 px-3 py-2 text-gray-800">
+                            <td className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-[#1E293B]">
                               {toDisplay(semester.totalCredits)}
                             </td>
-                            <td className="border border-gray-200 px-3 py-2 text-gray-800">
+                            <td className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-[#1E293B]">
                               {toGpaDisplay(semester.sgpa)}
                             </td>
-                            <td className="border border-gray-200 px-3 py-2 text-gray-800">
+                            <td className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-[#1E293B]">
                               {toGpaDisplay(semester.cgpa)}
                             </td>
                           </tr>
 
                           {expanded ? (
-                            <tr className="bg-gray-50">
-                              <td colSpan={8} className="border border-gray-200 px-3 py-3">
-                                <div className="mb-2 text-sm font-semibold text-gray-700">
+                            <tr className="bg-white">
+                              <td colSpan={8} className="border border-[rgba(0,0,0,0.08)] px-3 py-3">
+                                <div className="mb-2 text-sm font-semibold text-[#94A3B8]">
                                   Semester Course Progress
                                 </div>
                                 <div className="overflow-x-auto">
                                   <table className="min-w-full border-collapse text-sm">
                                     <thead>
-                                      <tr className="bg-white text-gray-700">
-                                        <th className="border border-gray-200 px-3 py-2 text-left">Course Code</th>
-                                        <th className="border border-gray-200 px-3 py-2 text-left">Course Name</th>
-                                        <th className="border border-gray-200 px-3 py-2 text-left">Credit</th>
-                                        <th className="border border-gray-200 px-3 py-2 text-left">Grade</th>
-                                        <th className="border border-gray-200 px-3 py-2 text-left">Backlog Status</th>
+                                      <tr className="bg-white text-[#94A3B8]">
+                                        <th className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-left">Course Code</th>
+                                        <th className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-left">Course Name</th>
+                                        <th className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-left">Credit</th>
+                                        <th className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-left">Grade</th>
+                                        <th className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-left">Backlog Status</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -1635,19 +1619,19 @@ export default function UserProfile() {
                                             String(course.grade || "").trim().toUpperCase() === "F";
                                           return (
                                             <tr key={`${semester.semesterNo}-course-${idx}`} className="bg-white">
-                                              <td className="border border-gray-200 px-3 py-2 text-gray-800">
+                                              <td className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-[#1E293B]">
                                                 {toDisplay(course.courseCode)}
                                               </td>
-                                              <td className="border border-gray-200 px-3 py-2 text-gray-800">
+                                              <td className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-[#1E293B]">
                                                 {toDisplay(course.courseName)}
                                               </td>
-                                              <td className="border border-gray-200 px-3 py-2 text-gray-800">
+                                              <td className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-[#1E293B]">
                                                 {toDisplay(course.credit)}
                                               </td>
-                                              <td className="border border-gray-200 px-3 py-2 text-gray-800">
+                                              <td className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-[#1E293B]">
                                                 {toDisplay(course.grade)}
                                               </td>
-                                              <td className="border border-gray-200 px-3 py-2 text-gray-800">
+                                              <td className="border border-[rgba(0,0,0,0.08)] px-3 py-2 text-[#1E293B]">
                                                 {backlog ? "Yes" : "No"}
                                               </td>
                                             </tr>
@@ -1657,7 +1641,7 @@ export default function UserProfile() {
                                         <tr className="bg-white">
                                           <td
                                             colSpan={5}
-                                            className="border border-gray-200 px-3 py-3 text-center text-gray-500"
+                                            className="border border-[rgba(0,0,0,0.08)] px-3 py-3 text-center text-[#94A3B8]"
                                           >
                                             No course progress found for this semester.
                                           </td>
@@ -1674,7 +1658,7 @@ export default function UserProfile() {
                     })
                   ) : (
                     <tr className="bg-white">
-                      <td colSpan={8} className="border border-gray-200 px-3 py-4 text-center text-gray-500">
+                      <td colSpan={8} className="border border-[rgba(0,0,0,0.08)] px-3 py-4 text-center text-[#94A3B8]">
                         No academic progress data available.
                       </td>
                     </tr>
@@ -1685,28 +1669,28 @@ export default function UserProfile() {
           </section>
         ) : null}
 
-        <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-100 px-5 py-4">
-                <h2 className="text-xl font-semibold text-gray-900">
+        <section className="rounded-xl border border-[rgba(0,0,0,0.08)] bg-white">
+          <div className="border-b border-[rgba(0,0,0,0.08)] px-5 py-4">
+                <h2 className="text-xl font-semibold text-[#1E293B]">
                   {isTeacherProfile ? "Teacher Details" : "Personal Details"}
                 </h2>
           </div>
 
           {saveError ? (
-            <div className="mx-5 mt-4 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm text-red-700">
+            <div className="mx-5 mt-4 rounded-lg border border-[rgba(239,68,68,0.2)] bg-white px-3 py-2 text-sm text-[#EF4444]">
               {saveError}
             </div>
           ) : null}
 
           {editMode ? (
             <div className="px-5 pt-4">
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#94A3B8]">
                 Update Reason (optional)
               </label>
               <input
                 value={updateReason}
                 onChange={(event) => setUpdateReason(event.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-400 focus:outline-none"
+                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-sm text-[#1E293B] focus:border-[rgba(249,115,22,0.4)] focus:outline-none"
                 placeholder="Reason for profile update"
               />
             </div>
@@ -1714,8 +1698,8 @@ export default function UserProfile() {
 
           <div className="space-y-5 p-5">
             {detailSections.map((section) => (
-              <div key={section.title} className="rounded-lg border border-gray-200 bg-white p-4">
-                <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-600">
+              <div key={section.title} className="rounded-lg border border-[rgba(0,0,0,0.08)] bg-white p-4">
+                <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[#94A3B8]">
                   {section.title}
                 </h3>
 
@@ -1725,19 +1709,19 @@ export default function UserProfile() {
                     const showViewLink = !editMode && isHttpUrl(value);
 
                     return (
-                      <div key={field} className="rounded-lg border border-gray-200 bg-white p-3">
-                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <div key={field} className="rounded-lg border border-[rgba(0,0,0,0.08)] bg-white p-3">
+                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#94A3B8]">
                           {field}
                         </label>
 
                         {!editMode ? (
-                          <div className="text-sm text-gray-800">
+                          <div className="text-sm text-[#1E293B]">
                             {showViewLink ? (
                               <a
                                 href={value}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="font-semibold text-blue-700 underline"
+                                className="font-semibold text-[#F97316] underline"
                               >
                                 View
                               </a>
@@ -1749,7 +1733,7 @@ export default function UserProfile() {
                           <input
                             value={value}
                             onChange={(event) => setDraftValue(field, event.target.value)}
-                            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-400 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-sm text-[#1E293B] focus:border-[rgba(249,115,22,0.4)] focus:outline-none"
                             placeholder={`Enter ${field}`}
                           />
                         )}
@@ -1762,7 +1746,7 @@ export default function UserProfile() {
           </div>
         </section>
 
-        <div className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-xs text-gray-500 shadow-sm">
+        <div className="rounded-xl border border-[rgba(0,0,0,0.08)] bg-white px-4 py-2 text-xs text-[#94A3B8]">
           Last updated: {toDateDisplay(profileData?.audit?.updatedAt)}
         </div>
       </div>
@@ -1770,20 +1754,20 @@ export default function UserProfile() {
       {/* ── Reset Password Confirmation Modal ── */}
       {resetModal.open && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-lg bg-white shadow-xl border border-gray-200">
-            <div className="px-5 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Confirm Password Reset</h3>
+          <div className="w-full max-w-md rounded-lg bg-white shadow-lg border border-[rgba(0,0,0,0.08)]">
+            <div className="px-5 py-4 border-b border-[rgba(0,0,0,0.08)]">
+              <h3 className="text-lg font-semibold text-[#1E293B]">Confirm Password Reset</h3>
             </div>
-            <div className="px-5 py-4 text-sm text-gray-700">
+            <div className="px-5 py-4 text-sm text-[#94A3B8]">
               {resetModal.mode === "generate"
                 ? "Generate a temporary password for this user and reveal it once?"
                 : "Reset this user\u2019s password to the value entered above?"}
             </div>
-            <div className="px-5 py-4 border-t border-gray-200 flex justify-end gap-2">
+            <div className="px-5 py-4 border-t border-[rgba(0,0,0,0.08)] flex justify-end gap-2">
               <button
                 type="button"
                 onClick={closeResetConfirm}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                className="rounded-lg border border-[rgba(0,0,0,0.08)] px-4 py-2 text-sm text-[#94A3B8] hover:bg-white"
                 disabled={resetLoading}
               >
                 Cancel
@@ -1791,7 +1775,7 @@ export default function UserProfile() {
               <button
                 type="button"
                 onClick={handleConfirmResetPassword}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
+                className="rounded-lg bg-[#F97316] px-4 py-2 text-sm text-white hover:bg-[#EA580C] disabled:opacity-60"
                 disabled={resetLoading}
               >
                 {resetLoading ? "Processing..." : "Confirm Reset"}

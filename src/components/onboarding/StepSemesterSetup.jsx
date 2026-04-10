@@ -274,12 +274,12 @@ const StepSemesterSetup = ({ state, dispatch, goNext, goBack }) => {
     goNext();
   };
 
-  const inputClass = 'w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition';
+  const inputClass = 'w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition';
   const labelClass = 'block text-xs uppercase tracking-widest text-gray-500 font-medium mb-1.5';
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight text-gray-900">{periodLabel} Setup</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-[#1E293B]">{periodLabel} Setup</h1>
       <p className="mt-1 text-sm text-gray-500">
         Add {periodLabel.toLowerCase()}s for this program.
         {totalExpected > 0 && (
@@ -299,7 +299,7 @@ const StepSemesterSetup = ({ state, dispatch, goNext, goBack }) => {
 
       {loadingSemesters && (
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+          <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
           <span className="ml-2 text-sm text-gray-500">Loading existing {periodLabel.toLowerCase()}s…</span>
         </div>
       )}
@@ -309,7 +309,7 @@ const StepSemesterSetup = ({ state, dispatch, goNext, goBack }) => {
         <div className="mb-4">
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-blue-600 rounded-full"
+              className="h-full bg-purple-600 rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${Math.min((semesters.length / totalExpected) * 100, 100)}%` }}
               transition={{ duration: 0.4 }}
@@ -323,10 +323,10 @@ const StepSemesterSetup = ({ state, dispatch, goNext, goBack }) => {
         <div className="mb-6 bg-white border border-gray-200 rounded-lg p-4">
           <div className="flex items-center justify-between text-sm mb-2">
             <span className="text-gray-600">
-              Program Credits: <span className="font-semibold text-gray-900">{programTotalCredits}</span>
+              Program Credits: <span className="font-semibold text-[#1E293B]">{programTotalCredits}</span>
             </span>
             <span className="text-gray-600">
-              Assigned: <span className={`font-semibold ${assignedCredits > programTotalCredits ? 'text-red-600' : 'text-gray-900'}`}>{assignedCredits}</span>
+              Assigned: <span className={`font-semibold ${assignedCredits > programTotalCredits ? 'text-red-600' : 'text-[#1E293B]'}`}>{assignedCredits}</span>
               {remainingCredits !== null && (
                 <span className="ml-2 text-gray-400">
                   ({remainingCredits >= 0 ? `${remainingCredits} remaining` : `${Math.abs(remainingCredits)} over`})
@@ -355,20 +355,20 @@ const StepSemesterSetup = ({ state, dispatch, goNext, goBack }) => {
           >
             <div className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3">
               <div className="text-sm">
-                <span className="font-medium text-gray-900">{sem.name}</span>
+                <span className="font-medium text-[#1E293B]">{sem.name}</span>
                 <span className="text-gray-400 mx-2">&middot;</span>
                 <span className="text-gray-500">
                   {sem.startDate?.split('T')[0]} &rarr; {sem.endDate?.split('T')[0]}
                 </span>
                 {sem.totalCredits != null && sem.totalCredits > 0 && (
-                  <span className="ml-2 inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">{sem.totalCredits} cr</span>
+                  <span className="ml-2 inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">{sem.totalCredits} cr</span>
                 )}
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => openEditModal(sem)}
                   disabled={Boolean(deleting) || editSubmitting}
-                  className="p-1.5 text-gray-400 hover:text-blue-600 transition disabled:opacity-50"
+                  className="p-1.5 text-gray-400 hover:text-purple-600 transition disabled:opacity-50"
                   title={`Edit ${periodLabel}`}
                 >
                   <Edit3 className="w-4 h-4" />
@@ -395,7 +395,7 @@ const StepSemesterSetup = ({ state, dispatch, goNext, goBack }) => {
           <div className="w-full max-w-lg rounded-lg bg-white shadow-lg">
             <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
               <div>
-                <div className="text-lg font-semibold text-gray-900">
+                <div className="text-lg font-semibold text-[#1E293B]">
                   Edit {periodLabel}
                 </div>
                 <div className="text-xs text-gray-500">
@@ -500,7 +500,7 @@ const StepSemesterSetup = ({ state, dispatch, goNext, goBack }) => {
                 type="button"
                 onClick={handleSaveEdit}
                 disabled={editSubmitting}
-                className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                className="inline-flex items-center rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
               >
                 {editSubmitting ? (
                   <>
@@ -590,7 +590,7 @@ const StepSemesterSetup = ({ state, dispatch, goNext, goBack }) => {
       <div className="flex items-center justify-between pt-8">
         <button
           onClick={goBack}
-          className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition"
+          className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-[#1E293B] transition"
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
           Back
@@ -605,7 +605,7 @@ const StepSemesterSetup = ({ state, dispatch, goNext, goBack }) => {
           )}
           <button
             onClick={handleContinue}
-            className="inline-flex items-center px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition"
+            className="inline-flex items-center px-6 py-3 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition"
           >
             Continue
             <ChevronRight className="w-4 h-4 ml-2" />

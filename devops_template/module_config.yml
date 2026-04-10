@@ -1,49 +1,49 @@
 deployconfig:
   dev:
     containerapp_name: "lmsadminfrontend"
-    containerapp_environment: "caenv-kiit-lms-dev"
+    containerapp_environment: "caenv-ssvm-lms-dev"
     ingress: "external"
     target_port: 3000
     min_replicas: 0
-    AZURE_STORAGE_ACCOUNT_NAME: "stgkiitlmsdev"
+    AZURE_STORAGE_ACCOUNT_NAME: "stgssvmlmsdev"
     env_vars:
       BACKEND_URL: "https://lmsbackend.bluehill-eb07d9c6.centralindia.azurecontainerapps.io"
-    #   MONGODB_URI: "keyvaultref:https://akv-kiit-lms-dev.vault.azure.net/secrets/MONGODB-URI/b7ab250070ef42a69e8acf0460af34a8"
+    #   MONGODB_URI: "keyvaultref:https://akv-ssvm-lms-dev.vault.azure.net/secrets/MONGODB-URI/b7ab250070ef42a69e8acf0460af34a8"
     #   NODE_ENV: "development"
-    #   JWT_SECRET: "keyvaultref:https://akv-kiit-lms-dev.vault.azure.net/secrets/JWT-SECRET/7de27f91b7de4817a924c9fab2450b73"
+    #   JWT_SECRET: "keyvaultref:https://akv-ssvm-lms-dev.vault.azure.net/secrets/JWT-SECRET/7de27f91b7de4817a924c9fab2450b73"
     #   JWT_EXPIRES_IN: "24h"
     #   BCRYPT_SALT_ROUNDS: 1
-    #   AZURE_STORAGE_ACCOUNT_KEY: "keyvaultref:https://akv-kiit-lms-dev.vault.azure.net/secrets/AZURE-STORAGE-ACCOUNT-KEY/02f25cbe8de246eb895a6c25f34e1ee4"
-    #   AZURE_STORAGE_ACCOUNT_NAME: "keyvaultref:https://akv-kiit-lms-dev.vault.azure.net/secrets/STORAGE-NAME/e07fdb5daabb4fb2a851e4b7790924f1"
+    #   AZURE_STORAGE_ACCOUNT_KEY: "keyvaultref:https://akv-ssvm-lms-dev.vault.azure.net/secrets/AZURE-STORAGE-ACCOUNT-KEY/02f25cbe8de246eb895a6c25f34e1ee4"
+    #   AZURE_STORAGE_ACCOUNT_NAME: "keyvaultref:https://akv-ssvm-lms-dev.vault.azure.net/secrets/STORAGE-NAME/e07fdb5daabb4fb2a851e4b7790924f1"
   uat:
     containerapp_name: "lmsadminfrontend"
-    containerapp_environment: "caenv-kiit-lms-uat"
+    containerapp_environment: "caenv-ssvm-lms-uat"
     ingress: "external"
     target_port: 3000
     min_replicas: 0
-    AZURE_STORAGE_ACCOUNT_NAME: "stgkiitlmsuat"
+    AZURE_STORAGE_ACCOUNT_NAME: "stgssvmlmsuat"
     env_vars:
       BACKEND_URL: "https://lmsbackend.mangoplant-048dc06b.centralindia.azurecontainerapps.io"
-    #   MONGODB_URI: "keyvaultref:https://akv-kiit-lms-uat.vault.azure.net/secrets/MONGODB-URI/b7ab250070ef42a69e8acf0460af34a8"
+    #   MONGODB_URI: "keyvaultref:https://akv-ssvm-lms-uat.vault.azure.net/secrets/MONGODB-URI/b7ab250070ef42a69e8acf0460af34a8"
     #   NODE_ENV: "development"
-    #   JWT_SECRET: "keyvaultref:https://akv-kiit-lms-uat.vault.azure.net/secrets/JWT-SECRET/7de27f91b7de4817a924c9fab2450b73"
+    #   JWT_SECRET: "keyvaultref:https://akv-ssvm-lms-uat.vault.azure.net/secrets/JWT-SECRET/7de27f91b7de4817a924c9fab2450b73"
     #   JWT_EXPIRES_IN: "24h"
     #   BCRYPT_SALT_ROUNDS: 1
-    #   AZURE_STORAGE_ACCOUNT_KEY: "keyvaultref:https://akv-kiit-lms-uat.vault.azure.net/secrets/AZURE-STORAGE-ACCOUNT-KEY/02f25cbe8de246eb895a6c25f34e1ee4"
-    #   AZURE_STORAGE_ACCOUNT_NAME: "keyvaultref:https://akv-kiit-lms-uat.vault.azure.net/secrets/STORAGE-NAME/e07fdb5daabb4fb2a851e4b7790924f1"
+    #   AZURE_STORAGE_ACCOUNT_KEY: "keyvaultref:https://akv-ssvm-lms-uat.vault.azure.net/secrets/AZURE-STORAGE-ACCOUNT-KEY/02f25cbe8de246eb895a6c25f34e1ee4"
+    #   AZURE_STORAGE_ACCOUNT_NAME: "keyvaultref:https://akv-ssvm-lms-uat.vault.azure.net/secrets/STORAGE-NAME/e07fdb5daabb4fb2a851e4b7790924f1"
   prd:
     containerapp_name: "lmsadminfrontend"
-    containerapp_environment: "caenv-kiit-lms-prd"
+    containerapp_environment: "caenv-ssvm-lms-prd"
     ingress: "external"
     target_port: 3000
     min_replicas: 1
-    AZURE_STORAGE_ACCOUNT_NAME: "stgkiitlmsprd"
+    AZURE_STORAGE_ACCOUNT_NAME: "stgssvmlmsprd"
     env_vars:
       BACKEND_URL: "https://lmsbackend.happybay-a98257cb.centralindia.azurecontainerapps.io"
-    #   MONGODB_URI: "keyvaultref:https://akv-kiit-lms-prd.vault.azure.net/secrets/MONGODB-URI/b7ab250070ef42a69e8acf0460af34a8"
+    #   MONGODB_URI: "keyvaultref:https://akv-ssvm-lms-prd.vault.azure.net/secrets/MONGODB-URI/b7ab250070ef42a69e8acf0460af34a8"
     #   NODE_ENV: "development"
-    #   JWT_SECRET: "keyvaultref:https://akv-kiit-lms-prd.vault.azure.net/secrets/JWT-SECRET/7de27f91b7de4817a924c9fab2450b73"
+    #   JWT_SECRET: "keyvaultref:https://akv-ssvm-lms-prd.vault.azure.net/secrets/JWT-SECRET/7de27f91b7de4817a924c9fab2450b73"
     #   JWT_EXPIRES_IN: "24h"
     #   BCRYPT_SALT_ROUNDS: 1
-    #   AZURE_STORAGE_ACCOUNT_KEY: "keyvaultref:https://akv-kiit-lms-prd.vault.azure.net/secrets/AZURE-STORAGE-ACCOUNT-KEY/02f25cbe8de246eb895a6c25f34e1ee4"
-    #   AZURE_STORAGE_ACCOUNT_NAME: "keyvaultref:https://akv-kiit-lms-prd.vault.azure.net/secrets/STORAGE-NAME/e07fdb5daabb4fb2a851e4b7790924f1"
+    #   AZURE_STORAGE_ACCOUNT_KEY: "keyvaultref:https://akv-ssvm-lms-prd.vault.azure.net/secrets/AZURE-STORAGE-ACCOUNT-KEY/02f25cbe8de246eb895a6c25f34e1ee4"
+    #   AZURE_STORAGE_ACCOUNT_NAME: "keyvaultref:https://akv-ssvm-lms-prd.vault.azure.net/secrets/STORAGE-NAME/e07fdb5daabb4fb2a851e4b7790924f1"

@@ -64,7 +64,7 @@ const ResetPasswordOtp = () => {
   return (
     <div className="min-h-screen w-screen flex items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-md rounded-xl bg-white shadow-sm border border-gray-200 p-8">
-        <h1 className="text-2xl font-bold text-gray-900">Reset Password</h1>
+        <h1 className="text-2xl font-bold text-[#1E293B]">Reset Password</h1>
         <p className="mt-2 text-sm text-gray-600">
           Enter your email, OTP, and a new password.
         </p>

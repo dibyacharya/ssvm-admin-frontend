@@ -283,51 +283,51 @@ const CreateCourse = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg">
-      <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg">
+      <div className="mb-4 rounded-md border border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.1)] px-4 py-2 text-sm text-[#F59E0B]">
         Legacy Create Page. After creation, continue in the Course Details tabs.
       </div>
-      <h1 className="text-3xl font-bold mb-8 text-gray-800">Create New Course</h1>
+      <h1 className="text-3xl font-bold mb-8 text-[#1E293B]">Create New Course</h1>
       
       <div className="space-y-8">
         {/* Basic Information */}
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">Basic Information</h2>
+        <div className="bg-white p-6 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4 text-[#94A3B8]">Basic Information</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Course Title *</label>
+              <label className="block text-sm font-medium text-[#94A3B8] mb-1">Course Title *</label>
               <input
                 type="text"
                 name="title"
                 value={formData.title}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Course Code</label>
+              <label className="block text-sm font-medium text-[#94A3B8] mb-1">Course Code</label>
               <input
                 type="text"
                 name="courseCode"
                 value={formData.courseCode}
                 disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
+                className="w-full px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#94A3B8] cursor-not-allowed"
               />
-              <p className="text-xs text-gray-500 mt-1">Course code is fixed and cannot be modified</p>
+              <p className="text-xs text-[#94A3B8] mt-1">Course code is fixed and cannot be modified</p>
             </div>
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">{periodLabel} *</label>
+            <label className="block text-sm font-medium text-[#94A3B8] mb-1">{periodLabel} *</label>
             {loadingSemesters ? (
-              <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+              <div className="w-full px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#94A3B8]">
                 Loading {periodLabel.toLowerCase()}s...
               </div>
             ) : semesterError ? (
-              <div className="w-full px-3 py-2 border border-red-300 rounded-md bg-red-50 text-red-700">
+              <div className="w-full px-3 py-2 border border-[rgba(239,68,68,0.3)] rounded-md bg-[rgba(220,38,38,0.08)] text-[#EF4444]">
                 {semesterError}
               </div>
             ) : (
@@ -336,7 +336,7 @@ const CreateCourse = () => {
                 value={formData.semester}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               >
                 <option value="">Select a {periodLabel.toLowerCase()}</option>
                 {semesters.map((semester) => (
@@ -347,17 +347,17 @@ const CreateCourse = () => {
               </select>
             )}
             {!loadingSemesters && !semesterError && semesters.length === 0 && (
-              <p className="text-xs text-orange-600 mt-1">No {periodLabel.toLowerCase()}s available. Please create a {periodLabel.toLowerCase()} first.</p>
+              <p className="text-xs text-[#F97316] mt-1">No {periodLabel.toLowerCase()}s available. Please create a {periodLabel.toLowerCase()} first.</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Course Type</label>
+            <label className="block text-sm font-medium text-[#94A3B8] mb-1">Course Type</label>
             <select
               name="courseType"
               value={formData.courseType}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
             >
               <option value="">Select Type</option>
               <option value="theory">Theory</option>
@@ -370,21 +370,21 @@ const CreateCourse = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">About Course *</label>
+            <label className="block text-sm font-medium text-[#94A3B8] mb-1">About Course *</label>
             <textarea
               name="aboutCourse"
               value={formData.aboutCourse}
               onChange={handleInputChange}
               required
               rows="4"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
             />
           </div>
         </div>
 
         {/* Learning Outcomes */}
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">Learning Outcomes</h2>
+        <div className="bg-white p-6 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4 text-[#94A3B8]">Learning Outcomes</h2>
           {formData.learningOutcomes.map((outcome, index) => (
             <div key={index} className="mb-2 flex gap-2">
               <input
@@ -392,13 +392,13 @@ const CreateCourse = () => {
                 value={outcome}
                 onChange={(e) => handleArrayInputChange('learningOutcomes', index, e.target.value)}
                 placeholder={`Learning outcome ${index + 1}`}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               />
               {index > 0 && (
                 <button
                   type="button"
                   onClick={() => removeArrayItem('learningOutcomes', index)}
-                  className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                  className="px-3 py-2 bg-[rgba(220,38,38,0.08)]0 text-white rounded-md hover:bg-red-600"
                 >
                   Remove
                 </button>
@@ -408,65 +408,65 @@ const CreateCourse = () => {
           <button
             type="button"
             onClick={() => addArrayItem('learningOutcomes')}
-            className="mt-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+            className="mt-2 px-4 py-2 bg-[#F97316] text-white rounded-md hover:bg-[#EA580C]"
           >
             Add Learning Outcome
           </button>
         </div>
 
         {/* Course Schedule */}
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">Course Schedule</h2>
+        <div className="bg-white p-6 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4 text-[#94A3B8]">Course Schedule</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Class Start Date</label>
+              <label className="block text-sm font-medium text-[#94A3B8] mb-1">Class Start Date</label>
               <input
                 type="date"
                 value={formData.courseSchedule.classStartDate}
                 onChange={(e) => handleNestedInputChange('courseSchedule', 'classStartDate', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Class End Date</label>
+              <label className="block text-sm font-medium text-[#94A3B8] mb-1">Class End Date</label>
               <input
                 type="date"
                 value={formData.courseSchedule.classEndDate}
                 onChange={(e) => handleNestedInputChange('courseSchedule', 'classEndDate', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mid Exam Date</label>
+              <label className="block text-sm font-medium text-[#94A3B8] mb-1">Mid Exam Date</label>
               <input
                 type="date"
                 value={formData.courseSchedule.midSemesterExamDate}
                 onChange={(e) => handleNestedInputChange('courseSchedule', 'midSemesterExamDate', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">End Exam Date</label>
+              <label className="block text-sm font-medium text-[#94A3B8] mb-1">End Exam Date</label>
               <input
                 type="date"
                 value={formData.courseSchedule.endSemesterExamDate}
                 onChange={(e) => handleNestedInputChange('courseSchedule', 'endSemesterExamDate', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               />
             </div>
           </div>
 
-          <h3 className="text-lg font-medium mb-2 text-gray-700">Class Days and Times</h3>
+          <h3 className="text-lg font-medium mb-2 text-[#94A3B8]">Class Days and Times</h3>
           {formData.courseSchedule.classDaysAndTimes.map((classTime, index) => (
             <div key={index} className="mb-2 flex gap-2">
               <select
                 value={classTime.day}
                 onChange={(e) => handleClassDayTimeChange(index, 'day', e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               >
                 <option value="">Select Day</option>
                 <option value="Monday">Monday</option>
@@ -482,13 +482,13 @@ const CreateCourse = () => {
                 value={classTime.time}
                 onChange={(e) => handleClassDayTimeChange(index, 'time', e.target.value)}
                 placeholder="e.g., 10:00-11:30"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               />
               {index > 0 && (
                 <button
                   type="button"
                   onClick={() => removeClassDayTime(index)}
-                  className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                  className="px-3 py-2 bg-[rgba(220,38,38,0.08)]0 text-white rounded-md hover:bg-red-600"
                 >
                   Remove
                 </button>
@@ -498,63 +498,63 @@ const CreateCourse = () => {
           <button
             type="button"
             onClick={addClassDayTime}
-            className="mt-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+            className="mt-2 px-4 py-2 bg-[#F97316] text-white rounded-md hover:bg-[#EA580C]"
           >
             Add Class Time
           </button>
         </div>
 
         {/* Credit Points (L/T/P) */}
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">Credit Points (L/T/P)</h2>
+        <div className="bg-white p-6 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4 text-[#94A3B8]">Credit Points (L/T/P)</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">L (Lecture)</label>
+              <label className="block text-sm font-medium text-[#94A3B8] mb-1">L (Lecture)</label>
               <input
                 type="number"
                 min="0"
                 value={formData.creditPoints.lecture}
                 onChange={(e) => handleNestedInputChange('creditPoints', 'lecture', parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">T (Tutorial)</label>
+              <label className="block text-sm font-medium text-[#94A3B8] mb-1">T (Tutorial)</label>
               <input
                 type="number"
                 min="0"
                 value={formData.creditPoints.tutorial}
                 onChange={(e) => handleNestedInputChange('creditPoints', 'tutorial', parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">P (Practical)</label>
+              <label className="block text-sm font-medium text-[#94A3B8] mb-1">P (Practical)</label>
               <input
                 type="number"
                 min="0"
                 value={formData.creditPoints.practical}
                 onChange={(e) => handleNestedInputChange('creditPoints', 'practical', parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">C (Total)</label>
+              <label className="block text-sm font-medium text-[#94A3B8] mb-1">C (Total)</label>
               <input
                 type="number"
                 value={totalCredits}
                 disabled
-                className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-gray-600 font-semibold"
+                className="w-full px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#94A3B8] font-semibold"
               />
             </div>
           </div>
         </div>
 
         {/* Weekly Plan */}
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">Weekly Plan</h2>
+        <div className="bg-white p-6 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4 text-[#94A3B8]">Weekly Plan</h2>
           {formData.weeklyPlan.map((week, weekIndex) => (
-            <div key={weekIndex} className="mb-6 p-4 border border-gray-200 rounded-md">
+            <div key={weekIndex} className="mb-6 p-4 border border-[rgba(0,0,0,0.08)] rounded-md">
               <h3 className="text-lg font-medium mb-2">Week {week.weekNumber}</h3>
               {week.topics.map((topic, topicIndex) => (
                 <div key={topicIndex} className="mb-2 flex gap-2">
@@ -563,7 +563,7 @@ const CreateCourse = () => {
                     value={topic}
                     onChange={(e) => handleWeeklyTopicChange(weekIndex, topicIndex, e.target.value)}
                     placeholder={`Topic ${topicIndex + 1}`}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
                   />
                   {topicIndex > 0 && (
                     <button
@@ -579,7 +579,7 @@ const CreateCourse = () => {
                           )
                         }));
                       }}
-                      className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                      className="px-3 py-2 bg-[rgba(220,38,38,0.08)]0 text-white rounded-md hover:bg-red-600"
                     >
                       Remove
                     </button>
@@ -589,7 +589,7 @@ const CreateCourse = () => {
               <button
                 type="button"
                 onClick={() => addTopicToWeek(weekIndex)}
-                className="mt-2 px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
+                className="mt-2 px-3 py-1 bg-[#F97316] text-white rounded-md hover:bg-[#F97316] text-sm"
               >
                 Add Topic
               </button>
@@ -598,34 +598,34 @@ const CreateCourse = () => {
           <button
             type="button"
             onClick={addWeeklyPlan}
-            className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+            className="px-4 py-2 bg-[#F97316] text-white rounded-md hover:bg-[#EA580C]"
           >
             Add Week
           </button>
         </div>
 
         {/* Syllabus Modules */}
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">Syllabus Modules</h2>
+        <div className="bg-white p-6 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4 text-[#94A3B8]">Syllabus Modules</h2>
           {formData.syllabus.modules.map((module, index) => (
-            <div key={index} className="mb-6 p-4 border border-gray-200 rounded-md">
+            <div key={index} className="mb-6 p-4 border border-[rgba(0,0,0,0.08)] rounded-md">
               <h3 className="text-lg font-medium mb-2">Module {module.moduleNumber}</h3>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Module Title</label>
+                <label className="block text-sm font-medium text-[#94A3B8] mb-1">Module Title</label>
                 <input
                   type="text"
                   value={module.moduleTitle}
                   onChange={(e) => handleModuleChange(index, 'moduleTitle', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Module Description</label>
+                <label className="block text-sm font-medium text-[#94A3B8] mb-1">Module Description</label>
                 <textarea
                   value={module.description}
                   onChange={(e) => handleModuleChange(index, 'description', e.target.value)}
                   rows="3"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-[rgba(0,0,0,0.08)] rounded-md bg-white text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#F97316]"
                 />
               </div>
             </div>
@@ -633,7 +633,7 @@ const CreateCourse = () => {
           <button
             type="button"
             onClick={addModule}
-            className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+            className="px-4 py-2 bg-[#F97316] text-white rounded-md hover:bg-[#EA580C]"
           >
             Add Module
           </button>
@@ -646,8 +646,8 @@ const CreateCourse = () => {
             disabled={isSubmitting}
             className={`px-8 py-3 rounded-md text-white font-semibold ${
               isSubmitting 
-                ? 'bg-gray-400 cursor-not-allowed' 
-                : 'bg-blue-600 hover:bg-blue-700'
+                ? 'bg-[#64748B] cursor-not-allowed' 
+                : 'bg-[#F97316] hover:bg-[#EA580C]'
             }`}
           >
             {isSubmitting ? 'Creating Course...' : 'Create Course'}
@@ -658,8 +658,8 @@ const CreateCourse = () => {
         {submitMessage && (
           <div className={`text-center p-3 rounded-md ${
             submitMessage.includes('Error') 
-              ? 'bg-red-100 text-red-700' 
-              : 'bg-green-100 text-green-700'
+              ? 'bg-[rgba(239,68,68,0.15)] text-[#EF4444]' 
+              : 'bg-[rgba(5,150,105,0.1)] text-[#10B981]'
           }`}>
             {submitMessage}
           </div>

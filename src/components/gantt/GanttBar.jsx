@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const GanttBar = ({ label, startDate, endDate, timelineStart, timelineEnd, color = 'bg-blue-500', className = '' }) => {
+const GanttBar = ({ label, startDate, endDate, timelineStart, timelineEnd, color = 'bg-purple-500', className = '' }) => {
   const totalSpan = timelineEnd - timelineStart;
   const left = ((new Date(startDate) - timelineStart) / totalSpan) * 100;
   const width = ((new Date(endDate) - new Date(startDate)) / totalSpan) * 100;

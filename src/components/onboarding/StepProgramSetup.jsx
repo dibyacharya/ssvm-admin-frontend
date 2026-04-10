@@ -507,14 +507,14 @@ const StepProgramSetup = ({ state, dispatch, goNext, isEditMode = false }) => {
   };
 
   const inputClass =
-    "w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition";
+    "w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition";
   const labelClass =
     "block text-xs uppercase tracking-widest text-gray-500 font-medium mb-1.5";
 
   return (
     <div>
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
+        <h1 className="text-2xl font-semibold tracking-tight text-[#1E293B]">
           {isEditMode ? "Edit Program" : "Program Setup"}
         </h1>
         <p className="mt-1 text-sm text-gray-500">
@@ -535,19 +535,19 @@ const StepProgramSetup = ({ state, dispatch, goNext, isEditMode = false }) => {
               relative p-5 rounded-xl border-2 text-left transition-all
               ${
                 mode === "create"
-                  ? "border-blue-600 bg-blue-50"
+                  ? "border-purple-600 bg-purple-50"
                   : "border-gray-200 bg-white hover:border-gray-300"
               }
             `}
           >
             <Plus
               className={`w-5 h-5 mb-2 ${
-                mode === "create" ? "text-blue-600" : "text-gray-400"
+                mode === "create" ? "text-purple-600" : "text-gray-400"
               }`}
             />
             <div
               className={`text-sm font-semibold ${
-                mode === "create" ? "text-blue-900" : "text-gray-700"
+                mode === "create" ? "text-purple-900" : "text-gray-700"
               }`}
             >
               Create New Program
@@ -560,19 +560,19 @@ const StepProgramSetup = ({ state, dispatch, goNext, isEditMode = false }) => {
               relative p-5 rounded-xl border-2 text-left transition-all
               ${
                 mode === "existing"
-                  ? "border-blue-600 bg-blue-50"
+                  ? "border-purple-600 bg-purple-50"
                   : "border-gray-200 bg-white hover:border-gray-300"
               }
             `}
           >
             <Building2
               className={`w-5 h-5 mb-2 ${
-                mode === "existing" ? "text-blue-600" : "text-gray-400"
+                mode === "existing" ? "text-purple-600" : "text-gray-400"
               }`}
             />
             <div
               className={`text-sm font-semibold ${
-                mode === "existing" ? "text-blue-900" : "text-gray-700"
+                mode === "existing" ? "text-purple-900" : "text-gray-700"
               }`}
             >
               Use Existing Program
@@ -751,14 +751,14 @@ const StepProgramSetup = ({ state, dispatch, goNext, isEditMode = false }) => {
               >
                 <div className="border-t border-gray-200 pt-6 mt-2">
                   <div className="flex items-center justify-between mb-1">
-                    <h2 className="text-lg font-semibold text-gray-900">
+                    <h2 className="text-lg font-semibold text-[#1E293B]">
                       {periodLabel} Distribution
                     </h2>
                     {totalCredits > 0 && semesterSlots.length > 0 && (
                       <button
                         type="button"
                         onClick={handleRedistributeCredits}
-                        className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                        className="text-xs text-purple-600 hover:text-purple-700 font-medium"
                       >
                         Redistribute equally
                       </button>
@@ -832,7 +832,7 @@ const StepProgramSetup = ({ state, dispatch, goNext, isEditMode = false }) => {
                             onChange={(e) =>
                               handleSlotNameChange(index, e.target.value)
                             }
-                            className="w-full border-0 p-0 text-sm font-medium text-gray-900 focus:ring-0 outline-none bg-transparent"
+                            className="w-full border-0 p-0 text-sm font-medium text-[#1E293B] focus:ring-0 outline-none bg-transparent"
                             placeholder={`${periodLabel} ${index + 1}`}
                           />
                         </div>
@@ -844,7 +844,7 @@ const StepProgramSetup = ({ state, dispatch, goNext, isEditMode = false }) => {
                             onChange={(e) =>
                               handleSlotCreditChange(index, e.target.value)
                             }
-                            className="w-20 border border-gray-300 rounded-md px-3 py-1.5 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                            className="w-20 border border-gray-300 rounded-md px-3 py-1.5 text-sm text-center focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                             placeholder="0"
                           />
                           <span className="text-xs text-gray-500">credits</span>
@@ -870,7 +870,7 @@ const StepProgramSetup = ({ state, dispatch, goNext, isEditMode = false }) => {
             <button
               onClick={handleCreateAndContinue}
               disabled={creditOverflow}
-              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+              className="inline-flex items-center px-6 py-3 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
             >
               Continue
               <ChevronRight className="w-4 h-4 ml-2" />
@@ -915,7 +915,7 @@ const StepProgramSetup = ({ state, dispatch, goNext, isEditMode = false }) => {
               variants={fadeUp}
               className="bg-gray-50 border border-gray-200 rounded-lg p-5 space-y-2"
             >
-              <div className="text-sm font-semibold text-gray-900">
+              <div className="text-sm font-semibold text-[#1E293B]">
                 {selectedProgram.name}
               </div>
               <div className="text-xs text-gray-500 space-y-1">
@@ -943,7 +943,7 @@ const StepProgramSetup = ({ state, dispatch, goNext, isEditMode = false }) => {
             <button
               onClick={handleSelectAndContinue}
               disabled={submitting || !selectedProgramId}
-              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+              className="inline-flex items-center px-6 py-3 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
             >
               {submitting ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />

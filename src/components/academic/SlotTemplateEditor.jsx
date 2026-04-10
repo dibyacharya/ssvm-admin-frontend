@@ -32,7 +32,7 @@ const SlotTemplateEditor = ({
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
           <h5 className="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
-            <Clock className="w-4 h-4 text-blue-500" />
+            <Clock className="w-4 h-4 text-purple-500" />
             Slot Templates
           </h5>
           <p className="text-[11px] text-gray-400 mt-0.5">
@@ -49,7 +49,7 @@ const SlotTemplateEditor = ({
           </button>
           <button
             type="button"
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 transition"
             onClick={onSave}
             disabled={saving}
           >
@@ -84,7 +84,7 @@ const SlotTemplateEditor = ({
                 type="text"
                 value={template.title || ''}
                 placeholder="e.g. Slot 1, Lunch Break"
-                className="w-full border border-gray-300 rounded-md px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-blue-400 focus:border-blue-400 outline-none bg-white"
+                className="w-full border border-gray-300 rounded-md px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-purple-400 focus:border-purple-400 outline-none bg-white"
                 onChange={(e) => onUpdateTemplate(templateIndex, 'title', e.target.value)}
               />
             </div>
@@ -93,7 +93,7 @@ const SlotTemplateEditor = ({
               <label className="lg:hidden text-[10px] font-medium text-gray-500 uppercase mb-0.5 block">Type</label>
               <select
                 value={template.type || 'CLASS'}
-                className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-400 focus:border-blue-400 outline-none bg-white"
+                className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-purple-400 focus:border-purple-400 outline-none bg-white"
                 onChange={(e) => onUpdateTemplate(templateIndex, 'type', e.target.value)}
               >
                 {SLOT_TYPE_OPTIONS.map((opt) => (
@@ -107,7 +107,7 @@ const SlotTemplateEditor = ({
               <input
                 type="time"
                 value={template.startTime || ''}
-                className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-400 focus:border-blue-400 outline-none bg-white"
+                className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-purple-400 focus:border-purple-400 outline-none bg-white"
                 onChange={(e) => onUpdateTemplate(templateIndex, 'startTime', e.target.value)}
               />
             </div>
@@ -117,7 +117,7 @@ const SlotTemplateEditor = ({
               <input
                 type="time"
                 value={template.endTime || ''}
-                className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-400 focus:border-blue-400 outline-none bg-white"
+                className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-purple-400 focus:border-purple-400 outline-none bg-white"
                 onChange={(e) => onUpdateTemplate(templateIndex, 'endTime', e.target.value)}
               />
             </div>
@@ -129,7 +129,7 @@ const SlotTemplateEditor = ({
                 value={template.label || ''}
                 placeholder={['BREAK', 'MID_EXAM', 'END_EXAM'].includes(template.type) ? 'e.g. Lunch Break, Tea Break' : 'N/A for class slots'}
                 disabled={!['BREAK', 'MID_EXAM', 'END_EXAM'].includes(template.type)}
-                className="w-full border border-gray-300 rounded-md px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-blue-400 focus:border-blue-400 outline-none bg-white disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                className="w-full border border-gray-300 rounded-md px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-purple-400 focus:border-purple-400 outline-none bg-white disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                 onChange={(e) => onUpdateTemplate(templateIndex, 'label', e.target.value)}
               />
             </div>
@@ -142,7 +142,7 @@ const SlotTemplateEditor = ({
                 placeholder="#"
                 min={1}
                 title="Display order — slots are shown in this sequence in the timetable"
-                className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-400 focus:border-blue-400 outline-none bg-white w-16"
+                className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-purple-400 focus:border-purple-400 outline-none bg-white w-16"
                 onChange={(e) => onUpdateTemplate(templateIndex, 'order', Number(e.target.value) || 1)}
               />
             </div>

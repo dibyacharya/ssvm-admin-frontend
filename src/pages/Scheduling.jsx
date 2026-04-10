@@ -7,7 +7,7 @@ import { getPeriodLabel } from '../utils/periodLabel';
 
 const statusColors = {
   active: 'bg-green-100 text-green-800',
-  upcoming: 'bg-blue-100 text-blue-800',
+  upcoming: 'bg-purple-100 text-purple-800',
   completed: 'bg-purple-100 text-purple-800'
 };
 
@@ -272,8 +272,8 @@ export const Scheduling = () => {
       <div className="space-y-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="text-center py-12">
-            <RefreshCw className="w-16 h-16 text-blue-400 mx-auto mb-4 animate-spin" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Schedule Data</h2>
+            <RefreshCw className="w-16 h-16 text-purple-400 mx-auto mb-4 animate-spin" />
+            <h2 className="text-xl font-semibold text-[#1E293B] mb-2">Loading Schedule Data</h2>
             <p className="text-gray-600">Please wait while we fetch the scheduling information...</p>
           </div>
         </div>
@@ -287,16 +287,16 @@ export const Scheduling = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
-            <Calendar className="w-8 h-8 text-blue-600" />
+            <Calendar className="w-8 h-8 text-purple-600" />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Scheduling & Timetables</h1>
+              <h1 className="text-2xl font-bold text-[#1E293B]">Scheduling & Timetables</h1>
               <p className="text-gray-600">Manage academic schedules and period information</p>
             </div>
           </div>
           <div className="flex space-x-3">
             <button
               onClick={() => setShowCreateForm(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
             >
               <Plus className="w-4 h-4" />
               <span>Add Period</span>
@@ -309,7 +309,7 @@ export const Scheduling = () => {
           <select
             value={filterProgram}
             onChange={(e) => { setFilterProgram(e.target.value); setCurrentPage(1); }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           >
             <option value="all">All Programs</option>
             {programs.map(p => (
@@ -319,7 +319,7 @@ export const Scheduling = () => {
           <select
             value={filterPeriodType}
             onChange={(e) => { setFilterPeriodType(e.target.value); setCurrentPage(1); }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           >
             <option value="all">All Types</option>
             <option value="semester">Semester</option>
@@ -330,7 +330,7 @@ export const Scheduling = () => {
           <select
             value={filterStatus}
             onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -353,18 +353,18 @@ export const Scheduling = () => {
           <div key={semester._id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{semester.name}</h3>
+                  <h3 className="text-lg font-semibold text-[#1E293B]">{semester.name}</h3>
                   <p className="text-sm text-gray-500">ID: {semester._id.slice(-8)}</p>
                 </div>
               </div>
               <div className="flex space-x-1">
                 <button
                   onClick={() => handleEditClick(semester)}
-                  className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                  className="p-1 text-gray-400 hover:text-purple-600 transition-colors"
                   title="Edit"
                 >
                   <Edit3 className="w-4 h-4" />
@@ -442,11 +442,11 @@ export const Scheduling = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="text-center py-12">
             <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">No {filterPeriodType !== 'all' ? getPeriodLabel(filterPeriodType) : 'Period'}s Found</h2>
+            <h2 className="text-xl font-semibold text-[#1E293B] mb-2">No {filterPeriodType !== 'all' ? getPeriodLabel(filterPeriodType) : 'Period'}s Found</h2>
             <p className="text-gray-600 mb-4">Get started by creating your first {filterPeriodType !== 'all' ? getPeriodLabel(filterPeriodType).toLowerCase() : 'period'}.</p>
             <button
               onClick={() => setShowCreateForm(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
             >
               Create Period
             </button>
@@ -475,7 +475,7 @@ export const Scheduling = () => {
                   onClick={() => setCurrentPage(page)}
                   className={`px-3 py-1 text-sm rounded-lg ${
                     currentPage === page
-                      ? 'text-white bg-blue-600'
+                      ? 'text-white bg-purple-600'
                       : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
                   }`}
                 >
@@ -499,7 +499,7 @@ export const Scheduling = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Create New {getPeriodLabel(selectedPeriodType)}</h2>
+              <h2 className="text-xl font-semibold text-[#1E293B]">Create New {getPeriodLabel(selectedPeriodType)}</h2>
               <button
                 onClick={() => setShowCreateForm(false)}
                 className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
@@ -516,7 +516,7 @@ export const Scheduling = () => {
                   name="selectedProgram"
                   value={formData.selectedProgram}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="">Select Program (optional)</option>
                   {programs.map(p => (
@@ -533,7 +533,7 @@ export const Scheduling = () => {
                   value={formData.batch}
                   onChange={handleInputChange}
                   disabled={!formData.selectedProgram}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-50"
                 >
                   <option value="">Select Batch (optional)</option>
                   {batches.map(b => (
@@ -551,7 +551,7 @@ export const Scheduling = () => {
                   onChange={handleInputChange}
                   required
                   placeholder="e.g., Fall 2024, Spring 2025"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -564,7 +564,7 @@ export const Scheduling = () => {
                   onChange={handleInputChange}
                   min="1"
                   placeholder="e.g., 1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -576,7 +576,7 @@ export const Scheduling = () => {
                   value={formData.startDate}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -588,7 +588,7 @@ export const Scheduling = () => {
                   value={formData.endDate}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -606,7 +606,7 @@ export const Scheduling = () => {
                   className={`flex items-center space-x-2 px-4 py-2 rounded-md text-white transition-colors ${
                     creating
                       ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700'
+                      : 'bg-purple-600 hover:bg-purple-700'
                   }`}
                 >
                   <Save className="w-4 h-4" />
@@ -623,7 +623,7 @@ export const Scheduling = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Edit {getPeriodLabel(editingSemester?.batch?.program?.periodType)}</h2>
+              <h2 className="text-xl font-semibold text-[#1E293B]">Edit {getPeriodLabel(editingSemester?.batch?.program?.periodType)}</h2>
               <button
                 onClick={() => { setShowEditForm(false); setEditingSemester(null); }}
                 className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
@@ -641,7 +641,7 @@ export const Scheduling = () => {
                   value={editFormData.name}
                   onChange={handleEditInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -653,7 +653,7 @@ export const Scheduling = () => {
                   value={editFormData.semNumber}
                   onChange={handleEditInputChange}
                   min="1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -665,7 +665,7 @@ export const Scheduling = () => {
                   value={editFormData.startDate}
                   onChange={handleEditInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -677,7 +677,7 @@ export const Scheduling = () => {
                   value={editFormData.endDate}
                   onChange={handleEditInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -693,7 +693,7 @@ export const Scheduling = () => {
                   type="submit"
                   disabled={updating}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-md text-white transition-colors ${
-                    updating ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                    updating ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'
                   }`}
                 >
                   <Save className="w-4 h-4" />
@@ -709,7 +709,7 @@ export const Scheduling = () => {
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Delete {getPeriodLabel(semesters.find(s => s._id === deletingSemesterId)?.batch?.program?.periodType)}</h2>
+            <h2 className="text-xl font-semibold text-[#1E293B] mb-2">Delete {getPeriodLabel(semesters.find(s => s._id === deletingSemesterId)?.batch?.program?.periodType)}</h2>
             <p className="text-gray-600 mb-6">Are you sure you want to delete this {getPeriodLabel(semesters.find(s => s._id === deletingSemesterId)?.batch?.program?.periodType).toLowerCase()}? This action cannot be undone.</p>
             <div className="flex justify-end space-x-3">
               <button

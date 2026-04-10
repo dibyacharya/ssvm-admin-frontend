@@ -24,13 +24,13 @@ const CSVUpload = ({ batchId, onClose, onSuccess, acceptedFormats = ['csv', 'xls
       mimeTypes: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'], 
       extensions: ['.xlsx'],
       icon: FileSpreadsheet,
-      color: 'text-blue-500'
+      color: 'text-purple-500'
     },
     xls: { 
       mimeTypes: ['application/vnd.ms-excel'], 
       extensions: ['.xls'],
       icon: FileSpreadsheet,
-      color: 'text-blue-500'
+      color: 'text-purple-500'
     },
     json: { 
       mimeTypes: ['application/json'], 
@@ -231,7 +231,7 @@ const CSVUpload = ({ batchId, onClose, onSuccess, acceptedFormats = ['csv', 'xls
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Upload Students File</h2>
+          <h2 className="text-xl font-semibold text-[#1E293B]">Upload Students File</h2>
           {onClose && (
             <button
               onClick={onClose}
@@ -248,7 +248,7 @@ const CSVUpload = ({ batchId, onClose, onSuccess, acceptedFormats = ['csv', 'xls
           <div
             className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
               dragActive
-                ? 'border-blue-500 bg-blue-50'
+                ? 'border-purple-500 bg-purple-50'
                 : file
                 ? 'border-green-500 bg-green-50'
                 : 'border-gray-300 hover:border-gray-400'
@@ -262,7 +262,7 @@ const CSVUpload = ({ batchId, onClose, onSuccess, acceptedFormats = ['csv', 'xls
                 <div className="flex items-center">
                   <FileIcon className={`w-8 h-8 ${color} mr-3`} />
                   <div className="text-left">
-                    <p className="font-medium text-gray-900">{file.name}</p>
+                    <p className="font-medium text-[#1E293B]">{file.name}</p>
                     <p className="text-sm text-gray-500">
                       {(file.size / 1024).toFixed(1)} KB
                     </p>
@@ -290,7 +290,7 @@ const CSVUpload = ({ batchId, onClose, onSuccess, acceptedFormats = ['csv', 'xls
                     className="hidden"
                     disabled={uploading}
                   />
-                  <span className="bg-blue-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-blue-700 transition-colors">
+                  <span className="bg-purple-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-purple-700 transition-colors">
                     Browse Files
                   </span>
                 </label>
@@ -305,7 +305,7 @@ const CSVUpload = ({ batchId, onClose, onSuccess, acceptedFormats = ['csv', 'xls
         {/* File Preview */}
         {previewData && (
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-medium text-gray-900 mb-2">File Preview:</h3>
+            <h3 className="font-medium text-[#1E293B] mb-2">File Preview:</h3>
             {previewData.type === 'csv' && (
               <div className="text-sm font-mono text-gray-700 whitespace-pre-wrap">
                 {previewData.lines.join('\n')}
@@ -336,9 +336,9 @@ const CSVUpload = ({ batchId, onClose, onSuccess, acceptedFormats = ['csv', 'xls
         )}
 
         {/* Format-specific Instructions */}
-        <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="font-medium text-blue-900 mb-2">Supported Formats:</h3>
-          <div className="text-sm text-blue-800 space-y-2">
+        <div className="mb-6 p-4 bg-purple-50 rounded-lg">
+          <h3 className="font-medium text-purple-900 mb-2">Supported Formats:</h3>
+          <div className="text-sm text-purple-800 space-y-2">
             {acceptedFormats.includes('csv') && (
               <div>
                 <strong>CSV:</strong> Include headers (name, email, password, mobileNo, rollNumber, role)
@@ -388,7 +388,7 @@ const CSVUpload = ({ batchId, onClose, onSuccess, acceptedFormats = ['csv', 'xls
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
               !file || uploading
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-purple-600 text-white hover:bg-purple-700'
             }`}
           >
             {uploading ? (

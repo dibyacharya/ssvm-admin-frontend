@@ -160,7 +160,7 @@ const TimetableUploadModal = ({ semesterId, periodLabel = 'Semester', onClose, o
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-[#1E293B]">
             Upload {periodLabel} Timetable
           </h2>
           <button
@@ -193,7 +193,7 @@ const TimetableUploadModal = ({ semesterId, periodLabel = 'Semester', onClose, o
               type="button"
               onClick={handleDownloadTemplate}
               disabled={templateDownloading}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
             >
               {templateDownloading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -216,7 +216,7 @@ const TimetableUploadModal = ({ semesterId, periodLabel = 'Semester', onClose, o
               onClick={() => fileInputRef.current?.click()}
               className={`
                 border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-                ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'}
+                ${dragActive ? 'border-purple-500 bg-purple-50' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'}
               `}
             >
               <input
@@ -230,12 +230,12 @@ const TimetableUploadModal = ({ semesterId, periodLabel = 'Semester', onClose, o
               <p className="text-sm text-gray-600">
                 {file ? (
                   <span className="inline-flex items-center gap-2">
-                    <FileSpreadsheet className="w-4 h-4 text-blue-500" />
+                    <FileSpreadsheet className="w-4 h-4 text-purple-500" />
                     <span className="font-medium text-gray-800">{file.name}</span>
                     <span className="text-gray-400">({(file.size / 1024).toFixed(1)} KB)</span>
                   </span>
                 ) : (
-                  <>Drag & drop an Excel file here, or <span className="text-blue-600 font-medium">click to browse</span></>
+                  <>Drag & drop an Excel file here, or <span className="text-purple-600 font-medium">click to browse</span></>
                 )}
               </p>
               <p className="text-xs text-gray-400 mt-1">Accepted: .xlsx, .xls (max 10MB)</p>
@@ -355,7 +355,7 @@ const TimetableUploadModal = ({ semesterId, periodLabel = 'Semester', onClose, o
                               </td>
                               <td className="px-2 py-1.5">
                                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                                  entry.type === 'BREAK' ? 'bg-gray-100 text-gray-600' : 'bg-blue-50 text-blue-700'
+                                  entry.type === 'BREAK' ? 'bg-gray-100 text-gray-600' : 'bg-purple-50 text-purple-700'
                                 }`}>
                                   {entry.type}
                                 </span>

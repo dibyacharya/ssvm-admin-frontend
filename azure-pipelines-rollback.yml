@@ -34,17 +34,17 @@ parameters:
 
 variables:
   - name: containerapp_name_dev
-    value: 'kiit-lms-admin-dev'
+    value: 'ssvm-lms-admin-dev'
   - name: containerapp_name_uat
-    value: 'kiit-lms-admin-uat'
+    value: 'ssvm-lms-admin-uat'
   - name: containerapp_name_prod
-    value: 'kiit-lms-admin-prod'
+    value: 'ssvm-lms-admin-prod'
   - name: resource_group_dev
-    value: 'rg-kiit-lms-dev'
+    value: 'rg-ssvm-lms-dev'
   - name: resource_group_uat
-    value: 'rg-kiit-lms-uat'
+    value: 'rg-ssvm-lms-uat'
   - name: resource_group_prod
-    value: 'rg-kiit-lms-prod'
+    value: 'rg-ssvm-lms-prod'
 
 stages:
   - stage: Rollback
@@ -52,19 +52,19 @@ stages:
     variables:
       - ${{ if eq(parameters.environment, 'dev') }}:
         - name: containerapp_name
-          value: 'kiit-lms-admin-dev'
+          value: 'ssvm-lms-admin-dev'
         - name: resource_group
-          value: 'rg-kiit-lms-dev'
+          value: 'rg-ssvm-lms-dev'
       - ${{ if eq(parameters.environment, 'uat') }}:
         - name: containerapp_name
-          value: 'kiit-lms-admin-uat'
+          value: 'ssvm-lms-admin-uat'
         - name: resource_group
-          value: 'rg-kiit-lms-uat'
+          value: 'rg-ssvm-lms-uat'
       - ${{ if eq(parameters.environment, 'prod') }}:
         - name: containerapp_name
-          value: 'kiit-lms-admin-prod'
+          value: 'ssvm-lms-admin-prod'
         - name: resource_group
-          value: 'rg-kiit-lms-prod'
+          value: 'rg-ssvm-lms-prod'
       - group: ${{ parameters.environment }}
     jobs:
       - ${{ if eq(parameters.deployment_type, 'containerapp') }}:
@@ -81,7 +81,7 @@ stages:
             k8s_cluster_name: $(k8s_cluster_name)
             k8s_resource_group: $(k8s_resource_group)
             namespace: default
-            deployment_name: 'kiit-lms-admin-frontend'
+            deployment_name: 'ssvm-lms-admin-frontend'
             revision_number: ${{ parameters.rollback_to_revision }}
             build_id: ${{ parameters.rollback_to_build_id }}
 

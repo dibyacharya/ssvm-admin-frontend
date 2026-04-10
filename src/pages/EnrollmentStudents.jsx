@@ -131,24 +131,24 @@ const EnrollmentStudents = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
-            <Users className="h-6 w-6 text-blue-600" />
+          <h1 className="text-2xl font-semibold text-[#1E293B] flex items-center gap-2">
+            <Users className="h-6 w-6 text-[#F97316]" />
             Student Enrollment
           </h1>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-[#94A3B8]">
             View enrolled students and assign or change their batch.
           </p>
         </div>
       </div>
 
-      <form onSubmit={applyFilters} className="bg-white border border-gray-200 rounded-lg p-4">
+      <form onSubmit={applyFilters} className="bg-white border border-[rgba(0,0,0,0.08)] rounded-lg p-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label className="text-xs font-medium text-gray-500">Status</label>
+            <label className="text-xs font-medium text-[#94A3B8]">Status</label>
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="mt-1 w-full rounded-md border-gray-200 text-sm"
+              className="mt-1 w-full rounded-md border-[rgba(0,0,0,0.08)] text-sm"
             >
               {statusOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -158,11 +158,11 @@ const EnrollmentStudents = () => {
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-500">Batch</label>
+            <label className="text-xs font-medium text-[#94A3B8]">Batch</label>
             <select
               value={filters.batchId}
               onChange={(e) => handleFilterChange('batchId', e.target.value)}
-              className="mt-1 w-full rounded-md border-gray-200 text-sm"
+              className="mt-1 w-full rounded-md border-[rgba(0,0,0,0.08)] text-sm"
             >
               <option value="">All Batches</option>
               {batches.map((batch) => (
@@ -173,11 +173,11 @@ const EnrollmentStudents = () => {
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-500">Source</label>
+            <label className="text-xs font-medium text-[#94A3B8]">Source</label>
             <select
               value={filters.source}
               onChange={(e) => handleFilterChange('source', e.target.value)}
-              className="mt-1 w-full rounded-md border-gray-200 text-sm"
+              className="mt-1 w-full rounded-md border-[rgba(0,0,0,0.08)] text-sm"
             >
               {sourceOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -187,12 +187,12 @@ const EnrollmentStudents = () => {
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-500">Group</label>
+            <label className="text-xs font-medium text-[#94A3B8]">Group</label>
             <input
               type="text"
               value={filters.group}
               onChange={(e) => handleFilterChange('group', e.target.value)}
-              className="mt-1 w-full rounded-md border-gray-200 text-sm"
+              className="mt-1 w-full rounded-md border-[rgba(0,0,0,0.08)] text-sm"
               placeholder="Cohort / group"
             />
           </div>
@@ -200,14 +200,14 @@ const EnrollmentStudents = () => {
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <button
             type="submit"
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="rounded-lg bg-[#F97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#EA580C]"
           >
             Apply Filters
           </button>
           <button
             type="button"
             onClick={clearFilters}
-            className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-[rgba(0,0,0,0.08)] px-4 py-2 text-sm text-[#94A3B8] hover:bg-white"
           >
             Clear
           </button>
@@ -215,20 +215,20 @@ const EnrollmentStudents = () => {
       </form>
 
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-lg border border-[rgba(239,68,68,0.2)] bg-[rgba(220,38,38,0.08)] p-4 text-sm text-[#EF4444]">
           {error}
         </div>
       )}
 
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-lg overflow-hidden">
         {loading ? (
-          <div className="p-6 text-center text-gray-600">Loading enrollment students...</div>
+          <div className="p-6 text-center text-[#94A3B8]">Loading enrollment students...</div>
         ) : students.length === 0 ? (
-          <div className="p-6 text-center text-gray-600">No students found.</div>
+          <div className="p-6 text-center text-[#94A3B8]">No students found.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+              <thead className="bg-white text-xs uppercase text-[#94A3B8]">
                 <tr>
                   <th className="px-4 py-3 text-left">Name</th>
                   <th className="px-4 py-3 text-left">Roll</th>
@@ -238,15 +238,15 @@ const EnrollmentStudents = () => {
                   <th className="px-4 py-3 text-left">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-[rgba(255,255,255,0.06)]">
                 {students.map((student) => {
                   const isAssigned = Boolean(student.batch);
                   const currentBatch = student.batch ? batchesById.get(student.batch._id) : null;
                   return (
                     <tr key={student._id}>
                       <td className="px-4 py-3">
-                        <div className="font-medium text-gray-900">{student.name || 'Unnamed'}</div>
-                        <div className="text-xs text-gray-500">{student.email}</div>
+                        <div className="font-medium text-[#1E293B]">{student.name || 'Unnamed'}</div>
+                        <div className="text-xs text-[#94A3B8]">{student.email}</div>
                       </td>
                       <td className="px-4 py-3">{student.rollNumber || '-'}</td>
                       <td className="px-4 py-3">{student.source || 'Bulk Upload'}</td>
@@ -254,17 +254,17 @@ const EnrollmentStudents = () => {
                         {currentBatch ? (
                           <span>{currentBatch.name} {currentBatch.year ? `(${currentBatch.year})` : ''}</span>
                         ) : (
-                          <span className="text-gray-500">Not Assigned</span>
+                          <span className="text-[#94A3B8]">Not Assigned</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
                         {isAssigned ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(5,150,105,0.1)] px-2 py-1 text-xs font-medium text-[#10B981]">
                             <CheckCircle className="h-3 w-3" />
                             Assigned
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(217,119,6,0.1)] px-2 py-1 text-xs font-medium text-[#F59E0B]">
                             <XCircle className="h-3 w-3" />
                             Not Assigned
                           </span>
@@ -275,7 +275,7 @@ const EnrollmentStudents = () => {
                           <select
                             value={pendingBatchMap[student._id] ?? ''}
                             onChange={(e) => handleBatchSelect(student._id, e.target.value)}
-                            className="rounded-md border-gray-200 text-sm"
+                            className="rounded-md border-[rgba(0,0,0,0.08)] text-sm"
                           >
                             <option value="">-- Unassigned --</option>
                             {batches.map((batch) => (
@@ -288,7 +288,7 @@ const EnrollmentStudents = () => {
                             type="button"
                             onClick={() => handleAssignBatch(student._id)}
                             disabled={updatingId === student._id}
-                            className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+                            className="rounded-md bg-[#F97316] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#EA580C] disabled:opacity-60"
                           >
                             {updatingId === student._id ? 'Saving...' : 'Save Batch'}
                           </button>

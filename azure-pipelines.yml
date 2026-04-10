@@ -11,11 +11,11 @@ variables:
   - name: tag
     value: '$(Build.BuildId)'
   - name: devRepo
-    value: 'kiit/dev/lms/lmsadminfrontend'
+    value: 'ssvm/dev/lms/lmsadminfrontend'
   - name: uatRepo
-    value: 'kiit/uat/lms/lmsadminfrontend'
+    value: 'ssvm/uat/lms/lmsadminfrontend'
   - name: prodRepo
-    value: 'kiit/prod/lms/lmsadminfrontend'
+    value: 'ssvm/prod/lms/lmsadminfrontend'
 
 ########################
 # BUILD (DEV REPO)
@@ -106,7 +106,7 @@ stages:
                     registry_name: '$(registry_name)'
                     acrusername: '$(acrusername)'
                     acrpassword: '$(acrpassword)'
-                    resource_group: rg-kiit-lms-'$(env)'
+                    resource_group: rg-ssvm-lms-'$(env)'
                     # containerapp_environment: '$(containerapp_environment)'
                     # containerapp_name: 'lmsbackend'
                     env: '$(env)'
@@ -154,7 +154,7 @@ stages:
                     registry_name: '$(registry_name)'
                     acrusername: '$(acrusername)'
                     acrpassword: '$(acrpassword)'
-                    resource_group: rg-kiit-lms-'$(env)'
+                    resource_group: rg-ssvm-lms-'$(env)'
                     # containerapp_environment: '$(containerapp_environment)'
                     # containerapp_name: 'lmsbackend'
                     env: '$(env)'

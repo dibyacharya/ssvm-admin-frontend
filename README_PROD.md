@@ -1,6 +1,6 @@
-# KIIT Admin Frontend Production Notes
+# SSVM Admin Frontend Production Notes
 
-Frontend is a standalone Vite + React SPA in `KIIT_ADMIN_FRONTED`.
+Frontend is a standalone Vite + React SPA in `SSVM_ADMIN_FRONTED`.
 Build output is generated into `dist/` and should be served by a static host (Nginx/CDN/object storage).
 
 ## Runtime/Build Requirements
@@ -8,7 +8,7 @@ Build output is generated into `dist/` and should be served by a static host (Ng
 - npm (validated here with `11.6.0`)
 
 ## Environment Variables
-Use `KIIT_ADMIN_FRONTED/.env.example`.
+Use `SSVM_ADMIN_FRONTED/.env.example`.
 
 | Key | Required | Purpose |
 |---|---|---|
@@ -19,7 +19,7 @@ Important:
 - If backend URL changes, rebuild and redeploy frontend.
 
 ## Commands
-From `KIIT_ADMIN_FRONTED`:
+From `SSVM_ADMIN_FRONTED`:
 
 ```bash
 npm ci
@@ -40,7 +40,7 @@ There is no production runtime fallback to backend URL config. Production builds
 server {
   listen 80;
   server_name admin.example.com;
-  root /var/www/kiit-admin-frontend/dist;
+  root /var/www/ssvm-admin-frontend/dist;
   index index.html;
 
   location / {

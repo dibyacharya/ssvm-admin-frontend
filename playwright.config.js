@@ -17,7 +17,7 @@ export default defineConfig({
   webServer: [
     {
       command: "npm run start",
-      cwd: "../../KIIT_LMS_BACKEND/KIIT_LMS_BACKEND",
+      cwd: "../../SSVM_LMS_BACKEND/SSVM_LMS_BACKEND",
       url: "http://127.0.0.1:5000/health",
       reuseExistingServer: true,
       timeout: 120_000,
@@ -31,7 +31,7 @@ export default defineConfig({
     },
     {
       command: "PORT=3001 CI=1 npm start",
-      cwd: "../../KIIT_LMS_FRONTEND/KIIT_LMS_FRONTEND",
+      cwd: "../../SSVM_LMS_FRONTEND/SSVM_LMS_FRONTEND",
       url: "http://127.0.0.1:3001/login",
       reuseExistingServer: true,
       timeout: 180_000,

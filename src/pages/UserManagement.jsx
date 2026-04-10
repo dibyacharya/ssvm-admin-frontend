@@ -1234,20 +1234,20 @@ const UserManagement = () => {
 
   const getAccessRoleBadge = (roleTag) => {
     const config = {
-      ADMIN: 'bg-red-100 text-red-800',
-      DEAN: 'bg-amber-100 text-amber-800',
-      ASSOCIATE_DEAN: 'bg-orange-100 text-orange-800',
-      PROGRAM_COORDINATOR: 'bg-emerald-100 text-emerald-800',
+      ADMIN: 'bg-[rgba(239,68,68,0.15)] text-[#EF4444]',
+      DEAN: 'bg-[rgba(217,119,6,0.1)] text-[#F59E0B]',
+      ASSOCIATE_DEAN: 'bg-[rgba(249,115,22,0.15)] text-[#F97316]',
+      PROGRAM_COORDINATOR: 'bg-[rgba(5,150,105,0.1)] text-[#10B981]',
       COURSE_COORDINATOR: 'bg-sky-100 text-sky-800',
-      TEACHER: 'bg-blue-100 text-blue-800',
-      TA: 'bg-indigo-100 text-indigo-800',
+      TEACHER: 'bg-[rgba(249,115,22,0.15)] text-[#FB923C]',
+      TA: 'bg-[rgba(249,115,22,0.15)] text-[#FB923C]',
       STUDENT: 'bg-violet-100 text-violet-800'
     };
-    return config[String(roleTag || '').trim().toUpperCase()] || 'bg-gray-100 text-gray-700';
+    return config[String(roleTag || '').trim().toUpperCase()] || 'bg-white text-[#94A3B8]';
   };
 
   const getStatusBadge = (isActive) => {
-    return isActive === false ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
+    return isActive === false ? 'bg-[rgba(239,68,68,0.15)] text-[#EF4444]' : 'bg-[rgba(5,150,105,0.1)] text-[#10B981]';
   };
 
   const getSourceBadge = (targetUser) => {
@@ -1260,18 +1260,18 @@ const UserManagement = () => {
     if (normalized === 'CRM') {
       return {
         label: 'CRM',
-        className: 'bg-indigo-100 text-indigo-800'
+        className: 'bg-[rgba(249,115,22,0.15)] text-[#FB923C]'
       };
     }
     if (normalized === 'BULK_UPLOAD' || normalized === 'BULK') {
       return {
         label: 'Bulk Upload',
-        className: 'bg-amber-100 text-amber-800'
+        className: 'bg-[rgba(217,119,6,0.1)] text-[#F59E0B]'
       };
     }
     return {
       label: 'Manual',
-      className: 'bg-slate-100 text-slate-700'
+      className: 'bg-white text-[#94A3B8]'
     };
   };
 
@@ -1403,14 +1403,14 @@ const UserManagement = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-6">
         <div className="mb-4 space-y-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Users className="w-8 h-8 text-blue-600 mr-3" />
+            <h1 className="text-2xl font-bold text-[#1E293B] flex items-center">
+              <Users className="w-8 h-8 text-[#F97316] mr-3" />
               User Management
             </h1>
-            <p className="text-gray-600 mt-1">{pagination.totalUsers} total users</p>
+            <p className="text-[#94A3B8] mt-1">{pagination.totalUsers} total users</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -1421,8 +1421,8 @@ const UserManagement = () => {
                 onClick={() => setActiveUserSection(section.id)}
                 className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                   activeUserSection === section.id
-                    ? 'border-blue-600 bg-blue-600 text-white'
-                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                    ? 'border-[#F97316] bg-[#F97316] text-white'
+                    : 'border-[rgba(0,0,0,0.08)] bg-white text-[#94A3B8] hover:bg-white'
                 }`}
               >
                 {section.label}
@@ -1431,15 +1431,15 @@ const UserManagement = () => {
           </div>
 
           {activeUserSection === 'student' && (
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-4">
+            <div className="rounded-lg border border-[rgba(0,0,0,0.08)] bg-white p-4 space-y-4">
               <div>
-                <div className="text-sm font-semibold text-gray-800">Import Student</div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm font-semibold text-[#1E293B]">Import Student</div>
+                <div className="text-sm text-[#94A3B8]">
                   Choose mode first. Regular/WILP support Bulk + Single. Online supports CRM Pull only.
                 </div>
               </div>
               <div>
-                <div className="text-sm font-medium text-gray-700 mb-2">Mode</div>
+                <div className="text-sm font-medium text-[#94A3B8] mb-2">Mode</div>
                 <div className="flex flex-wrap gap-2">
                   {STUDENT_MODE_OPTIONS.map((modeOption) => (
                     <button
@@ -1448,8 +1448,8 @@ const UserManagement = () => {
                       onClick={() => setStudentModeSelection(modeOption.id)}
                       className={`rounded-lg border px-3 py-1.5 text-sm ${
                         studentModeSelection === modeOption.id
-                          ? 'border-blue-600 bg-blue-600 text-white'
-                          : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                          ? 'border-[#F97316] bg-[#F97316] text-white'
+                          : 'border-[rgba(0,0,0,0.08)] bg-white text-[#94A3B8] hover:bg-white'
                       }`}
                     >
                       {modeOption.label}
@@ -1458,7 +1458,7 @@ const UserManagement = () => {
                 </div>
               </div>
               {isOnlineModeSelected && (
-                <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">
+                <div className="rounded-lg border border-[rgba(249,115,22,0.2)] bg-[rgba(249,115,22,0.1)] px-3 py-2 text-sm text-[#F97316]">
                   Online students are onboarded only via CRM Pull. Bulk/Single import is not available.
                 </div>
               )}
@@ -1469,8 +1469,8 @@ const UserManagement = () => {
                   disabled={!bulkSingleAllowedForMode}
                   className={`inline-flex items-center rounded-lg border px-3 py-2 text-sm ${
                     bulkSingleAllowedForMode
-                      ? 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      : 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-100'
+                      ? 'border-[rgba(0,0,0,0.08)] text-[#94A3B8] hover:bg-white'
+                      : 'border-[rgba(0,0,0,0.08)] text-[#94A3B8] cursor-not-allowed bg-white'
                   }`}
                 >
                   <Upload className="w-4 h-4 mr-1.5" />
@@ -1482,8 +1482,8 @@ const UserManagement = () => {
                   disabled={!bulkSingleAllowedForMode}
                   className={`inline-flex items-center rounded-lg px-3 py-2 text-sm ${
                     bulkSingleAllowedForMode
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
-                      : 'bg-gray-300 text-white cursor-not-allowed'
+                      ? 'bg-[#F97316] text-white hover:bg-[#EA580C]'
+                      : 'bg-[#475569] text-white cursor-not-allowed'
                   }`}
                 >
                   <UserPlus className="w-4 h-4 mr-1.5" />
@@ -1495,8 +1495,8 @@ const UserManagement = () => {
                   disabled={!crmAllowedForMode}
                   className={`inline-flex items-center rounded-lg border px-3 py-2 text-sm ${
                     crmAllowedForMode
-                      ? 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      : 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-100'
+                      ? 'border-[rgba(0,0,0,0.08)] text-[#94A3B8] hover:bg-white'
+                      : 'border-[rgba(0,0,0,0.08)] text-[#94A3B8] cursor-not-allowed bg-white'
                   }`}
                 >
                   <Upload className="w-4 h-4 mr-1.5" />
@@ -1507,17 +1507,17 @@ const UserManagement = () => {
           )}
 
           {activeUserSection === 'teacher' && (
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="rounded-lg border border-[rgba(0,0,0,0.08)] bg-white p-4 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="text-sm font-semibold text-gray-800">Teacher Add</div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm font-semibold text-[#1E293B]">Teacher Add</div>
+                <div className="text-sm text-[#94A3B8]">
                   Required fields: Employee ID, Name, Email.
                 </div>
               </div>
               <button
                 type="button"
                 onClick={openTeacherAdd}
-                className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+                className="inline-flex items-center rounded-lg bg-[#F97316] px-4 py-2 text-sm text-white hover:bg-[#EA580C]"
               >
                 <UserPlus className="w-4 h-4 mr-2" />
                 Add Teacher
@@ -1526,17 +1526,17 @@ const UserManagement = () => {
           )}
 
           {activeUserSection === 'executive' && (
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="rounded-lg border border-[rgba(0,0,0,0.08)] bg-white p-4 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="text-sm font-semibold text-gray-800">Executive Staff Add</div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm font-semibold text-[#1E293B]">Executive Staff Add</div>
+                <div className="text-sm text-[#94A3B8]">
                   Adds executive staff with Employee ID, Name, Email, and Designation.
                 </div>
               </div>
               <button
                 type="button"
                 onClick={openExecutiveAdd}
-                className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+                className="inline-flex items-center rounded-lg bg-[#F97316] px-4 py-2 text-sm text-white hover:bg-[#EA580C]"
               >
                 <UserPlus className="w-4 h-4 mr-2" />
                 Add User
@@ -1546,18 +1546,18 @@ const UserManagement = () => {
         </div>
 
         {activeUserSection === 'student' && (
-          <div className="text-sm font-semibold text-gray-800">Student List</div>
+          <div className="text-sm font-semibold text-[#1E293B]">Student List</div>
         )}
 
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#94A3B8]" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by name, email, or mobile..."
-              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="pl-10 pr-4 py-2 w-full border border-[rgba(0,0,0,0.08)] rounded-lg bg-white text-[#1E293B] focus:ring-2 focus:ring-[#F97316] focus:border-[#F97316]"
             />
           </div>
 
@@ -1565,7 +1565,7 @@ const UserManagement = () => {
             <select
               value={studentModeFilter}
               onChange={(e) => setStudentModeFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 border border-[rgba(0,0,0,0.08)] rounded-lg bg-white text-[#1E293B] focus:ring-2 focus:ring-[#F97316] focus:border-[#F97316]"
             >
               <option value="">All Modes</option>
               <option value={MODE_OF_DELIVERY.REGULAR}>Regular</option>
@@ -1582,7 +1582,7 @@ const UserManagement = () => {
                   setFilterProgramId(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-2 border border-[rgba(0,0,0,0.08)] rounded-lg bg-white text-[#1E293B] focus:ring-2 focus:ring-[#F97316] focus:border-[#F97316]"
               >
                 <option value="">All Programs</option>
                 {programsList.map((p) => (
@@ -1598,7 +1598,7 @@ const UserManagement = () => {
                   setCurrentPage(1);
                 }}
                 disabled={!filterProgramId}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50"
+                className="px-4 py-2 border border-[rgba(0,0,0,0.08)] rounded-lg bg-white text-[#1E293B] focus:ring-2 focus:ring-[#F97316] focus:border-[#F97316] disabled:bg-white"
               >
                 <option value="">All Batches</option>
                 {batchesList.map((b) => (
@@ -1611,17 +1611,17 @@ const UserManagement = () => {
           )}
         </div>
         {roleOptionsError && (
-          <p className="mt-2 text-sm text-red-600">{roleOptionsError}</p>
+          <p className="mt-2 text-sm text-[#EF4444]">{roleOptionsError}</p>
         )}
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="bg-[rgba(220,38,38,0.08)] border border-[rgba(239,68,68,0.2)] rounded-lg p-4">
           <div className="flex items-center justify-between">
-            <p className="text-red-800">{error}</p>
+            <p className="text-[#EF4444]">{error}</p>
             <button
               onClick={fetchUsers}
-              className="px-3 py-1 text-sm text-red-700 bg-red-100 rounded-lg hover:bg-red-200"
+              className="px-3 py-1 text-sm text-[#EF4444] bg-[rgba(239,68,68,0.15)] rounded-lg hover:bg-red-200"
             >
               Retry
             </button>
@@ -1633,8 +1633,8 @@ const UserManagement = () => {
         <div
           className={`rounded-lg border p-4 ${
             feedbackBanner.type === 'success'
-              ? 'border-green-200 bg-green-50 text-green-800'
-              : 'border-red-200 bg-red-50 text-red-800'
+              ? 'border-[rgba(16,185,129,0.2)] bg-[rgba(16,185,129,0.1)] text-[#10B981]'
+              : 'border-[rgba(239,68,68,0.2)] bg-[rgba(220,38,38,0.08)] text-[#EF4444]'
           }`}
         >
           <div className="flex items-center justify-between gap-4">
@@ -1652,22 +1652,22 @@ const UserManagement = () => {
 
       {loading && !error && (
         <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#F97316]" />
         </div>
       )}
 
       {!loading && !error && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
+        <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] overflow-hidden">
+          <div className="px-6 py-3 bg-white border-b border-[rgba(0,0,0,0.08)]">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
                   type="checkbox"
                   checked={selectedUsers.length === users.length && users.length > 0}
                   onChange={handleSelectAll}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-[rgba(0,0,0,0.08)] text-[#F97316] focus:ring-[#F97316]"
                 />
-                <span className="ml-3 text-sm font-medium text-gray-700">
+                <span className="ml-3 text-sm font-medium text-[#94A3B8]">
                   {selectedUsers.length > 0
                     ? `${selectedUsers.length} selected`
                     : `${users.length} ${listEntityLabel} on this page`}
@@ -1678,7 +1678,7 @@ const UserManagement = () => {
                 <button
                   onClick={handleBulkDelete}
                   disabled={bulkDeleting}
-                  className="px-3 py-1 text-sm text-red-700 bg-red-100 rounded-lg hover:bg-red-200 disabled:opacity-50"
+                  className="px-3 py-1 text-sm text-[#EF4444] bg-[rgba(239,68,68,0.15)] rounded-lg hover:bg-red-200 disabled:opacity-50"
                 >
                   {bulkDeleting ? 'Deleting...' : `Delete ${selectedUsers.length} Users`}
                 </button>
@@ -1687,13 +1687,13 @@ const UserManagement = () => {
           </div>
 
           {users.length === 0 ? (
-            <div className="px-6 py-12 text-center text-gray-500">No users found.</div>
+            <div className="px-6 py-12 text-center text-[#94A3B8]">No users found.</div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-[rgba(255,255,255,0.06)]">
               {users.map((user) => (
                 <div
                   key={user._id}
-                  className="px-6 py-4 hover:bg-gray-50 cursor-pointer"
+                  className="px-6 py-4 hover:bg-white cursor-pointer"
                   onClick={() => navigate(`/users/${user._id}/profile`)}
                 >
                   <div className="flex items-center justify-between">
@@ -1703,34 +1703,34 @@ const UserManagement = () => {
                         checked={selectedUsers.includes(user._id)}
                         onChange={() => handleSelectUser(user._id)}
                         onClick={(e) => e.stopPropagation()}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-[rgba(0,0,0,0.08)] text-[#F97316] focus:ring-[#F97316]"
                       />
 
-                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 bg-gradient-to-r from-[#F97316] to-[#FB923C] rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-white font-medium text-sm">{getInitials(user.name)}</span>
                       </div>
 
                       <div className="min-w-0">
-                        <h3 className="text-sm font-medium text-gray-900 truncate">{user.name}</h3>
-                        <div className="flex items-center text-sm text-gray-500">
+                        <h3 className="text-sm font-medium text-[#1E293B] truncate">{user.name}</h3>
+                        <div className="flex items-center text-sm text-[#94A3B8]">
                           <Mail className="w-3 h-3 mr-1 flex-shrink-0" />
                           <span className="truncate">{user.email}</span>
                         </div>
-                        <div className="text-xs text-gray-500 mt-0.5">
+                        <div className="text-xs text-[#94A3B8] mt-0.5">
                           {getTabPrimaryIdentifierInfo(user).label}: {getTabPrimaryIdentifierInfo(user).value}
                         </div>
                         {getUserIdDisplayInfo(user).value !== getTabPrimaryIdentifierInfo(user).value && (
-                          <div className="text-xs text-gray-500 mt-0.5">
+                          <div className="text-xs text-[#94A3B8] mt-0.5">
                             {getUserIdDisplayInfo(user).label}: {getUserIdDisplayInfo(user).value}
                           </div>
                         )}
                         {user.designation && (
-                          <div className="text-xs text-gray-500 mt-0.5">
+                          <div className="text-xs text-[#94A3B8] mt-0.5">
                             Designation: {user.designation}
                           </div>
                         )}
                         {user.mobileNo && (
-                          <div className="flex items-center text-sm text-gray-500 mt-0.5">
+                          <div className="flex items-center text-sm text-[#94A3B8] mt-0.5">
                             <Phone className="w-3 h-3 mr-1 flex-shrink-0" />
                             {user.mobileNo}
                           </div>
@@ -1755,7 +1755,7 @@ const UserManagement = () => {
                               </span>
                             ))
                         ) : (
-                          <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                          <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-white text-[#94A3B8]">
                             No Tags
                           </span>
                         )}
@@ -1777,7 +1777,7 @@ const UserManagement = () => {
                         {user.isActive === false ? 'Inactive' : 'Active'}
                       </span>
 
-                      <div className="text-sm text-gray-500 hidden md:flex flex-col items-end">
+                      <div className="text-sm text-[#94A3B8] hidden md:flex flex-col items-end">
                         <div className="flex items-center">
                           <Calendar className="w-3 h-3 mr-1" />
                           {formatDate(user.createdAt)}
@@ -1791,7 +1791,7 @@ const UserManagement = () => {
                             handleDeleteUser(user._id);
                           }}
                           disabled={deleting === user._id}
-                          className="p-1 text-gray-400 hover:text-red-600 disabled:opacity-50"
+                          className="p-1 text-[#94A3B8] hover:text-[#EF4444] disabled:opacity-50"
                           title="Delete User"
                         >
                           <Trash2 className={`w-4 h-4 ${deleting === user._id ? 'animate-pulse' : ''}`} />
@@ -1805,23 +1805,23 @@ const UserManagement = () => {
           )}
 
           {pagination.totalPages > 0 && (
-            <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
+            <div className="px-6 py-3 bg-white border-t border-[rgba(0,0,0,0.08)]">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-700">
+                <div className="text-sm text-[#94A3B8]">
                   Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalUsers} total)
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
                     disabled={!pagination.hasPrev}
                     onClick={() => setCurrentPage(currentPage - 1)}
-                    className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1 text-sm text-[#94A3B8] bg-white border border-[rgba(0,0,0,0.08)] rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Previous
                   </button>
 
                   {renderPageButtons().map((page, idx) =>
                     page === '...' ? (
-                      <span key={`dots-${idx}`} className="px-2 text-gray-400">
+                      <span key={`dots-${idx}`} className="px-2 text-[#94A3B8]">
                         ...
                       </span>
                     ) : (
@@ -1830,8 +1830,8 @@ const UserManagement = () => {
                         onClick={() => setCurrentPage(page)}
                         className={`px-3 py-1 text-sm rounded-lg ${
                           currentPage === page
-                            ? 'text-white bg-blue-600'
-                            : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
+                            ? 'text-white bg-[#F97316]'
+                            : 'text-[#94A3B8] bg-white border border-[rgba(0,0,0,0.08)] hover:bg-white'
                         }`}
                       >
                         {page}
@@ -1842,7 +1842,7 @@ const UserManagement = () => {
                   <button
                     disabled={!pagination.hasNext}
                     onClick={() => setCurrentPage(currentPage + 1)}
-                    className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1 text-sm text-[#94A3B8] bg-white border border-[rgba(0,0,0,0.08)] rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Next
                   </button>
@@ -1855,13 +1855,13 @@ const UserManagement = () => {
 
       {showUserModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-lg bg-white shadow-xl">
-            <div className="shrink-0 border-b border-gray-200 px-5 py-4">
+          <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-lg bg-white shadow-lg">
+            <div className="shrink-0 border-b border-[rgba(0,0,0,0.08)] px-5 py-4">
               <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">{isEditMode ? 'Edit User' : 'Add User'}</h2>
+              <h2 className="text-lg font-semibold text-[#1E293B]">{isEditMode ? 'Edit User' : 'Add User'}</h2>
               <button
                 onClick={closeUserModal}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-[#94A3B8] hover:text-[#94A3B8]"
                 disabled={formSubmitting}
               >
                 <X className="h-5 w-5" />
@@ -1872,17 +1872,17 @@ const UserManagement = () => {
             <form onSubmit={handleSubmitUser} className="flex min-h-0 flex-1 flex-col">
               <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4">
               {formError && (
-                <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                <div className="rounded border border-[rgba(239,68,68,0.2)] bg-[rgba(220,38,38,0.08)] px-3 py-2 text-sm text-[#EF4444]">
                   {formError}
                 </div>
               )}
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Name *</label>
+                <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Name *</label>
                 <input
                   value={formData.name}
                   onChange={(e) => handleFormChange('name', e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                   placeholder="Enter full name"
                   disabled={formSubmitting}
                   required
@@ -1890,12 +1890,12 @@ const UserManagement = () => {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Email *</label>
+                <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Email *</label>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleFormChange('email', e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
+                  className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none disabled:bg-white"
                   placeholder="Enter email"
                   disabled={formSubmitting || isEditMode}
                   required
@@ -1906,18 +1906,18 @@ const UserManagement = () => {
                 <>
                   {createContext.roleLocked ? (
                     <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-700">Role</label>
-                      <div className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                      <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Role</label>
+                      <div className="rounded-lg border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-sm text-[#94A3B8]">
                         {selectedCreateRoleOption?.label || formData.roleKey || '—'}
                       </div>
                     </div>
                   ) : (
                     <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-700">Role *</label>
+                      <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Role *</label>
                       <select
                         value={formData.roleKey}
                         onChange={(e) => handleFormChange('roleKey', e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
+                        className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none disabled:bg-white"
                         disabled={formSubmitting || isEditMode || rolesLoading}
                       >
                         {roleOptions.length === 0 ? (
@@ -1938,11 +1938,11 @@ const UserManagement = () => {
               {!isEditMode &&
                 (selectedCreateAccessRole === 'teacher' || createContext.flow === 'executive_add') && (
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Employee ID *</label>
+                  <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Employee ID *</label>
                   <input
                     value={formData.employeeId}
                     onChange={(e) => handleFormChange('employeeId', e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                    className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                     placeholder="Enter employee ID"
                     disabled={formSubmitting}
                     required
@@ -1952,11 +1952,11 @@ const UserManagement = () => {
 
               {!isEditMode && createContext.flow === 'executive_add' && (
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Designation</label>
+                  <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Designation</label>
                   <input
                     value={formData.designation}
                     onChange={(e) => handleFormChange('designation', e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                    className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                     placeholder="Enter designation"
                     disabled={formSubmitting}
                   />
@@ -1966,11 +1966,11 @@ const UserManagement = () => {
               {!isEditMode && selectedCreateAccessRole === 'student' && (
                 <>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">Student Type *</label>
+                    <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Student Type *</label>
                     <select
                       value={formData.studentType}
                       onChange={(e) => handleFormChange('studentType', e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                      className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                       disabled={formSubmitting || isSingleImportRegularWilpFlow}
                     >
                       <option value="regular">Regular Student</option>
@@ -1980,7 +1980,7 @@ const UserManagement = () => {
                     </select>
                   </div>
                   {isSingleImportRegularWilpFlow && (
-                    <p className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                    <p className="rounded border border-[rgba(249,115,22,0.2)] bg-[rgba(249,115,22,0.1)] px-3 py-2 text-xs text-[#F97316]">
                       Online onboarding is available only via CRM Pull.
                     </p>
                   )}
@@ -1988,11 +1988,11 @@ const UserManagement = () => {
                   {formData.studentType === 'online' ? (
                     <>
                       <div>
-                        <label className="mb-1 block text-sm font-medium text-gray-700">Program *</label>
+                        <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Program *</label>
                         <select
                           value={formData.programId}
                           onChange={(e) => handleFormChange('programId', e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                          className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           disabled={formSubmitting}
                         >
                           <option value="">Select online program</option>
@@ -2005,7 +2005,7 @@ const UserManagement = () => {
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">
                             Admission Year *
                           </label>
                           <input
@@ -2014,20 +2014,20 @@ const UserManagement = () => {
                             max="2100"
                             value={formData.admissionYear}
                             onChange={(e) => handleFormChange('admissionYear', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                             placeholder="2025"
                             disabled={formSubmitting}
                             required
                           />
                         </div>
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">
                             Session Code *
                           </label>
                           <select
                             value={formData.sessionCode}
                             onChange={(e) => handleFormChange('sessionCode', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                             disabled={formSubmitting}
                           >
                             <option value="SP">SP (Spring)</option>
@@ -2035,18 +2035,18 @@ const UserManagement = () => {
                           </select>
                         </div>
                       </div>
-                      <p className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                      <p className="rounded border border-[rgba(249,115,22,0.2)] bg-[rgba(249,115,22,0.1)] px-3 py-2 text-xs text-[#F97316]">
                         Enrollment Number and User ID will be auto-generated after create.
                       </p>
                     </>
                   ) : (
                     <div className="space-y-3">
                       <div>
-                        <label className="mb-1 block text-sm font-medium text-gray-700">Program *</label>
+                        <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Program *</label>
                         <select
                           value={formData.programId}
                           onChange={(e) => handleFormChange('programId', e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                          className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           disabled={formSubmitting}
                         >
                           <option value="">Select program</option>
@@ -2058,11 +2058,11 @@ const UserManagement = () => {
                         </select>
                       </div>
                       <div>
-                        <label className="mb-1 block text-sm font-medium text-gray-700">Batch *</label>
+                        <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Batch *</label>
                         <select
                           value={formData.batchId}
                           onChange={(e) => handleFormChange('batchId', e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none disabled:bg-gray-50"
+                          className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none disabled:bg-white"
                           disabled={formSubmitting || !formData.programId || createBatchesLoading}
                         >
                           <option value="">
@@ -2076,13 +2076,13 @@ const UserManagement = () => {
                         </select>
                       </div>
                       <div>
-                        <label className="mb-1 block text-sm font-medium text-gray-700">
+                        <label className="mb-1 block text-sm font-medium text-[#94A3B8]">
                           Mode of Delivery
                         </label>
                         <select
                           value={formData.studentMode}
                           onChange={(e) => handleFormChange('studentMode', e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 bg-gray-50 text-gray-600 focus:outline-none"
+                          className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 bg-white text-[#94A3B8] focus:outline-none"
                           disabled
                         >
                           {STUDENT_MODE_OPTIONS.map((opt) => (
@@ -2091,11 +2091,11 @@ const UserManagement = () => {
                         </select>
                       </div>
                       <div>
-                        <label className="mb-1 block text-sm font-medium text-gray-700">Roll Number *</label>
+                        <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Roll Number *</label>
                         <input
                           value={formData.rollNumber}
                           onChange={(e) => handleFormChange('rollNumber', e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                          className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           placeholder="Enter roll number"
                           disabled={formSubmitting}
                           required
@@ -2107,30 +2107,30 @@ const UserManagement = () => {
               )}
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Phone</label>
+                <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Phone</label>
                 <input
                   value={formData.mobileNo}
                   onChange={(e) => handleFormChange('mobileNo', e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                   placeholder="Optional mobile number"
                   disabled={formSubmitting}
                 />
               </div>
               </div>
 
-              <div className="shrink-0 border-t border-gray-200 bg-white px-5 py-3">
+              <div className="shrink-0 border-t border-[rgba(0,0,0,0.08)] bg-white px-5 py-3">
                 <div className="flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={closeUserModal}
-                  className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  className="rounded border border-[rgba(0,0,0,0.08)] px-4 py-2 text-sm text-[#94A3B8] hover:bg-white"
                   disabled={formSubmitting}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
+                  className="rounded bg-[#F97316] px-4 py-2 text-sm text-white hover:bg-[#EA580C] disabled:opacity-60"
                   disabled={
                     formSubmitting ||
                     (!isEditMode &&
@@ -2152,18 +2152,18 @@ const UserManagement = () => {
           <div className="absolute inset-0 bg-black/40" onClick={closeDetailDrawer} />
 
           <div className="relative ml-auto h-full w-full max-w-5xl bg-white shadow-2xl flex flex-col">
-            <div className="border-b border-gray-200 px-6 py-4">
+            <div className="border-b border-[rgba(0,0,0,0.08)] px-6 py-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">User Profile</h2>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <h2 className="text-xl font-semibold text-[#1E293B]">User Profile</h2>
+                  <p className="text-sm text-[#94A3B8] mt-1">
                     {detailForm?.user?.name || 'Loading...'}
                     {detailForm?.user?.email ? ` • ${detailForm.user.email}` : ''}
                   </p>
                 </div>
                 <button
                   onClick={closeDetailDrawer}
-                  className="rounded p-2 text-gray-500 hover:bg-gray-100"
+                  className="rounded p-2 text-[#94A3B8] hover:bg-white"
                   disabled={detailSaving || resetLoading}
                 >
                   <X className="h-5 w-5" />
@@ -2177,8 +2177,8 @@ const UserManagement = () => {
                     onClick={() => setDetailTab(tab.id)}
                     className={`px-3 py-1.5 text-sm rounded-lg border ${
                       detailTab === tab.id
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        ? 'bg-[#F97316] text-white border-[#F97316]'
+                        : 'bg-white text-[#94A3B8] border-[rgba(0,0,0,0.08)] hover:bg-white'
                     }`}
                   >
                     {tab.label}
@@ -2190,12 +2190,12 @@ const UserManagement = () => {
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
               {detailLoading && (
                 <div className="flex items-center justify-center py-20">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#F97316]" />
                 </div>
               )}
 
               {!detailLoading && detailError && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">
+                <div className="rounded-lg border border-[rgba(239,68,68,0.2)] bg-[rgba(220,38,38,0.08)] px-4 py-3 text-[#EF4444] text-sm">
                   {detailError}
                 </div>
               )}
@@ -2203,12 +2203,12 @@ const UserManagement = () => {
               {!detailLoading && !detailError && detailForm && (
                 <>
                   {detailSaveError && (
-                    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">
+                    <div className="rounded-lg border border-[rgba(239,68,68,0.2)] bg-[rgba(220,38,38,0.08)] px-4 py-3 text-[#EF4444] text-sm">
                       {detailSaveError}
                     </div>
                   )}
                   {detailSaveSuccess && (
-                    <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700 text-sm">
+                    <div className="rounded-lg border border-[rgba(16,185,129,0.2)] bg-[rgba(16,185,129,0.1)] px-4 py-3 text-[#10B981] text-sm">
                       {detailSaveSuccess}
                     </div>
                   )}
@@ -2217,141 +2217,141 @@ const UserManagement = () => {
                     <div className="space-y-5">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">Full Name</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Full Name</label>
                           <input
                             value={detailForm.personalProfile.fullName}
                             onChange={(e) =>
                               handleDetailFieldChange('personalProfile', 'fullName', e.target.value)
                             }
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           />
                         </div>
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Email</label>
                           <input
                             type="email"
                             value={detailForm.personalProfile.email}
                             onChange={(e) =>
                               handleDetailFieldChange('personalProfile', 'email', e.target.value)
                             }
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           />
                         </div>
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">Username</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Username</label>
                           <input
                             value={detailForm.user.username}
                             onChange={(e) => handleDetailFieldChange('user', 'username', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                             placeholder="Optional username"
                           />
                         </div>
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">Phone</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Phone</label>
                           <input
                             value={detailForm.personalProfile.phone}
                             onChange={(e) =>
                               handleDetailFieldChange('personalProfile', 'phone', e.target.value)
                             }
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           />
                         </div>
                         {detailForm.user.role === 'admin' && (
                           <div>
-                            <label className="mb-1 block text-sm font-medium text-gray-700">Designation</label>
+                            <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Designation</label>
                             <input
                               value={detailForm.user.designation || detailForm.personalProfile.designation || ''}
                               readOnly
-                              className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-gray-700"
+                              className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-[#94A3B8]"
                             />
                           </div>
                         )}
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">Date of Birth</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Date of Birth</label>
                           <input
                             type="date"
                             value={detailForm.personalProfile.dob}
                             onChange={(e) =>
                               handleDetailFieldChange('personalProfile', 'dob', e.target.value)
                             }
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           />
                         </div>
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">Gender</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Gender</label>
                           <input
                             value={detailForm.personalProfile.gender}
                             onChange={(e) =>
                               handleDetailFieldChange('personalProfile', 'gender', e.target.value)
                             }
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           />
                         </div>
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">Blood Group</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Blood Group</label>
                           <input
                             value={detailForm.personalProfile.bloodGroup}
                             onChange={(e) =>
                               handleDetailFieldChange('personalProfile', 'bloodGroup', e.target.value)
                             }
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           />
                         </div>
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">Category</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Category</label>
                           <input
                             value={detailForm.personalProfile.category}
                             onChange={(e) =>
                               handleDetailFieldChange('personalProfile', 'category', e.target.value)
                             }
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           />
                         </div>
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">Mother Tongue</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Mother Tongue</label>
                           <input
                             value={detailForm.personalProfile.motherTongue}
                             onChange={(e) =>
                               handleDetailFieldChange('personalProfile', 'motherTongue', e.target.value)
                             }
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           />
                         </div>
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">Aadhaar (masked)</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Aadhaar (masked)</label>
                           <input
                             value={detailForm.personalProfile.aadhaarMasked}
                             onChange={(e) =>
                               handleDetailFieldChange('personalProfile', 'aadhaarMasked', e.target.value)
                             }
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           />
                         </div>
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">PAN/Passport (masked)</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">PAN/Passport (masked)</label>
                           <input
                             value={detailForm.personalProfile.panMasked}
                             onChange={(e) =>
                               handleDetailFieldChange('personalProfile', 'panMasked', e.target.value)
                             }
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           />
                         </div>
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">Photo URL</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Photo URL</label>
                           <input
                             value={detailForm.personalProfile.photoUrl}
                             onChange={(e) =>
                               handleDetailFieldChange('personalProfile', 'photoUrl', e.target.value)
                             }
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">
                             Permanent Address
                           </label>
                           <textarea
@@ -2360,11 +2360,11 @@ const UserManagement = () => {
                               handleDetailFieldChange('personalProfile', 'addressPermanent', e.target.value)
                             }
                             rows={3}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           />
                         </div>
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">
                             Correspondence Address
                           </label>
                           <textarea
@@ -2377,37 +2377,37 @@ const UserManagement = () => {
                               )
                             }
                             rows={3}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           />
                         </div>
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">State</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">State</label>
                           <input
                             value={detailForm.personalProfile.state}
                             onChange={(e) =>
                               handleDetailFieldChange('personalProfile', 'state', e.target.value)
                             }
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           />
                         </div>
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">City</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">City</label>
                           <input
                             value={detailForm.personalProfile.city}
                             onChange={(e) =>
                               handleDetailFieldChange('personalProfile', 'city', e.target.value)
                             }
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           />
                         </div>
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">PIN</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">PIN</label>
                           <input
                             value={detailForm.personalProfile.pin}
                             onChange={(e) =>
                               handleDetailFieldChange('personalProfile', 'pin', e.target.value)
                             }
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           />
                         </div>
                       </div>
@@ -2418,75 +2418,75 @@ const UserManagement = () => {
                     <div className="space-y-5">
                       {detailForm.user.role === 'teacher' ? (
                         <>
-                          <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800 text-sm">
+                          <div className="rounded-lg border border-[rgba(249,115,22,0.2)] bg-[rgba(249,115,22,0.1)] px-4 py-3 text-[#FB923C] text-sm">
                             Teacher role selected. Showing teacher professional details.
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">Teacher ID</label>
+                              <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Teacher ID</label>
                               <input
                                 value={detailForm.teacherProfile.teacherId}
                                 onChange={(e) =>
                                   handleDetailFieldChange('teacherProfile', 'teacherId', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                               />
                             </div>
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">Employee ID</label>
+                              <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Employee ID</label>
                               <input
                                 value={detailForm.teacherProfile.employeeId}
                                 onChange={(e) =>
                                   handleDetailFieldChange('teacherProfile', 'employeeId', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                               />
                             </div>
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">Department</label>
+                              <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Department</label>
                               <input
                                 value={detailForm.teacherProfile.department}
                                 onChange={(e) =>
                                   handleDetailFieldChange('teacherProfile', 'department', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                               />
                             </div>
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">Designation</label>
+                              <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Designation</label>
                               <input
                                 value={detailForm.teacherProfile.designation}
                                 onChange={(e) =>
                                   handleDetailFieldChange('teacherProfile', 'designation', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                               />
                             </div>
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">Qualification</label>
+                              <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Qualification</label>
                               <input
                                 value={detailForm.teacherProfile.qualification}
                                 onChange={(e) =>
                                   handleDetailFieldChange('teacherProfile', 'qualification', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                               />
                             </div>
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">Specialization</label>
+                              <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Specialization</label>
                               <input
                                 value={detailForm.teacherProfile.specialization}
                                 onChange={(e) =>
                                   handleDetailFieldChange('teacherProfile', 'specialization', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                               />
                             </div>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">Google Scholar</label>
+                              <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Google Scholar</label>
                               <input
                                 value={detailForm.teacherProfile.googleScholarLink}
                                 onChange={(e) =>
@@ -2496,74 +2496,74 @@ const UserManagement = () => {
                                     e.target.value
                                   )
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                               />
                             </div>
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">Scopus</label>
+                              <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Scopus</label>
                               <input
                                 value={detailForm.teacherProfile.scopusLink}
                                 onChange={(e) =>
                                   handleDetailFieldChange('teacherProfile', 'scopusLink', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                               />
                             </div>
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">LinkedIn</label>
+                              <label className="mb-1 block text-sm font-medium text-[#94A3B8]">LinkedIn</label>
                               <input
                                 value={detailForm.teacherProfile.linkedInLink}
                                 onChange={(e) =>
                                   handleDetailFieldChange('teacherProfile', 'linkedInLink', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                               />
                             </div>
                           </div>
 
                           <div>
-                            <label className="mb-1 block text-sm font-medium text-gray-700">Profile Title</label>
+                            <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Profile Title</label>
                             <input
                               value={detailForm.teacherProfile.profTitle}
                               onChange={(e) =>
                                 handleDetailFieldChange('teacherProfile', 'profTitle', e.target.value)
                               }
-                              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                              className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                             />
                           </div>
 
                           <div>
-                            <label className="mb-1 block text-sm font-medium text-gray-700">Profile Description</label>
+                            <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Profile Description</label>
                             <textarea
                               rows={3}
                               value={detailForm.teacherProfile.profDesc}
                               onChange={(e) =>
                                 handleDetailFieldChange('teacherProfile', 'profDesc', e.target.value)
                               }
-                              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                              className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                             />
                           </div>
 
-                          <div className="rounded-lg border border-gray-200 p-4">
-                            <h4 className="text-sm font-semibold text-gray-800 mb-2">Current Teaching Assignments</h4>
+                          <div className="rounded-lg border border-[rgba(0,0,0,0.08)] p-4">
+                            <h4 className="text-sm font-semibold text-[#1E293B] mb-2">Current Teaching Assignments</h4>
                             {detailForm.linked?.teacherAssignments?.length ? (
                               <div className="space-y-2 text-sm">
                                 {detailForm.linked.teacherAssignments.map((assignment) => (
                                   <div
                                     key={assignment.assignmentId}
-                                    className="rounded border border-gray-200 px-3 py-2"
+                                    className="rounded border border-[rgba(0,0,0,0.08)] px-3 py-2"
                                   >
-                                    <div className="font-medium text-gray-900">
+                                    <div className="font-medium text-[#1E293B]">
                                       {assignment.course?.title || 'Untitled Course'} ({assignment.course?.courseCode || '—'})
                                     </div>
-                                    <div className="text-gray-600">
+                                    <div className="text-[#94A3B8]">
                                       {assignment.batch?.name || 'No batch'} • {assignment.semester?.name || 'No semester'}
                                     </div>
                                   </div>
                                 ))}
                               </div>
                             ) : (
-                              <p className="text-sm text-gray-500">No assignments found.</p>
+                              <p className="text-sm text-[#94A3B8]">No assignments found.</p>
                             )}
                           </div>
                         </>
@@ -2571,13 +2571,13 @@ const UserManagement = () => {
                         <>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">Program</label>
+                              <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Program</label>
                               <select
                                 value={detailForm.academicProfile.programId}
                                 onChange={(e) =>
                                   handleDetailFieldChange('academicProfile', 'programId', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                               >
                                 <option value="">Select program</option>
                                 {profilePrograms.map((program) => (
@@ -2588,13 +2588,13 @@ const UserManagement = () => {
                               </select>
                             </div>
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">Batch</label>
+                              <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Batch</label>
                               <select
                                 value={detailForm.academicProfile.batchId}
                                 onChange={(e) =>
                                   handleDetailFieldChange('academicProfile', 'batchId', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                                 disabled={!detailForm.academicProfile.programId}
                               >
                                 <option value="">Select batch</option>
@@ -2606,101 +2606,101 @@ const UserManagement = () => {
                               </select>
                             </div>
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">Program Code</label>
+                              <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Program Code</label>
                               <input
                                 value={detailForm.academicProfile.programCode}
                                 onChange={(e) =>
                                   handleDetailFieldChange('academicProfile', 'programCode', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                               />
                             </div>
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">Roll Number</label>
+                              <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Roll Number</label>
                               <input
                                 value={detailForm.academicProfile.rollNumber}
                                 onChange={(e) =>
                                   handleDetailFieldChange('academicProfile', 'rollNumber', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                               />
                             </div>
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">Stream</label>
+                              <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Stream</label>
                               <input
                                 value={detailForm.academicProfile.stream}
                                 onChange={(e) =>
                                   handleDetailFieldChange('academicProfile', 'stream', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                               />
                             </div>
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">{getPeriodLabel(profilePrograms.find(p => p._id === detailForm.academicProfile.programId)?.periodType)}</label>
+                              <label className="mb-1 block text-sm font-medium text-[#94A3B8]">{getPeriodLabel(profilePrograms.find(p => p._id === detailForm.academicProfile.programId)?.periodType)}</label>
                               <input
                                 type="number"
                                 value={detailForm.academicProfile.semester}
                                 onChange={(e) =>
                                   handleDetailFieldChange('academicProfile', 'semester', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                               />
                             </div>
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">Stage</label>
+                              <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Stage</label>
                               <input
                                 value={detailForm.academicProfile.stage}
                                 onChange={(e) =>
                                   handleDetailFieldChange('academicProfile', 'stage', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                               />
                             </div>
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">Status</label>
+                              <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Status</label>
                               <input
                                 value={detailForm.academicProfile.status}
                                 onChange={(e) =>
                                   handleDetailFieldChange('academicProfile', 'status', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                               />
                             </div>
                             <div>
-                              <label className="mb-1 block text-sm font-medium text-gray-700">Admission Year</label>
+                              <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Admission Year</label>
                               <input
                                 type="number"
                                 value={detailForm.academicProfile.admissionYear}
                                 onChange={(e) =>
                                   handleDetailFieldChange('academicProfile', 'admissionYear', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                               />
                             </div>
                           </div>
 
-                          <div className="rounded-lg border border-gray-200 p-4 space-y-4">
-                            <h4 className="text-sm font-semibold text-gray-800">Academic History</h4>
+                          <div className="rounded-lg border border-[rgba(0,0,0,0.08)] p-4 space-y-4">
+                            <h4 className="text-sm font-semibold text-[#1E293B]">Academic History</h4>
                             {['tenth', 'twelfth', 'diploma'].map((level) => (
                               <div key={level} className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <input
                                   value={detailForm.academicProfile[level]?.board || ''}
                                   onChange={(e) => handleAcademicScoreChange(level, 'board', e.target.value)}
                                   placeholder={`${level} board`}
-                                  className="rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                  className="rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                                 />
                                 <input
                                   value={detailForm.academicProfile[level]?.marks || ''}
                                   onChange={(e) => handleAcademicScoreChange(level, 'marks', e.target.value)}
                                   placeholder={`${level} marks`}
-                                  className="rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                  className="rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                                 />
                                 <input
                                   type="number"
                                   value={detailForm.academicProfile[level]?.year || ''}
                                   onChange={(e) => handleAcademicScoreChange(level, 'year', e.target.value)}
                                   placeholder={`${level} year`}
-                                  className="rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                                  className="rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                                 />
                               </div>
                             ))}
@@ -2714,11 +2714,11 @@ const UserManagement = () => {
                     <div className="space-y-5">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">Role</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Role</label>
                           <select
                             value={detailForm.user.roleKey || detailForm.user.role}
                             onChange={(e) => handleDetailRoleChange(e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           >
                             {roleOptions.length === 0 ? (
                               <option value={detailForm.user.roleKey || detailForm.user.role}>
@@ -2734,7 +2734,7 @@ const UserManagement = () => {
                           </select>
                         </div>
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">Account Status</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Account Status</label>
                           <button
                             type="button"
                             onClick={() =>
@@ -2742,55 +2742,55 @@ const UserManagement = () => {
                             }
                             className={`w-full rounded-lg border px-3 py-2 text-left ${
                               detailForm.user.isActive
-                                ? 'border-green-300 bg-green-50 text-green-800'
-                                : 'border-red-300 bg-red-50 text-red-800'
+                                ? 'border-[rgba(16,185,129,0.3)] bg-[rgba(16,185,129,0.1)] text-[#10B981]'
+                                : 'border-[rgba(239,68,68,0.3)] bg-[rgba(220,38,38,0.08)] text-[#EF4444]'
                             }`}
                           >
                             {detailForm.user.isActive ? 'Active (click to deactivate)' : 'Inactive (click to activate)'}
                           </button>
                         </div>
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">Primary Email</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Primary Email</label>
                           <input
                             type="email"
                             value={detailForm.user.email}
                             onChange={(e) => handleDetailFieldChange('user', 'email', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           />
                         </div>
                         <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">Username</label>
+                          <label className="mb-1 block text-sm font-medium text-[#94A3B8]">Username</label>
                           <input
                             value={detailForm.user.username}
                             onChange={(e) => handleDetailFieldChange('user', 'username', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                             placeholder="Optional username"
                           />
                         </div>
                       </div>
 
-                      <div className="rounded-lg border border-gray-200 p-4 space-y-3">
-                        <div className="flex items-center text-gray-800">
+                      <div className="rounded-lg border border-[rgba(0,0,0,0.08)] p-4 space-y-3">
+                        <div className="flex items-center text-[#1E293B]">
                           <Shield className="w-4 h-4 mr-2" />
                           <span className="font-medium">Reset Password</span>
                         </div>
 
                         {resetError && (
-                          <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                          <div className="rounded border border-[rgba(239,68,68,0.2)] bg-[rgba(220,38,38,0.08)] px-3 py-2 text-sm text-[#EF4444]">
                             {resetError}
                           </div>
                         )}
 
                         {resetResult?.tempPassword && (
-                          <div className="rounded border border-amber-200 bg-amber-50 px-3 py-3">
-                            <p className="text-sm font-medium text-amber-900">Temporary password generated</p>
-                            <p className="mt-1 break-all font-mono text-sm text-amber-800">
+                          <div className="rounded border border-amber-200 bg-[rgba(245,158,11,0.1)] px-3 py-3">
+                            <p className="text-sm font-medium text-[#F59E0B]">Temporary password generated</p>
+                            <p className="mt-1 break-all font-mono text-sm text-[#F59E0B]">
                               {resetResult.tempPassword}
                             </p>
                             <button
                               type="button"
                               onClick={handleCopyGeneratedPassword}
-                              className="mt-2 inline-flex items-center rounded border border-amber-300 px-2 py-1 text-xs text-amber-800 hover:bg-amber-100"
+                              className="mt-2 inline-flex items-center rounded border border-[rgba(245,158,11,0.3)] px-2 py-1 text-xs text-[#F59E0B] hover:bg-[rgba(217,119,6,0.1)]"
                             >
                               {passwordCopied ? (
                                 <>
@@ -2808,7 +2808,7 @@ const UserManagement = () => {
                         )}
 
                         {!resetResult?.tempPassword && resetResult?.success && (
-                          <div className="rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+                          <div className="rounded border border-[rgba(16,185,129,0.2)] bg-[rgba(16,185,129,0.1)] px-3 py-2 text-sm text-[#10B981]">
                             Password reset completed.
                           </div>
                         )}
@@ -2819,13 +2819,13 @@ const UserManagement = () => {
                             value={passwordInput}
                             onChange={(e) => setPasswordInput(e.target.value)}
                             placeholder="Enter new password"
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                            className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] px-3 py-2 focus:border-[#F97316] focus:outline-none"
                           />
                           <div className="flex gap-2">
                             <button
                               type="button"
                               onClick={() => openResetConfirm('manual')}
-                              className="flex-1 inline-flex items-center justify-center rounded bg-blue-600 px-3 py-2 text-white text-sm hover:bg-blue-700"
+                              className="flex-1 inline-flex items-center justify-center rounded bg-[#F97316] px-3 py-2 text-white text-sm hover:bg-[#EA580C]"
                               disabled={resetLoading}
                             >
                               <KeyRound className="w-4 h-4 mr-1.5" />
@@ -2834,7 +2834,7 @@ const UserManagement = () => {
                             <button
                               type="button"
                               onClick={() => openResetConfirm('generate')}
-                              className="flex-1 inline-flex items-center justify-center rounded border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                              className="flex-1 inline-flex items-center justify-center rounded border border-[rgba(0,0,0,0.08)] px-3 py-2 text-sm text-[#94A3B8] hover:bg-white"
                               disabled={resetLoading}
                             >
                               Generate Temp
@@ -2842,7 +2842,7 @@ const UserManagement = () => {
                           </div>
                         </div>
 
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-[#94A3B8]">
                           Changing email/username can affect login identifiers. Confirm policy before saving.
                         </p>
                       </div>
@@ -2852,8 +2852,8 @@ const UserManagement = () => {
               )}
             </div>
 
-            <div className="border-t border-gray-200 px-6 py-4 flex items-center justify-between">
-              <div className="text-sm text-gray-500 flex items-center">
+            <div className="border-t border-[rgba(0,0,0,0.08)] px-6 py-4 flex items-center justify-between">
+              <div className="text-sm text-[#94A3B8] flex items-center">
                 {isDetailDirty ? (
                   <>
                     <AlertTriangle className="w-4 h-4 mr-1.5 text-amber-500" />
@@ -2868,7 +2868,7 @@ const UserManagement = () => {
                 <button
                   type="button"
                   onClick={closeDetailDrawer}
-                  className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  className="rounded border border-[rgba(0,0,0,0.08)] px-4 py-2 text-sm text-[#94A3B8] hover:bg-white"
                   disabled={detailSaving || resetLoading}
                 >
                   Cancel
@@ -2876,7 +2876,7 @@ const UserManagement = () => {
                 <button
                   type="button"
                   onClick={handleSaveDetails}
-                  className="inline-flex items-center rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
+                  className="inline-flex items-center rounded bg-[#F97316] px-4 py-2 text-sm text-white hover:bg-[#EA580C] disabled:opacity-60"
                   disabled={!detailForm || detailSaving || detailLoading || resetLoading || !isDetailDirty}
                 >
                   <Save className="w-4 h-4 mr-1.5" />
@@ -2904,20 +2904,20 @@ const UserManagement = () => {
 
       {resetModal.open && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-lg bg-white shadow-xl border border-gray-200">
-            <div className="px-5 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Confirm Password Reset</h3>
+          <div className="w-full max-w-md rounded-lg bg-white shadow-lg border border-[rgba(0,0,0,0.08)]">
+            <div className="px-5 py-4 border-b border-[rgba(0,0,0,0.08)]">
+              <h3 className="text-lg font-semibold text-[#1E293B]">Confirm Password Reset</h3>
             </div>
-            <div className="px-5 py-4 text-sm text-gray-700">
+            <div className="px-5 py-4 text-sm text-[#94A3B8]">
               {resetModal.mode === 'generate'
                 ? 'Generate a temporary password for this user and reveal it once?'
                 : 'Reset this user password to the value entered above?'}
             </div>
-            <div className="px-5 py-4 border-t border-gray-200 flex justify-end gap-2">
+            <div className="px-5 py-4 border-t border-[rgba(0,0,0,0.08)] flex justify-end gap-2">
               <button
                 type="button"
                 onClick={closeResetConfirm}
-                className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                className="rounded border border-[rgba(0,0,0,0.08)] px-4 py-2 text-sm text-[#94A3B8] hover:bg-white"
                 disabled={resetLoading}
               >
                 Cancel
@@ -2925,7 +2925,7 @@ const UserManagement = () => {
               <button
                 type="button"
                 onClick={handleConfirmResetPassword}
-                className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
+                className="rounded bg-[#F97316] px-4 py-2 text-sm text-white hover:bg-[#EA580C] disabled:opacity-60"
                 disabled={resetLoading}
               >
                 {resetLoading ? 'Processing...' : 'Confirm Reset'}

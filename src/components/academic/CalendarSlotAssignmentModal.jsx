@@ -63,7 +63,7 @@ const CalendarSlotAssignmentModal = ({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
         <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900">
+            <h3 className="text-sm font-semibold text-[#1E293B]">
               {dayLabel}, {dateStr}
             </h3>
             <button onClick={onCancel} className="text-gray-400 hover:text-gray-600">
@@ -93,7 +93,7 @@ const CalendarSlotAssignmentModal = ({
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">
+            <h3 className="text-sm font-semibold text-[#1E293B]">
               {isEdit ? 'Edit' : 'Assign'} Class — {dayLabel}, {dateStr}
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -114,7 +114,7 @@ const CalendarSlotAssignmentModal = ({
             <select
               value={course}
               onChange={(e) => setCourse(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-blue-400 outline-none"
+              className="w-full border border-gray-300 rounded-md px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-purple-400 outline-none"
             >
               <option value="">— Select Course —</option>
               {courses.map((c) => (
@@ -131,7 +131,7 @@ const CalendarSlotAssignmentModal = ({
             <select
               value={teacher}
               onChange={(e) => setTeacher(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-blue-400 outline-none"
+              className="w-full border border-gray-300 rounded-md px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-purple-400 outline-none"
             >
               <option value="">— Auto-fill from mapping —</option>
               {teachers.map((t) => (
@@ -153,7 +153,7 @@ const CalendarSlotAssignmentModal = ({
                   className={`flex-1 py-1.5 text-xs font-medium rounded-md border transition ${
                     mode === m
                       ? m === 'VIRTUAL'
-                        ? 'bg-blue-50 border-blue-300 text-blue-700'
+                        ? 'bg-purple-50 border-purple-300 text-purple-700'
                         : 'bg-green-50 border-green-300 text-green-700'
                       : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
                   }`}
@@ -175,7 +175,7 @@ const CalendarSlotAssignmentModal = ({
                   value={roomNo}
                   onChange={(e) => setRoomNo(e.target.value)}
                   placeholder="Room number"
-                  className="w-full border border-gray-300 rounded-md px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-blue-400 outline-none"
+                  className="w-full border border-gray-300 rounded-md px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-purple-400 outline-none"
                 />
               </div>
               <div>
@@ -185,7 +185,7 @@ const CalendarSlotAssignmentModal = ({
                   value={campusNo}
                   onChange={(e) => setCampusNo(e.target.value)}
                   placeholder="Campus number"
-                  className="w-full border border-gray-300 rounded-md px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-blue-400 outline-none"
+                  className="w-full border border-gray-300 rounded-md px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-purple-400 outline-none"
                 />
               </div>
             </div>
@@ -200,7 +200,7 @@ const CalendarSlotAssignmentModal = ({
                 value={virtualLink}
                 onChange={(e) => setVirtualLink(e.target.value)}
                 placeholder="Auto-filled on VConf scheduling"
-                className="w-full border border-gray-300 rounded-md px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-blue-400 outline-none"
+                className="w-full border border-gray-300 rounded-md px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-purple-400 outline-none"
               />
             </div>
           )}
@@ -254,7 +254,7 @@ const CalendarSlotAssignmentModal = ({
               type="button"
               onClick={handleConfirm}
               disabled={!course}
-              className="px-4 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
+              className="px-4 py-1.5 text-xs font-medium rounded-md bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 transition"
             >
               {isEdit ? 'Update' : 'Assign'}
             </button>

@@ -92,7 +92,7 @@ const SemesterPlanEditor = ({
               </span>
             )}
             {eventCount > 0 && (
-              <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-blue-100 text-blue-700">
+              <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-purple-100 text-purple-700">
                 {eventCount} Event{eventCount > 1 ? 's' : ''}
               </span>
             )}
@@ -118,7 +118,7 @@ const SemesterPlanEditor = ({
               </button>
               <button
                 type="button"
-                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 transition"
                 onClick={(e) => {
                   e.stopPropagation();
                   onSave();
@@ -189,20 +189,20 @@ const SemesterPlanEditor = ({
                 key={item.itemId || `plan-item-${index}`}
                 className={`border rounded-lg overflow-hidden ${
                   itemType === 'EXAM' ? 'border-orange-200' :
-                  itemType === 'EVENT' ? 'border-blue-200' :
+                  itemType === 'EVENT' ? 'border-purple-200' :
                   'border-red-200'
                 }`}
               >
                 {/* Card Header Row */}
                 <div className={`px-3 py-2 flex items-center gap-2 flex-wrap ${
                   itemType === 'EXAM' ? 'bg-orange-50' :
-                  itemType === 'EVENT' ? 'bg-blue-50' :
+                  itemType === 'EVENT' ? 'bg-purple-50' :
                   'bg-red-50'
                 }`}>
                   {/* Type */}
                   <select
                     value={itemType}
-                    className={`border rounded-md px-2 py-1 text-xs font-medium focus:ring-1 focus:ring-blue-400 outline-none ${typeConfig.color}`}
+                    className={`border rounded-md px-2 py-1 text-xs font-medium focus:ring-1 focus:ring-purple-400 outline-none ${typeConfig.color}`}
                     onChange={(e) => {
                       onUpdateItem(index, 'type', e.target.value);
                       // Reset enhanced fields when switching to HOLIDAY
@@ -232,7 +232,7 @@ const SemesterPlanEditor = ({
                       itemType === 'EVENT' ? 'e.g., Guest Lecture - AI' :
                       'e.g., Diwali Holiday'
                     }
-                    className="flex-1 min-w-[150px] border border-gray-300 rounded-md px-2 py-1 text-xs focus:ring-1 focus:ring-blue-400 outline-none"
+                    className="flex-1 min-w-[150px] border border-gray-300 rounded-md px-2 py-1 text-xs focus:ring-1 focus:ring-purple-400 outline-none"
                     onChange={(e) => onUpdateItem(index, 'title', e.target.value)}
                   />
 
@@ -242,7 +242,7 @@ const SemesterPlanEditor = ({
                     value={formatDateKey(item.date) || ''}
                     min={minDate}
                     max={maxDate}
-                    className="border border-gray-300 rounded-md px-2 py-1 text-xs focus:ring-1 focus:ring-blue-400 outline-none"
+                    className="border border-gray-300 rounded-md px-2 py-1 text-xs focus:ring-1 focus:ring-purple-400 outline-none"
                     onChange={(e) => onUpdateItem(index, 'date', e.target.value)}
                   />
 
@@ -297,7 +297,7 @@ const SemesterPlanEditor = ({
                         <label className="text-[10px] text-gray-500 font-medium whitespace-nowrap">Course:</label>
                         <select
                           value={item.course || ''}
-                          className="flex-1 border border-gray-300 rounded-md px-2 py-1 text-xs focus:ring-1 focus:ring-blue-400 outline-none"
+                          className="flex-1 border border-gray-300 rounded-md px-2 py-1 text-xs focus:ring-1 focus:ring-purple-400 outline-none"
                           onChange={(e) => onUpdateItem(index, 'course', e.target.value || null)}
                         >
                           <option value="">Select Course</option>
@@ -314,7 +314,7 @@ const SemesterPlanEditor = ({
                         <label className="text-[10px] text-gray-500 font-medium whitespace-nowrap">Time Slot:</label>
                         <select
                           value={item.slotTemplateId || ''}
-                          className="flex-1 border border-gray-300 rounded-md px-2 py-1 text-xs focus:ring-1 focus:ring-blue-400 outline-none"
+                          className="flex-1 border border-gray-300 rounded-md px-2 py-1 text-xs focus:ring-1 focus:ring-purple-400 outline-none"
                           onChange={(e) => handleSlotSelect(index, e.target.value)}
                         >
                           <option value="">Select Slot</option>
@@ -369,14 +369,14 @@ const SemesterPlanEditor = ({
                             type="text"
                             value={item.roomNo || ''}
                             placeholder="Room No"
-                            className="border border-gray-300 rounded-md px-2 py-1 text-xs focus:ring-1 focus:ring-blue-400 outline-none w-24"
+                            className="border border-gray-300 rounded-md px-2 py-1 text-xs focus:ring-1 focus:ring-purple-400 outline-none w-24"
                             onChange={(e) => onUpdateItem(index, 'roomNo', e.target.value)}
                           />
                           <input
                             type="text"
                             value={item.campusNo || ''}
                             placeholder="Campus"
-                            className="border border-gray-300 rounded-md px-2 py-1 text-xs focus:ring-1 focus:ring-blue-400 outline-none w-24"
+                            className="border border-gray-300 rounded-md px-2 py-1 text-xs focus:ring-1 focus:ring-purple-400 outline-none w-24"
                             onChange={(e) => onUpdateItem(index, 'campusNo', e.target.value)}
                           />
                         </>
@@ -414,7 +414,7 @@ const SemesterPlanEditor = ({
                       type="text"
                       value={item.description || ''}
                       placeholder="Description (optional)"
-                      className="w-full border border-gray-300 rounded-md px-2 py-1 text-xs focus:ring-1 focus:ring-blue-400 outline-none"
+                      className="w-full border border-gray-300 rounded-md px-2 py-1 text-xs focus:ring-1 focus:ring-purple-400 outline-none"
                       onChange={(e) => onUpdateItem(index, 'description', e.target.value)}
                     />
                   </div>
@@ -427,7 +427,7 @@ const SemesterPlanEditor = ({
                       type="text"
                       value={item.description || ''}
                       placeholder="Description (optional)"
-                      className="w-full border border-gray-300 rounded-md px-2 py-1 text-xs focus:ring-1 focus:ring-blue-400 outline-none"
+                      className="w-full border border-gray-300 rounded-md px-2 py-1 text-xs focus:ring-1 focus:ring-purple-400 outline-none"
                       onChange={(e) => onUpdateItem(index, 'description', e.target.value)}
                     />
                   </div>

@@ -40,9 +40,9 @@ class AcademicPlanErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div className="space-y-6">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-700 font-medium">Academic Plan failed to render.</p>
-            <p className="text-red-600 text-sm">
+          <div className="bg-[rgba(220,38,38,0.08)] border border-[rgba(239,68,68,0.2)] rounded-lg p-4">
+            <p className="text-[#EF4444] font-medium">Academic Plan failed to render.</p>
+            <p className="text-[#EF4444] text-sm">
               {this.state.error?.message || 'Unexpected UI error.'}
             </p>
           </div>
@@ -238,42 +238,42 @@ const AcademicPlan = () => {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50">
-              <th className="text-left px-3 py-2 font-medium text-gray-600">Code</th>
-              <th className="text-left px-3 py-2 font-medium text-gray-600">Title</th>
-              <th className="text-left px-3 py-2 font-medium text-gray-600">Teachers</th>
-              <th className="text-center px-2 py-2 font-medium text-gray-600 w-10">L</th>
-              <th className="text-center px-2 py-2 font-medium text-gray-600 w-10">T</th>
-              <th className="text-center px-2 py-2 font-medium text-gray-600 w-10">P</th>
-              <th className="text-center px-2 py-2 font-medium text-gray-600 w-12">Cr</th>
+            <tr className="bg-white">
+              <th className="text-left px-3 py-2 font-medium text-[#94A3B8]">Code</th>
+              <th className="text-left px-3 py-2 font-medium text-[#94A3B8]">Title</th>
+              <th className="text-left px-3 py-2 font-medium text-[#94A3B8]">Teachers</th>
+              <th className="text-center px-2 py-2 font-medium text-[#94A3B8] w-10">L</th>
+              <th className="text-center px-2 py-2 font-medium text-[#94A3B8] w-10">T</th>
+              <th className="text-center px-2 py-2 font-medium text-[#94A3B8] w-10">P</th>
+              <th className="text-center px-2 py-2 font-medium text-[#94A3B8] w-12">Cr</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-[rgba(255,255,255,0.06)]">
             {courses.map((course) => {
               const cp = course.creditPoints || {};
               return (
-                <tr key={course._id} className="hover:bg-gray-50">
-                  <td className="px-3 py-2 text-gray-900 font-medium">
+                <tr key={course._id} className="hover:bg-white">
+                  <td className="px-3 py-2 text-[#1E293B] font-medium">
                     {safeDisplay(course.courseCode)}
                   </td>
-                  <td className="px-3 py-2 text-gray-700">
+                  <td className="px-3 py-2 text-[#94A3B8]">
                     {safeDisplay(course.title)}
                   </td>
-                  <td className="px-3 py-2 text-gray-600">
+                  <td className="px-3 py-2 text-[#94A3B8]">
                     {(() => {
                       const assigned = Array.isArray(course.assignedTeachers)
                         ? course.assignedTeachers
                         : [];
                       if (!assigned.length) {
-                        return <div className="text-xs text-gray-400">No teachers assigned</div>;
+                        return <div className="text-xs text-[#94A3B8]">No teachers assigned</div>;
                       }
                       return (
                         <div className="space-y-1">
                           {assigned.map((teacher, idx) => (
-                            <div key={`${course._id}-t-${idx}`} className="text-xs text-gray-700">
+                            <div key={`${course._id}-t-${idx}`} className="text-xs text-[#94A3B8]">
                               {safeDisplay(teacher?.name || teacher?.user?.name || teacher?.email)}
                               {teacher?.roleLabel && (
-                                <span className="text-[10px] text-gray-400 ml-1">({teacher.roleLabel})</span>
+                                <span className="text-[10px] text-[#94A3B8] ml-1">({teacher.roleLabel})</span>
                               )}
                             </div>
                           ))}
@@ -281,16 +281,16 @@ const AcademicPlan = () => {
                       );
                     })()}
                   </td>
-                  <td className="text-center px-2 py-2 text-gray-500">{cp.lecture || 0}</td>
-                  <td className="text-center px-2 py-2 text-gray-500">{cp.tutorial || 0}</td>
-                  <td className="text-center px-2 py-2 text-gray-500">{cp.practical || 0}</td>
-                  <td className="text-center px-2 py-2 text-gray-900 font-semibold">{safeCredits(cp)}</td>
+                  <td className="text-center px-2 py-2 text-[#94A3B8]">{cp.lecture || 0}</td>
+                  <td className="text-center px-2 py-2 text-[#94A3B8]">{cp.tutorial || 0}</td>
+                  <td className="text-center px-2 py-2 text-[#94A3B8]">{cp.practical || 0}</td>
+                  <td className="text-center px-2 py-2 text-[#1E293B] font-semibold">{safeCredits(cp)}</td>
                 </tr>
               );
             })}
           </tbody>
           <tfoot>
-            <tr className="bg-gray-50 font-medium text-gray-700">
+            <tr className="bg-white font-medium text-[#94A3B8]">
               <td className="px-3 py-2" colSpan={3}>Total</td>
               <td className="text-center px-2 py-2">{sums.L}</td>
               <td className="text-center px-2 py-2">{sums.T}</td>
@@ -306,11 +306,11 @@ const AcademicPlan = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-6">
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Academic Plan</h2>
-            <p className="text-gray-600">Please wait...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#F97316] mx-auto mb-4"></div>
+            <h2 className="text-xl font-semibold text-[#1E293B] mb-2">Loading Academic Plan</h2>
+            <p className="text-[#94A3B8]">Please wait...</p>
           </div>
         </div>
       </div>
@@ -321,14 +321,14 @@ const AcademicPlan = () => {
     <AcademicPlanErrorBoundary>
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-                <BookOpen className="w-8 h-8 text-blue-600 mr-3" />
+              <h1 className="text-2xl font-bold text-[#1E293B] flex items-center">
+                <BookOpen className="w-8 h-8 text-[#F97316] mr-3" />
                 Academic Plan
               </h1>
-              <p className="text-gray-600 mt-1">View and manage the academic plan for a program</p>
+              <p className="text-[#94A3B8] mt-1">View and manage the academic plan for a program</p>
             </div>
           </div>
 
@@ -337,7 +337,7 @@ const AcademicPlan = () => {
             <select
               value={selectedProgram}
               onChange={(e) => handleProgramSelect(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 border border-[rgba(0,0,0,0.08)] rounded-lg bg-white text-[#1E293B] focus:ring-2 focus:ring-[#F97316] focus:border-[#F97316]"
             >
               <option value="">Select a Program</option>
               {safePrograms.map((program) => (
@@ -351,7 +351,7 @@ const AcademicPlan = () => {
               <select
                 value={selectedBatch}
                 onChange={(e) => handleBatchSelect(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-2 border border-[rgba(0,0,0,0.08)] rounded-lg bg-white text-[#1E293B] focus:ring-2 focus:ring-[#F97316] focus:border-[#F97316]"
               >
                 <option value="">Select a Batch to manage semesters</option>
                 {safeBatches.map((batch) => (
@@ -366,31 +366,31 @@ const AcademicPlan = () => {
 
         {/* Error */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-700">{error}</p>
+          <div className="bg-[rgba(220,38,38,0.08)] border border-[rgba(239,68,68,0.2)] rounded-lg p-4">
+            <p className="text-[#EF4444]">{error}</p>
           </div>
         )}
 
         {/* No program selected placeholder */}
         {!selectedProgram && !error && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-6">
             <div className="text-center py-12">
-              <GraduationCap className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">No Program Selected</h2>
-              <p className="text-gray-600">Select a program above to view its academic plan.</p>
+              <GraduationCap className="w-16 h-16 text-[#94A3B8] mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-[#1E293B] mb-2">No Program Selected</h2>
+              <p className="text-[#94A3B8]">Select a program above to view its academic plan.</p>
             </div>
           </div>
         )}
 
         {/* Semester Manager — shown when a batch is selected */}
         {showSemesterManager && selectedBatch && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-6">
             <div className="flex items-center mb-4">
-              <Plus className="w-5 h-5 text-green-600 mr-2" />
-              <h2 className="text-lg font-semibold text-gray-900">
+              <Plus className="w-5 h-5 text-[#10B981] mr-2" />
+              <h2 className="text-lg font-semibold text-[#1E293B]">
                 Manage Semesters / Terms
               </h2>
-              <span className="ml-2 text-sm text-gray-500">
+              <span className="ml-2 text-sm text-[#94A3B8]">
                 for batch: {safeBatches.find(b => b._id === selectedBatch)?.name || ''}
               </span>
             </div>
@@ -406,35 +406,35 @@ const AcademicPlan = () => {
         {academicPlan && (
           <>
           {/* Program Info Header Card */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-6">
             <div className="flex items-center mb-4">
-              <GraduationCap className="w-6 h-6 text-blue-600 mr-2" />
-              <h2 className="text-xl font-semibold text-gray-900">
+              <GraduationCap className="w-6 h-6 text-[#F97316] mr-2" />
+              <h2 className="text-xl font-semibold text-[#1E293B]">
                 {safeDisplay(academicPlan.program?.name)}
               </h2>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Code</p>
-                <p className="text-sm font-medium text-gray-900 mt-1">
+                <p className="text-xs font-medium text-[#94A3B8] uppercase tracking-wider">Code</p>
+                <p className="text-sm font-medium text-[#1E293B] mt-1">
                   {safeDisplay(academicPlan.program?.code)}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Credits</p>
-                <p className="text-sm font-medium text-gray-900 mt-1">
+                <p className="text-xs font-medium text-[#94A3B8] uppercase tracking-wider">Total Credits</p>
+                <p className="text-sm font-medium text-[#1E293B] mt-1">
                   {safeDisplay(academicPlan.program?.totalCredits)}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Period Type</p>
-                <p className="text-sm font-medium text-gray-900 mt-1">
+                <p className="text-xs font-medium text-[#94A3B8] uppercase tracking-wider">Period Type</p>
+                <p className="text-sm font-medium text-[#1E293B] mt-1">
                   {safeDisplay(academicPlan.program?.periodType)}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Mode of Delivery</p>
-                <p className="text-sm font-medium text-gray-900 mt-1">
+                <p className="text-xs font-medium text-[#94A3B8] uppercase tracking-wider">Mode of Delivery</p>
+                <p className="text-sm font-medium text-[#1E293B] mt-1">
                   {safeDisplay(academicPlan.program?.modeOfDelivery)}
                 </p>
               </div>
@@ -453,31 +453,31 @@ const AcademicPlan = () => {
             const totalFromCourses = semesterRows.reduce((s, r) => s + r.coursesSum, 0);
 
             return (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Credit Summary</h2>
+              <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-6">
+                <h2 className="text-lg font-semibold text-[#1E293B] mb-4">Credit Summary</h2>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="bg-gray-50">
-                        <th className="text-left px-3 py-2 font-medium text-gray-600">{getPeriodLabel(academicPlan?.program?.periodType || selectedProgramData?.periodType)}</th>
-                        <th className="text-center px-3 py-2 font-medium text-gray-600">Admin-Set Credits</th>
-                        <th className="text-center px-3 py-2 font-medium text-gray-600">Courses Sum</th>
+                      <tr className="bg-white">
+                        <th className="text-left px-3 py-2 font-medium text-[#94A3B8]">{getPeriodLabel(academicPlan?.program?.periodType || selectedProgramData?.periodType)}</th>
+                        <th className="text-center px-3 py-2 font-medium text-[#94A3B8]">Admin-Set Credits</th>
+                        <th className="text-center px-3 py-2 font-medium text-[#94A3B8]">Courses Sum</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-[rgba(255,255,255,0.06)]">
                       {semesterRows.map((row, i) => (
-                        <tr key={i} className="hover:bg-gray-50">
-                          <td className="px-3 py-2 text-gray-900">{row.name}</td>
-                          <td className="text-center px-3 py-2 text-gray-700">{row.adminCredits ?? '---'}</td>
-                          <td className="text-center px-3 py-2 text-gray-700">{row.coursesSum || '---'}</td>
+                        <tr key={i} className="hover:bg-white">
+                          <td className="px-3 py-2 text-[#1E293B]">{row.name}</td>
+                          <td className="text-center px-3 py-2 text-[#94A3B8]">{row.adminCredits ?? '---'}</td>
+                          <td className="text-center px-3 py-2 text-[#94A3B8]">{row.coursesSum || '---'}</td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
-                      <tr className="bg-gray-50 font-medium">
-                        <td className="px-3 py-2 text-gray-900">Total</td>
-                        <td className="text-center px-3 py-2 text-gray-900">{totalAssigned}</td>
-                        <td className="text-center px-3 py-2 text-gray-900">{totalFromCourses}</td>
+                      <tr className="bg-white font-medium">
+                        <td className="px-3 py-2 text-[#1E293B]">Total</td>
+                        <td className="text-center px-3 py-2 text-[#1E293B]">{totalAssigned}</td>
+                        <td className="text-center px-3 py-2 text-[#1E293B]">{totalFromCourses}</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -485,12 +485,12 @@ const AcademicPlan = () => {
                 {programTotal != null && programTotal > 0 && (
                   <div className="mt-4">
                     <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="text-gray-600">Program Total: <span className="font-semibold text-gray-900">{programTotal} credits</span></span>
-                      <span className="text-gray-500">{totalAssigned} / {programTotal} assigned</span>
+                      <span className="text-[#94A3B8]">Program Total: <span className="font-semibold text-[#1E293B]">{programTotal} credits</span></span>
+                      <span className="text-[#94A3B8]">{totalAssigned} / {programTotal} assigned</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-[#F8FAFC] rounded-full h-2">
                       <div
-                        className={`h-2 rounded-full transition-all ${totalAssigned > programTotal ? 'bg-red-500' : 'bg-blue-600'}`}
+                        className={`h-2 rounded-full transition-all ${totalAssigned > programTotal ? 'bg-[rgba(220,38,38,0.08)]0' : 'bg-[#F97316]'}`}
                         style={{ width: `${Math.min(100, (totalAssigned / programTotal) * 100)}%` }}
                       />
                     </div>
@@ -502,12 +502,12 @@ const AcademicPlan = () => {
 
           {/* Semesters */}
           {semestersList.length === 0 && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-6">
               <div className="text-center py-8">
-                <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 mb-2">No semesters found for this program.</p>
+                <Calendar className="w-12 h-12 text-[#94A3B8] mx-auto mb-3" />
+                <p className="text-[#94A3B8] mb-2">No semesters found for this program.</p>
                 {!selectedBatch && (
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-[#94A3B8]">
                     Select a batch above to create semesters / terms.
                   </p>
                 )}
@@ -524,24 +524,24 @@ const AcademicPlan = () => {
             return (
               <div
                 key={semester._id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+                className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-6"
               >
                 {/* Semester Header */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center">
-                    <Calendar className="w-5 h-5 text-blue-600 mr-2" />
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <Calendar className="w-5 h-5 text-[#F97316] mr-2" />
+                    <h3 className="text-lg font-semibold text-[#1E293B]">
                       {safeDisplay(semester.name)}
                     </h3>
                   </div>
                   <div className="flex items-center gap-2">
                     {semester.totalCredits !== undefined && semester.totalCredits !== null && (
-                      <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-[rgba(249,115,22,0.15)] text-[#FB923C]">
                         {semester.totalCredits} Credits
                       </span>
                     )}
                     {hasCourses && (
-                      <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                      <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-white text-[#94A3B8]">
                         Courses: {coursesCreditsSum} cr
                       </span>
                     )}
@@ -551,35 +551,35 @@ const AcademicPlan = () => {
                 {/* Semester Dates */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
                   <div>
-                    <span className="text-gray-500">Start Date:</span>{' '}
-                    <span className="text-gray-900 font-medium">{formatDate(semester.startDate)}</span>
+                    <span className="text-[#94A3B8]">Start Date:</span>{' '}
+                    <span className="text-[#1E293B] font-medium">{formatDate(semester.startDate)}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">End Date:</span>{' '}
-                    <span className="text-gray-900 font-medium">{formatDate(semester.endDate)}</span>
+                    <span className="text-[#94A3B8]">End Date:</span>{' '}
+                    <span className="text-[#1E293B] font-medium">{formatDate(semester.endDate)}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Mid Exam:</span>{' '}
-                    <span className="text-gray-900 font-medium">{formatDate(semester.midTermExamDate)}</span>
+                    <span className="text-[#94A3B8]">Mid Exam:</span>{' '}
+                    <span className="text-[#1E293B] font-medium">{formatDate(semester.midTermExamDate)}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">End Exam:</span>{' '}
-                    <span className="text-gray-900 font-medium">{formatDate(semester.endTermExamDate)}</span>
+                    <span className="text-[#94A3B8]">End Exam:</span>{' '}
+                    <span className="text-[#1E293B] font-medium">{formatDate(semester.endTermExamDate)}</span>
                   </div>
                 </div>
 
                 {/* Course Tables */}
                 {hasCourses ? (
-                  <div className="border-t border-gray-200 pt-4">
-                    {renderCourseTable(theory, 'theory', 'bg-blue-100 text-blue-800')}
-                    {renderCourseTable(practical, 'practical', 'bg-green-100 text-green-800')}
-                    {renderCourseTable(project, 'project', 'bg-orange-100 text-orange-800')}
+                  <div className="border-t border-[rgba(0,0,0,0.08)] pt-4">
+                    {renderCourseTable(theory, 'theory', 'bg-[rgba(249,115,22,0.15)] text-[#FB923C]')}
+                    {renderCourseTable(practical, 'practical', 'bg-[rgba(5,150,105,0.1)] text-[#10B981]')}
+                    {renderCourseTable(project, 'project', 'bg-[rgba(249,115,22,0.15)] text-[#F97316]')}
                   </div>
                 ) : (
-                  <div className="border-t border-gray-200 pt-4">
+                  <div className="border-t border-[rgba(0,0,0,0.08)] pt-4">
                     <div className="text-center py-6">
-                      <BookOpen className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                      <p className="text-gray-500 text-sm">No courses added yet</p>
+                      <BookOpen className="w-10 h-10 text-[#475569] mx-auto mb-2" />
+                      <p className="text-[#94A3B8] text-sm">No courses added yet</p>
                     </div>
                   </div>
                 )}

@@ -188,7 +188,7 @@ const UploadedFile = () => {
   if (isLoading && !courseData) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     );
   }
@@ -215,12 +215,12 @@ const UploadedFile = () => {
               <div 
                 onClick={() => handleModuleToggle(module._id)}
                 className={`p-4 cursor-pointer transition-colors hover:bg-gray-50 ${
-                  expandedModule === module._id ? 'bg-blue-50' : ''
+                  expandedModule === module._id ? 'bg-purple-50' : ''
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <h3 className="font-medium text-gray-900 mb-1">
+                    <h3 className="font-medium text-[#1E293B] mb-1">
                       Module {module.moduleNumber}: {module.moduleTitle}
                     </h3>
                     <p className="text-sm text-gray-600 line-clamp-2">
@@ -232,7 +232,7 @@ const UploadedFile = () => {
                   </div>
                   <div className="ml-2">
                     {expandedModule === module._id ? (
-                      <ChevronDown size={20} className="text-blue-600" />
+                      <ChevronDown size={20} className="text-purple-600" />
                     ) : (
                       <ChevronRight size={20} className="text-gray-400" />
                     )}
@@ -254,7 +254,7 @@ const UploadedFile = () => {
                           onClick={() => handleContentTypeSelect(module, key)}
                           className={`w-full flex items-center justify-between p-3 rounded-md text-sm transition-colors ${
                             selectedModule?._id === module._id && selectedContentType === key
-                              ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                              ? 'bg-purple-100 text-purple-700 border border-purple-200'
                               : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-200'
                           }`}
                         >
@@ -264,7 +264,7 @@ const UploadedFile = () => {
                           </div>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                             selectedModule?._id === module._id && selectedContentType === key
-                              ? 'bg-blue-200 text-blue-800'
+                              ? 'bg-purple-200 text-purple-800'
                               : 'bg-gray-200 text-gray-600'
                           }`}>
                             {count}
@@ -288,7 +288,7 @@ const UploadedFile = () => {
             <div className="shadow-sm border-b p-6  max-h-[120px] min-h-[120px]">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-xl font-semibold text-gray-900">
+                  <h1 className="text-xl font-semibold text-[#1E293B]">
                     Module {selectedModule.moduleNumber}: {selectedModule.moduleTitle}
                   </h1>
                   <p className="text-gray-600">
@@ -297,7 +297,7 @@ const UploadedFile = () => {
                 </div>
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                  className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2"
                 >
                   <Plus size={20} />
                   <span>Add {contentTypes[selectedContentType]?.label}</span>
@@ -309,7 +309,7 @@ const UploadedFile = () => {
             <div className="flex-1 overflow-y-auto p-6">
               {isLoading ? (
                 <div className="flex items-center justify-center h-64">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
                 </div>
               ) : (
                 renderContentItems()
@@ -360,7 +360,7 @@ const ContentCard = ({ item, contentType, onDelete, onEdit, formatFileSize, form
       case 'ppts':
         return <Presentation className="text-orange-500" size={24} />;
       case 'videos':
-        return <Video className="text-blue-500" size={24} />;
+        return <Video className="text-purple-500" size={24} />;
       case 'links':
         return <Link className="text-green-500" size={24} />;
       default:
@@ -412,7 +412,7 @@ const ContentCard = ({ item, contentType, onDelete, onEdit, formatFileSize, form
 
       {/* Content */}
       <div className="p-4">
-        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+        <h3 className="font-semibold text-[#1E293B] mb-2 line-clamp-2">
           {item.name}
         </h3>
         
@@ -425,7 +425,7 @@ const ContentCard = ({ item, contentType, onDelete, onEdit, formatFileSize, form
         {/* Show URL for links */}
         {contentType === 'links' && item.fileUrl && (
           <div className="mb-3">
-            <p className="text-xs text-blue-600 truncate" title={item.fileUrl}>
+            <p className="text-xs text-purple-600 truncate" title={item.fileUrl}>
               {item.fileUrl}
             </p>
           </div>
@@ -445,7 +445,7 @@ const ContentCard = ({ item, contentType, onDelete, onEdit, formatFileSize, form
           <div className="flex space-x-2">
             <button
               onClick={handleViewClick}
-              className="text-blue-600 hover:text-blue-800 transition-colors"
+              className="text-purple-600 hover:text-purple-800 transition-colors"
               title={contentType === 'links' ? 'Open Link' : 'View'}
             >
               {contentType === 'links' ? <ExternalLink size={16} /> : <Eye size={16} />}
@@ -540,7 +540,7 @@ const AddContentModal = ({ contentType, onClose, onAdd }) => {
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
               required
             />
           </div>
@@ -553,7 +553,7 @@ const AddContentModal = ({ contentType, onClose, onAdd }) => {
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
 
@@ -566,7 +566,7 @@ const AddContentModal = ({ contentType, onClose, onAdd }) => {
                 type="url"
                 value={formData.url}
                 onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="https://example.com"
                 required
               />
@@ -582,7 +582,7 @@ const AddContentModal = ({ contentType, onClose, onAdd }) => {
                 type="file"
                 accept={getAcceptedFileTypes()}
                 onChange={(e) => setFile(e.target.files[0])}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 required
               />
             </div>
@@ -596,7 +596,7 @@ const AddContentModal = ({ contentType, onClose, onAdd }) => {
               type="file"
               accept="image/*"
               onChange={(e) => setThumbnail(e.target.files[0])}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
 
@@ -611,7 +611,7 @@ const AddContentModal = ({ contentType, onClose, onAdd }) => {
             <button
               type="submit"
               disabled={(!formData.name.trim()) || (contentType === 'links' && !formData.url.trim()) || (contentType !== 'links' && !file)}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50"
             >
               Add
             </button>
@@ -678,7 +678,7 @@ const EditContentModal = ({ item, contentType, onClose, onUpdate }) => {
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
               required
             />
           </div>
@@ -691,7 +691,7 @@ const EditContentModal = ({ item, contentType, onClose, onUpdate }) => {
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
 
@@ -704,7 +704,7 @@ const EditContentModal = ({ item, contentType, onClose, onUpdate }) => {
                 type="url"
                 value={formData.url}
                 onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="https://example.com"
                 required
               />
@@ -720,7 +720,7 @@ const EditContentModal = ({ item, contentType, onClose, onUpdate }) => {
                 type="file"
                 accept={getAcceptedFileTypes()}
                 onChange={(e) => setFile(e.target.files[0])}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
           )}
@@ -733,7 +733,7 @@ const EditContentModal = ({ item, contentType, onClose, onUpdate }) => {
               type="file"
               accept="image/*"
               onChange={(e) => setThumbnail(e.target.files[0])}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
 
@@ -748,7 +748,7 @@ const EditContentModal = ({ item, contentType, onClose, onUpdate }) => {
             <button
               type="submit"
               disabled={!formData.name.trim() || (contentType === 'links' && !formData.url.trim())}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50"
             >
               Update
             </button>

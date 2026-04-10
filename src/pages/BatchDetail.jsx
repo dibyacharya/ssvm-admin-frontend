@@ -13,19 +13,19 @@ import {
 } from 'lucide-react';
 import { getBatchById, getBatchStudents } from '../services/batch.service';
 import { getProgramById } from '../services/program.service';
-import { getAmendmentsByBatch, getAmendmentsByProgram, applyToBatch, revertFromBatch } from '../services/courseAmendment.service';
+import { getAmendmentsByBatch } from '../services/courseAmendment.service';
 import SemesterManager from '../components/academic/SemesterManager';
 import { getPeriodLabel } from '../utils/periodLabel';
 
 const statusColors = {
-  upcoming: 'bg-blue-100 text-blue-800',
-  ongoing: 'bg-green-100 text-green-800',
-  completed: 'bg-gray-100 text-gray-800',
-  active: 'bg-green-100 text-green-800',
-  graduated: 'bg-gray-100 text-gray-800',
-  archived: 'bg-gray-100 text-gray-800',
-  Assigned: 'bg-green-100 text-green-800',
-  'Not Assigned': 'bg-amber-100 text-amber-800',
+  upcoming: 'bg-[rgba(249,115,22,0.15)] text-[#FB923C]',
+  ongoing: 'bg-[rgba(5,150,105,0.1)] text-[#10B981]',
+  completed: 'bg-white text-[#1E293B]',
+  active: 'bg-[rgba(5,150,105,0.1)] text-[#10B981]',
+  graduated: 'bg-white text-[#1E293B]',
+  archived: 'bg-white text-[#1E293B]',
+  Assigned: 'bg-[rgba(5,150,105,0.1)] text-[#10B981]',
+  'Not Assigned': 'bg-[rgba(217,119,6,0.1)] text-[#F59E0B]',
 };
 
 const normalizeStatus = (status) => {
@@ -84,11 +84,8 @@ const BatchDetail = () => {
   const [hasLoadedStudents, setHasLoadedStudents] = useState(false);
 
   const [amendments, setAmendments] = useState([]);
-  const [programAmendments, setProgramAmendments] = useState([]);
   const [amendmentsLoading, setAmendmentsLoading] = useState(false);
   const [hasLoadedAmendments, setHasLoadedAmendments] = useState(false);
-  const [applyingId, setApplyingId] = useState(null);
-  const [revertingId, setRevertingId] = useState(null);
 
   // Sync activeBatchTab to URL so tab persists on refresh
   useEffect(() => {
@@ -145,66 +142,12 @@ const BatchDetail = () => {
   const fetchAmendments = async () => {
     try {
       setAmendmentsLoading(true);
-      const programId = batch?.program?._id || batch?.program;
-      const [batchRes, progRes] = await Promise.all([
-        getAmendmentsByBatch(batchId).catch(() => ({ amendments: [] })),
-        programId ? getAmendmentsByProgram(programId).catch(() => ({ amendments: [] })) : { amendments: [] },
-      ]);
-      setAmendments(batchRes.amendments || []);
-      setProgramAmendments(progRes.amendments || []);
+      const res = await getAmendmentsByBatch(batchId);
+      setAmendments(res.amendments || []);
     } catch {
       setAmendments([]);
-      setProgramAmendments([]);
     } finally {
       setAmendmentsLoading(false);
-    }
-  };
-
-  // Available = APPROVED/PARTIALLY_APPLIED program amendments not yet applied to this batch
-  const availableAmendments = useMemo(() => {
-    const appliedIds = new Set(
-      amendments.filter(a => a.batchStatus === 'APPLIED').map(a => a._id)
-    );
-    return programAmendments.filter(amd => {
-      if (!['APPROVED', 'PARTIALLY_APPLIED'].includes(amd.status)) return false;
-      // Check if already applied to this batch
-      if (appliedIds.has(amd._id)) return false;
-      const batchApp = amd.batchApplications?.find(
-        ba => (ba.batchId?._id || ba.batchId) === batchId
-      );
-      if (batchApp?.status === 'APPLIED') return false;
-      return true;
-    });
-  }, [programAmendments, amendments, batchId]);
-
-  // Applied = batch amendments with APPLIED status
-  const appliedAmendments = useMemo(() => {
-    return amendments.filter(a => a.batchStatus === 'APPLIED');
-  }, [amendments]);
-
-  const handleApplyAmendment = async (amendmentId) => {
-    try {
-      setApplyingId(amendmentId);
-      await applyToBatch(amendmentId, batchId);
-      await fetchAmendments();
-    } catch (err) {
-      console.error('Failed to apply amendment:', err);
-      alert(err?.response?.data?.message || 'Failed to apply amendment');
-    } finally {
-      setApplyingId(null);
-    }
-  };
-
-  const handleRevertAmendment = async (amendmentId) => {
-    try {
-      setRevertingId(amendmentId);
-      await revertFromBatch(amendmentId, batchId);
-      await fetchAmendments();
-    } catch (err) {
-      console.error('Failed to revert amendment:', err);
-      alert(err?.response?.data?.message || 'Failed to revert amendment');
-    } finally {
-      setRevertingId(null);
     }
   };
 
@@ -258,11 +201,11 @@ const BatchDetail = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-6">
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Batch Details</h2>
-            <p className="text-gray-600">Please wait...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#F97316] mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-[#1E293B] mb-2">Loading Batch Details</h2>
+            <p className="text-[#94A3B8]">Please wait...</p>
           </div>
         </div>
       </div>
@@ -272,12 +215,12 @@ const BatchDetail = () => {
   if (error) {
     return (
       <div className="space-y-6">
-        <Link to="/batches" className="flex items-center text-gray-600 hover:text-gray-900">
+        <Link to="/batches" className="flex items-center text-[#94A3B8] hover:text-[#1E293B]">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Batches
         </Link>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700">{error}</p>
+        <div className="bg-[rgba(220,38,38,0.08)] border border-[rgba(239,68,68,0.2)] rounded-lg p-4">
+          <p className="text-[#EF4444]">{error}</p>
         </div>
       </div>
     );
@@ -286,15 +229,15 @@ const BatchDetail = () => {
   if (!batch) {
     return (
       <div className="space-y-6">
-        <Link to="/batches" className="flex items-center text-gray-600 hover:text-gray-900">
+        <Link to="/batches" className="flex items-center text-[#94A3B8] hover:text-[#1E293B]">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Batches
         </Link>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-6">
           <div className="text-center py-12">
-            <Layers className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Batch Not Found</h2>
-            <p className="text-gray-600">The requested batch could not be found.</p>
+            <Layers className="w-16 h-16 text-[#94A3B8] mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-[#1E293B] mb-2">Batch Not Found</h2>
+            <p className="text-[#94A3B8]">The requested batch could not be found.</p>
           </div>
         </div>
       </div>
@@ -307,26 +250,26 @@ const BatchDetail = () => {
 
   return (
     <div className="space-y-6">
-      <Link to="/batches" className="flex items-center text-gray-600 hover:text-gray-900">
+      <Link to="/batches" className="flex items-center text-[#94A3B8] hover:text-[#1E293B]">
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back to Batches
       </Link>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-6">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Layers className="w-8 h-8 text-blue-600 mr-3" />
+            <h1 className="text-2xl font-bold text-[#1E293B] flex items-center">
+              <Layers className="w-8 h-8 text-[#F97316] mr-3" />
               {batch.name}
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-[#94A3B8] mt-1">
               {programName}
               {programCode ? ` (${programCode})` : ''}
             </p>
             <div className="mt-2">
               <span
                 className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
-                  statusColors[displayStatus] || 'bg-gray-100 text-gray-800'
+                  statusColors[displayStatus] || 'bg-white text-[#1E293B]'
                 }`}
               >
                 {displayStatus}
@@ -337,29 +280,29 @@ const BatchDetail = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
-            <div className="flex items-center text-gray-600">
-              <Calendar className="w-5 h-5 mr-2 text-gray-400" />
+            <div className="flex items-center text-[#94A3B8]">
+              <Calendar className="w-5 h-5 mr-2 text-[#94A3B8]" />
               <span className="text-sm">
                 {formatDate(batch.startDate)} - {formatDate(batch.expectedEndDate)}
               </span>
             </div>
-            <div className="flex items-center text-gray-600">
-              <User className="w-5 h-5 mr-2 text-gray-400" />
+            <div className="flex items-center text-[#94A3B8]">
+              <User className="w-5 h-5 mr-2 text-[#94A3B8]" />
               <span className="text-sm">Year: {batch.year || '-'}</span>
             </div>
           </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 pt-5 pb-4 border-b border-gray-200">
-          <div className="inline-flex items-center gap-2 rounded-lg bg-gray-100 p-1">
+      <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] overflow-hidden">
+        <div className="px-6 pt-5 pb-4 border-b border-[rgba(0,0,0,0.08)]">
+          <div className="inline-flex items-center gap-2 rounded-lg bg-white p-1">
             <button
               type="button"
               onClick={() => handleBatchTabChange('SEMESTER')}
               className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                 activeBatchTab === 'SEMESTER'
-                  ? 'bg-white text-blue-700 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white text-[#F97316]'
+                  : 'text-[#94A3B8] hover:text-[#1E293B]'
               }`}
             >
               <span className="inline-flex items-center gap-2">
@@ -372,8 +315,8 @@ const BatchDetail = () => {
               onClick={() => handleBatchTabChange('STUDENT')}
               className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                 activeBatchTab === 'STUDENT'
-                  ? 'bg-white text-blue-700 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white text-[#F97316]'
+                  : 'text-[#94A3B8] hover:text-[#1E293B]'
               }`}
             >
               <span className="inline-flex items-center gap-2">
@@ -386,8 +329,8 @@ const BatchDetail = () => {
               onClick={() => handleBatchTabChange('AMENDMENTS')}
               className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                 activeBatchTab === 'AMENDMENTS'
-                  ? 'bg-white text-blue-700 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white text-[#F97316]'
+                  : 'text-[#94A3B8] hover:text-[#1E293B]'
               }`}
             >
               <span className="inline-flex items-center gap-2">
@@ -413,64 +356,64 @@ const BatchDetail = () => {
           {(hasLoadedStudents || activeBatchTab === 'STUDENT') && (
             <div className={activeBatchTab === 'STUDENT' ? 'space-y-4' : 'hidden'}>
               <div className="flex items-center justify-between">
-                <h3 className="text-md font-semibold text-gray-900">Batch Students</h3>
-                <div className="text-sm text-gray-500">Total: {filteredStudents.length}</div>
+                <h3 className="text-md font-semibold text-[#1E293B]">Batch Students</h3>
+                <div className="text-sm text-[#94A3B8]">Total: {filteredStudents.length}</div>
               </div>
 
               <div className="relative max-w-md">
-                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                <Search className="w-4 h-4 text-[#94A3B8] absolute left-3 top-3" />
                 <input
                   value={studentSearch}
                   onChange={(e) => setStudentSearch(e.target.value)}
                   placeholder="Search by name, roll, registration, enrollment..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="w-full pl-10 pr-4 py-2 border border-[rgba(0,0,0,0.08)] rounded-lg text-sm focus:ring-2 focus:ring-[#F97316] focus:border-[#F97316] outline-none"
                 />
               </div>
 
               {studentsError ? (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
+                <div className="bg-[rgba(220,38,38,0.08)] border border-[rgba(239,68,68,0.2)] rounded-lg p-4 text-sm text-[#EF4444]">
                   {studentsError}
                 </div>
               ) : studentsLoading ? (
-                <div className="text-sm text-gray-500">Loading students...</div>
+                <div className="text-sm text-[#94A3B8]">Loading students...</div>
               ) : filteredStudents.length === 0 ? (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-                  <Users className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-700 font-medium">No students found</p>
-                  <p className="text-sm text-gray-500 mt-1">No students are currently mapped to this batch.</p>
+                <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-lg p-8 text-center">
+                  <Users className="w-10 h-10 text-[#94A3B8] mx-auto mb-3" />
+                  <p className="text-[#94A3B8] font-medium">No students found</p>
+                  <p className="text-sm text-[#94A3B8] mt-1">No students are currently mapped to this batch.</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto border border-gray-200 rounded-lg max-h-[480px] overflow-y-auto">
-                  <table className="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead className="bg-gray-50 sticky top-0">
+                <div className="overflow-x-auto border border-[rgba(0,0,0,0.08)] rounded-lg max-h-[480px] overflow-y-auto">
+                  <table className="min-w-full divide-y divide-[rgba(255,255,255,0.06)] text-sm">
+                    <thead className="bg-white sticky top-0">
                       <tr>
-                        <th className="px-4 py-3 text-left font-medium text-gray-600">Roll Number</th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-600">Registration/Enrollment</th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-600">Name</th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-600">Program / Stream</th>
+                        <th className="px-4 py-3 text-left font-medium text-[#94A3B8]">Roll Number</th>
+                        <th className="px-4 py-3 text-left font-medium text-[#94A3B8]">Registration/Enrollment</th>
+                        <th className="px-4 py-3 text-left font-medium text-[#94A3B8]">Name</th>
+                        <th className="px-4 py-3 text-left font-medium text-[#94A3B8]">Status</th>
+                        <th className="px-4 py-3 text-left font-medium text-[#94A3B8]">Program / Stream</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-[rgba(255,255,255,0.06)]">
                       {filteredStudents.map((student) => (
                         <tr
                           key={student._id}
-                          className="hover:bg-blue-50 cursor-pointer"
+                          className="hover:bg-[rgba(249,115,22,0.1)] cursor-pointer"
                           onClick={() => setSelectedStudent(student)}
                         >
-                          <td className="px-4 py-3 text-gray-700">{student.rollNumber || '-'}</td>
-                          <td className="px-4 py-3 text-gray-700">{getStudentPrimaryId(student)}</td>
-                          <td className="px-4 py-3 text-gray-900 font-medium">{getStudentDisplayName(student)}</td>
+                          <td className="px-4 py-3 text-[#94A3B8]">{student.rollNumber || '-'}</td>
+                          <td className="px-4 py-3 text-[#94A3B8]">{getStudentPrimaryId(student)}</td>
+                          <td className="px-4 py-3 text-[#1E293B] font-medium">{getStudentDisplayName(student)}</td>
                           <td className="px-4 py-3">
                             <span
                               className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                                statusColors[student.status] || 'bg-gray-100 text-gray-800'
+                                statusColors[student.status] || 'bg-white text-[#1E293B]'
                               }`}
                             >
                               {student.status || 'Assigned'}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-gray-700">
+                          <td className="px-4 py-3 text-[#94A3B8]">
                             {(student.program?.name || '-') + (student.stream ? ` / ${student.stream}` : '')}
                           </td>
                         </tr>
@@ -483,148 +426,81 @@ const BatchDetail = () => {
           )}
 
           {(hasLoadedAmendments || activeBatchTab === 'AMENDMENTS') && (
-            <div className={activeBatchTab === 'AMENDMENTS' ? 'space-y-6' : 'hidden'}>
-              <h3 className="text-md font-semibold text-gray-900">Program Amendments</h3>
-
+            <div className={activeBatchTab === 'AMENDMENTS' ? 'space-y-4' : 'hidden'}>
+              <div className="flex items-center justify-between">
+                <h3 className="text-md font-semibold text-[#1E293B]">Course Amendments</h3>
+                <a
+                  href="/course-amendments/new"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-[#F97316] hover:bg-[rgba(249,115,22,0.1)] rounded-lg transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  New Amendment
+                </a>
+              </div>
               {amendmentsLoading && (
                 <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
-                  <span className="ml-2 text-sm text-gray-500">Loading amendments...</span>
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#F97316]" />
+                  <span className="ml-2 text-sm text-[#94A3B8]">Loading amendments...</span>
                 </div>
               )}
-
-              {!amendmentsLoading && (
-                <>
-                  {/* Section A: Available Amendments */}
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                      Available Amendments
-                      {availableAmendments.length > 0 && (
-                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700">
-                          {availableAmendments.length}
-                        </span>
-                      )}
-                    </h4>
-                    {availableAmendments.length === 0 ? (
-                      <div className="text-center py-6 text-gray-400 text-sm border border-dashed border-gray-200 rounded-lg">
-                        No available amendments to apply.
-                      </div>
-                    ) : (
-                      <div className="border border-gray-200 rounded-lg overflow-hidden">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
-                              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">Scope</th>
-                              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">Changes</th>
-                              <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-200">
-                            {availableAmendments.map((amd) => (
-                              <tr key={amd._id} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 text-sm font-mono text-blue-600">
-                                  <Link to={`/program-amendments/${amd._id}`} className="hover:underline">
-                                    {amd.amendmentId || '-'}
-                                  </Link>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900">{amd.title || '-'}</td>
-                                <td className="px-4 py-3 text-xs text-gray-500">
-                                  {amd.scope === 'CURRENT_AND_FUTURE' ? 'Current + Future' : 'Future Only'}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-500">
-                                  {amd.changes?.length || 0} change{(amd.changes?.length || 0) !== 1 ? 's' : ''}
-                                </td>
-                                <td className="px-4 py-3 text-right">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleApplyAmendment(amd._id)}
-                                    disabled={applyingId === amd._id}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors disabled:opacity-60"
-                                  >
-                                    {applyingId === amd._id ? (
-                                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" />
-                                    ) : null}
-                                    Apply
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Section B: Applied Amendments */}
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                      Applied Amendments
-                      {appliedAmendments.length > 0 && (
-                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700">
-                          {appliedAmendments.length}
-                        </span>
-                      )}
-                    </h4>
-                    {appliedAmendments.length === 0 ? (
-                      <div className="text-center py-6 text-gray-400 text-sm border border-dashed border-gray-200 rounded-lg">
-                        No amendments applied to this batch yet.
-                      </div>
-                    ) : (
-                      <div className="border border-gray-200 rounded-lg overflow-hidden">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
-                              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">Changes</th>
-                              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                              <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-200">
-                            {appliedAmendments.map((amd) => (
-                              <tr key={amd._id} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 text-sm font-mono text-blue-600">
-                                  <Link to={`/program-amendments/${amd._id}`} className="hover:underline">
-                                    {amd.amendmentId || '-'}
-                                  </Link>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900">{amd.title || '-'}</td>
-                                <td className="px-4 py-3">
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    Applied
-                                  </span>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-500">
-                                  {amd.changes?.length || 0} change{(amd.changes?.length || 0) !== 1 ? 's' : ''}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-500">
-                                  {amd.createdAt ? formatDate(amd.createdAt) : '-'}
-                                </td>
-                                <td className="px-4 py-3 text-right">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRevertAmendment(amd._id)}
-                                    disabled={revertingId === amd._id}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors disabled:opacity-60"
-                                  >
-                                    {revertingId === amd._id ? (
-                                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" />
-                                    ) : null}
-                                    Revert
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                </>
+              {!amendmentsLoading && amendments.length === 0 && (
+                <div className="text-center py-8 text-[#94A3B8] text-sm">
+                  No amendments found for this batch.
+                </div>
+              )}
+              {!amendmentsLoading && amendments.length > 0 && (
+                <div className="border border-[rgba(0,0,0,0.08)] rounded-lg overflow-hidden">
+                  <table className="min-w-full divide-y divide-[rgba(255,255,255,0.06)]">
+                    <thead className="bg-white">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-[#94A3B8] uppercase">ID</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-[#94A3B8] uppercase">Title</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-[#94A3B8] uppercase">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-[#94A3B8] uppercase">Batch Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-[#94A3B8] uppercase">Changes</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-[#94A3B8] uppercase">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[rgba(255,255,255,0.06)]">
+                      {amendments.map((amd) => (
+                        <tr
+                          key={amd._id}
+                          className="hover:bg-white cursor-pointer"
+                          onClick={() => window.location.href = `/course-amendments/${amd._id}`}
+                        >
+                          <td className="px-4 py-3 text-sm font-mono text-[#F97316]">{amd.amendmentId || '-'}</td>
+                          <td className="px-4 py-3 text-sm text-[#1E293B]">{amd.title || '-'}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                              amd.status === 'FULLY_APPLIED' ? 'bg-[rgba(5,150,105,0.1)] text-[#10B981]' :
+                              amd.status === 'APPROVED' ? 'bg-[rgba(249,115,22,0.15)] text-[#FB923C]' :
+                              amd.status === 'PENDING_APPROVAL' ? 'bg-[rgba(217,119,6,0.1)] text-[#F59E0B]' :
+                              amd.status === 'REJECTED' ? 'bg-[rgba(239,68,68,0.15)] text-[#EF4444]' :
+                              'bg-white text-[#94A3B8]'
+                            }`}>
+                              {amd.status?.replace(/_/g, ' ') || '-'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                              amd.batchStatus === 'APPLIED' ? 'bg-[rgba(5,150,105,0.1)] text-[#10B981]' :
+                              amd.batchStatus === 'REVERTED' ? 'bg-[rgba(249,115,22,0.15)] text-[#FB923C]' :
+                              'bg-white text-[#94A3B8]'
+                            }`}>
+                              {amd.batchStatus || 'Not Applied'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-[#94A3B8]">
+                            {amd.changes?.length || 0} change{(amd.changes?.length || 0) !== 1 ? 's' : ''}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-[#94A3B8]">
+                            {amd.createdAt ? formatDate(amd.createdAt) : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           )}
@@ -637,15 +513,15 @@ const BatchDetail = () => {
             onClick={() => setSelectedStudent(null)}
             aria-hidden="true"
           />
-          <div className="w-full max-w-lg bg-white shadow-2xl border-l border-gray-200 overflow-y-auto">
-            <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-5 py-4 flex items-center justify-between">
+          <div className="w-full max-w-lg bg-white shadow-2xl border-l border-[rgba(0,0,0,0.08)] overflow-y-auto">
+            <div className="sticky top-0 z-10 bg-white border-b border-[rgba(0,0,0,0.08)] px-5 py-4 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Student Details</h3>
-                <p className="text-sm text-gray-500">{getStudentDisplayName(selectedStudent)}</p>
+                <h3 className="text-lg font-semibold text-[#1E293B]">Student Details</h3>
+                <p className="text-sm text-[#94A3B8]">{getStudentDisplayName(selectedStudent)}</p>
               </div>
               <button
                 onClick={() => setSelectedStudent(null)}
-                className="p-2 text-gray-500 hover:text-gray-700"
+                className="p-2 text-[#94A3B8] hover:text-[#94A3B8]"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -653,94 +529,94 @@ const BatchDetail = () => {
 
             <div className="p-5 space-y-5 text-sm">
               <section>
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Basic</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-[#94A3B8] mb-2">Basic</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <span className="text-gray-500">Name:</span> {getStudentDisplayName(selectedStudent)}
+                    <span className="text-[#94A3B8]">Name:</span> {getStudentDisplayName(selectedStudent)}
                   </div>
                   <div>
-                    <span className="text-gray-500">Email:</span> {selectedStudent.email || '-'}
+                    <span className="text-[#94A3B8]">Email:</span> {selectedStudent.email || '-'}
                   </div>
                   <div>
-                    <span className="text-gray-500">Phone:</span> {selectedStudent.phone || '-'}
+                    <span className="text-[#94A3B8]">Phone:</span> {selectedStudent.phone || '-'}
                   </div>
                   <div>
-                    <span className="text-gray-500">Roll Number:</span> {selectedStudent.rollNumber || '-'}
+                    <span className="text-[#94A3B8]">Roll Number:</span> {selectedStudent.rollNumber || '-'}
                   </div>
                 </div>
               </section>
 
               <section>
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Identifiers</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-[#94A3B8] mb-2">Identifiers</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <span className="text-gray-500">Registration Number:</span>{' '}
+                    <span className="text-[#94A3B8]">Registration Number:</span>{' '}
                     {selectedStudent.registrationNumber || '-'}
                   </div>
                   <div>
-                    <span className="text-gray-500">Enrollment Number:</span>{' '}
+                    <span className="text-[#94A3B8]">Enrollment Number:</span>{' '}
                     {selectedStudent.enrollmentNumber || '-'}
                   </div>
                   <div>
-                    <span className="text-gray-500">DEB ID:</span> {selectedStudent.debId || '-'}
+                    <span className="text-[#94A3B8]">DEB ID:</span> {selectedStudent.debId || '-'}
                   </div>
                 </div>
               </section>
 
               <section>
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Profile</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-[#94A3B8] mb-2">Profile</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <span className="text-gray-500">Sex:</span> {selectedStudent.sex || '-'}
+                    <span className="text-[#94A3B8]">Sex:</span> {selectedStudent.sex || '-'}
                   </div>
                   <div>
-                    <span className="text-gray-500">Age:</span> {selectedStudent.age ?? '-'}
+                    <span className="text-[#94A3B8]">Age:</span> {selectedStudent.age ?? '-'}
                   </div>
                   <div>
-                    <span className="text-gray-500">Mode:</span> {selectedStudent.mode || '-'}
+                    <span className="text-[#94A3B8]">Mode:</span> {selectedStudent.mode || '-'}
                   </div>
                   <div>
-                    <span className="text-gray-500">Company Associated:</span>{' '}
+                    <span className="text-[#94A3B8]">Company Associated:</span>{' '}
                     {selectedStudent.companyAssociated || '-'}
                   </div>
                   <div>
-                    <span className="text-gray-500">Stream:</span> {selectedStudent.stream || '-'}
+                    <span className="text-[#94A3B8]">Stream:</span> {selectedStudent.stream || '-'}
                   </div>
                   <div>
-                    <span className="text-gray-500">Source:</span> {selectedStudent.source || '-'}
+                    <span className="text-[#94A3B8]">Source:</span> {selectedStudent.source || '-'}
                   </div>
                 </div>
               </section>
 
               <section>
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Program & Batch</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-[#94A3B8] mb-2">Program & Batch</h4>
                 <div className="grid grid-cols-1 gap-3">
                   <div>
-                    <span className="text-gray-500">Program:</span>{' '}
+                    <span className="text-[#94A3B8]">Program:</span>{' '}
                     {selectedStudent.program
                       ? `${selectedStudent.program.name || '-'} (${selectedStudent.program.code || '-'})`
                       : '-'}
                   </div>
                   <div>
-                    <span className="text-gray-500">Batch:</span>{' '}
+                    <span className="text-[#94A3B8]">Batch:</span>{' '}
                     {selectedStudent.batch
                       ? `${selectedStudent.batch.name || '-'} (${selectedStudent.batch.year || '-'})`
                       : '-'}
                   </div>
                   <div>
-                    <span className="text-gray-500">Status:</span> {selectedStudent.status || '-'}
+                    <span className="text-[#94A3B8]">Status:</span> {selectedStudent.status || '-'}
                   </div>
                 </div>
               </section>
 
               <section>
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Audit</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-[#94A3B8] mb-2">Audit</h4>
                 <div className="grid grid-cols-1 gap-2">
                   <div>
-                    <span className="text-gray-500">Created At:</span> {formatDate(selectedStudent.createdAt)}
+                    <span className="text-[#94A3B8]">Created At:</span> {formatDate(selectedStudent.createdAt)}
                   </div>
                   <div>
-                    <span className="text-gray-500">Updated At:</span> {formatDate(selectedStudent.updatedAt)}
+                    <span className="text-[#94A3B8]">Updated At:</span> {formatDate(selectedStudent.updatedAt)}
                   </div>
                 </div>
               </section>

@@ -3,7 +3,7 @@ parameters:
     type: string
   - name: resource_group
     type: string
-    default: 'rg-kiit-lms-dev'
+    default: 'rg-ssvm-lms-dev'
   - name: revision_name
     type: string
     default: ''  # If empty, will rollback to previous revision
@@ -21,7 +21,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'List Available Revisions'
             inputs:
-              azureSubscription: 'kiit-it-analytics'
+              azureSubscription: 'ssvm-it-analytics'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
@@ -43,7 +43,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'Rollback to Previous Revision'
             inputs:
-              azureSubscription: 'kiit-it-analytics'
+              azureSubscription: 'ssvm-it-analytics'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
@@ -136,7 +136,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'Verify Rollback'
             inputs:
-              azureSubscription: 'kiit-it-analytics'
+              azureSubscription: 'ssvm-it-analytics'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |

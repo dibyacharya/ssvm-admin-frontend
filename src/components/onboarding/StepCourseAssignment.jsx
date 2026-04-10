@@ -534,7 +534,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
   if (semesters.length === 0) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Course Assignment</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-[#1E293B]">Course Assignment</h1>
         <hr className="my-6 border-gray-200" />
         <div className="text-center py-12">
           <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto mb-3" />
@@ -542,10 +542,10 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
             No {periodLabel.toLowerCase()}s created yet. Go back to add them, or skip.
           </p>
           <div className="flex items-center justify-center gap-4">
-            <button onClick={goBack} className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition">
+            <button onClick={goBack} className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-[#1E293B] transition">
               <ChevronLeft className="w-4 h-4 mr-1" /> Back
             </button>
-            <button onClick={handleContinue} className="inline-flex items-center px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
+            <button onClick={handleContinue} className="inline-flex items-center px-6 py-3 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition">
               Skip & Continue <ChevronRight className="w-4 h-4 ml-2" />
             </button>
           </div>
@@ -556,7 +556,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Course Assignment</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-[#1E293B]">Course Assignment</h1>
       <p className="mt-1 text-sm text-gray-500">
         Define course structure for each {periodLabel.toLowerCase()}.
       </p>
@@ -582,13 +582,13 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
               }}
               className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 isActive
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-purple-600 text-white'
                   : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'
               }`}
             >
               {sem.name}
               {hasSaved && (
-                <Check className={`inline w-3.5 h-3.5 ml-1.5 ${isActive ? 'text-blue-200' : 'text-green-500'}`} />
+                <Check className={`inline w-3.5 h-3.5 ml-1.5 ${isActive ? 'text-purple-200' : 'text-green-500'}`} />
               )}
             </button>
           );
@@ -606,7 +606,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
         >
           {/* ── Define Structure ── */}
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <div className="mb-3 text-sm font-semibold text-gray-900">Course Plan</div>
+            <div className="mb-3 text-sm font-semibold text-[#1E293B]">Course Plan</div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5">
               <div>
                 <label className="mb-1 block text-[11px] uppercase tracking-widest text-gray-500">
@@ -617,7 +617,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                   value={structure.compulsory_count}
                   onChange={(e) => updateStructureField('compulsory_count', e.target.value)}
                   placeholder="0"
-                  className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                 />
               </div>
               <div>
@@ -629,7 +629,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                   value={structure.compulsory_credit_target}
                   onChange={(e) => updateStructureField('compulsory_credit_target', e.target.value)}
                   placeholder="0"
-                  className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                 />
               </div>
               <div>
@@ -641,7 +641,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                   value={structure.elective_slot_count}
                   onChange={(e) => updateStructureField('elective_slot_count', e.target.value)}
                   placeholder="0"
-                  className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                 />
               </div>
               <div>
@@ -653,7 +653,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                   value={structure.elective_credit_target}
                   onChange={(e) => updateStructureField('elective_credit_target', e.target.value)}
                   placeholder="0"
-                  className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                 />
               </div>
               <div>
@@ -674,7 +674,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                 type="checkbox"
                 checked={Boolean(structure.enforce_credit_target)}
                 onChange={(e) => updateStructureField('enforce_credit_target', e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
               />
               Enforce Credit Target
             </label>
@@ -738,7 +738,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {/* Compulsory Slots */}
               <div className="rounded-lg border border-gray-200 p-3">
-                <div className="mb-1 text-sm font-semibold text-gray-900">Compulsory Slots</div>
+                <div className="mb-1 text-sm font-semibold text-[#1E293B]">Compulsory Slots</div>
                 <div className="mb-2 text-xs text-gray-500">Filled {selectedComp}/{compCount}</div>
 
                 {compCount === 0 ? (
@@ -757,7 +757,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                             <div className="flex items-center gap-2">
                               <button type="button"
                                 onClick={() => openEditCourse('compulsory', idx, slot.course)}
-                                className="text-[11px] text-gray-500 hover:text-blue-600 inline-flex items-center gap-0.5">
+                                className="text-[11px] text-gray-500 hover:text-purple-600 inline-flex items-center gap-0.5">
                                 <Edit3 size={12} /> Edit
                               </button>
                               <button type="button" onClick={() => clearCompulsorySlot(idx)}
@@ -771,7 +771,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                         {slot.course ? (
                           <div className="mt-2 flex items-center justify-between gap-2">
                             <div className="min-w-0">
-                              <div className="text-sm font-medium text-gray-900">
+                              <div className="text-sm font-medium text-[#1E293B]">
                                 {slot.course.courseCode || slot.course.code}
                               </div>
                               <div className="truncate text-xs text-gray-500">
@@ -790,7 +790,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                         <div className="mt-3">
                           <button type="button"
                             onClick={() => { setCoursePicker({ kind: 'compulsory', slotIndex: idx }); setPickerSearch(''); setPickerTab('existing'); }}
-                            className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-100">
+                            className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-medium text-purple-700 hover:bg-purple-100">
                             + Add Course
                           </button>
                         </div>
@@ -802,7 +802,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
 
               {/* Elective Blocks */}
               <div className="rounded-lg border border-gray-200 p-3">
-                <div className="mb-2 text-sm font-semibold text-gray-900">Elective Blocks</div>
+                <div className="mb-2 text-sm font-semibold text-[#1E293B]">Elective Blocks</div>
                 <div className="mb-2 text-[11px] text-gray-500">
                   Compulsory and elective pools are strictly disjoint.
                 </div>
@@ -858,7 +858,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                                   return (
                                     <div key={cId} className="flex items-center justify-between gap-2 rounded border border-gray-200 bg-white px-2 py-2 text-xs">
                                       <div className="min-w-0">
-                                        <div className="font-medium text-gray-900">{course.courseCode || course.code}</div>
+                                        <div className="font-medium text-[#1E293B]">{course.courseCode || course.code}</div>
                                         <div className="truncate text-[11px] text-gray-500">{course.title || course.name}</div>
                                       </div>
                                       <div className="flex items-center gap-2">
@@ -868,7 +868,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                                         </span>
                                         <button type="button"
                                           onClick={() => openEditCourse('elective', { blockIndex: bIdx }, course)}
-                                          className="text-gray-400 hover:text-blue-600" title="Edit course">
+                                          className="text-gray-400 hover:text-purple-600" title="Edit course">
                                           <Edit3 size={14} />
                                         </button>
                                         <button type="button" onClick={() => removeElectiveOption(bIdx, cId)}
@@ -886,7 +886,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                           <div className="mt-1">
                             <button type="button"
                               onClick={() => { setCoursePicker({ kind: 'elective', blockIndex: bIdx }); setPickerSearch(''); setPickerTab('existing'); }}
-                              className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-100">
+                              className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-medium text-purple-700 hover:bg-purple-100">
                               + Add Course
                             </button>
                           </div>
@@ -906,13 +906,13 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
       {/* ── Navigation ── */}
       <div className="flex items-center justify-between pt-8">
         <button onClick={goBack}
-          className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition">
+          className="inline-flex items-center px-5 py-3 text-sm font-medium text-gray-600 hover:text-[#1E293B] transition">
           <ChevronLeft className="w-4 h-4 mr-1" /> Back
         </button>
         <div className="flex flex-col items-end gap-1">
           <div className="flex items-center gap-3">
             <button onClick={handleContinue}
-              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
+              className="inline-flex items-center px-6 py-3 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition">
               Continue <ChevronRight className="w-4 h-4 ml-2" />
             </button>
           </div>
@@ -929,7 +929,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
               <div>
-                <h3 className="text-sm font-semibold text-gray-900">
+                <h3 className="text-sm font-semibold text-[#1E293B]">
                   {coursePicker.kind === 'compulsory'
                     ? `Select Course — Compulsory ${coursePicker.slotIndex + 1}`
                     : `Add Course — Elective ${coursePicker.blockIndex + 1}`}
@@ -944,13 +944,13 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
             <div className="flex border-b border-gray-200 px-5">
               <button onClick={() => setPickerTab('existing')}
                 className={`px-3 py-2 text-xs font-medium border-b-2 transition ${
-                  pickerTab === 'existing' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                  pickerTab === 'existing' ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}>
                 Existing Course
               </button>
               <button onClick={() => setPickerTab('new')}
                 className={`px-3 py-2 text-xs font-medium border-b-2 transition ${
-                  pickerTab === 'new' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                  pickerTab === 'new' ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}>
                 Create New (Draft)
               </button>
@@ -965,7 +965,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                       onChange={(e) => setPickerSearch(e.target.value)}
                       placeholder="Search by name or code..."
                       autoFocus
-                      className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                      className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" />
                   </div>
                   {loadingCourses ? (
                     <div className="flex items-center gap-2 py-4 text-sm text-gray-500 justify-center">
@@ -981,9 +981,9 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                         const cId = toIdString(course._id || course.id);
                         return (
                           <button key={cId} onClick={() => handlePickerSelect(course)}
-                            className="w-full text-left px-3 py-2.5 rounded-md text-sm hover:bg-blue-50 transition flex items-center justify-between">
+                            className="w-full text-left px-3 py-2.5 rounded-md text-sm hover:bg-purple-50 transition flex items-center justify-between">
                             <div>
-                              <span className="font-medium text-gray-900">{course.courseCode || course.code}</span>
+                              <span className="font-medium text-[#1E293B]">{course.courseCode || course.code}</span>
                               <span className="mx-2 text-gray-300">—</span>
                               <span className="text-gray-700">{course.title || course.name}</span>
                             </div>
@@ -1004,14 +1004,14 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                     <input type="text" value={newCourse.courseCode}
                       onChange={(e) => setNewCourse((p) => ({ ...p, courseCode: e.target.value }))}
                       placeholder="e.g. CS101"
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Title *</label>
                     <input type="text" value={newCourse.title}
                       onChange={(e) => setNewCourse((p) => ({ ...p, title: e.target.value }))}
                       placeholder="e.g. Introduction to Programming"
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Credit Points (L-T-P)</label>
@@ -1021,21 +1021,21 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                         <input type="number" min="0" value={newCourse.lecture}
                           onChange={(e) => setNewCourse((p) => ({ ...p, lecture: e.target.value }))}
                           placeholder="0"
-                          className="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                          className="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" />
                       </div>
                       <div>
                         <label className="block text-[10px] text-gray-500 mb-0.5">Tutorial (T)</label>
                         <input type="number" min="0" value={newCourse.tutorial}
                           onChange={(e) => setNewCourse((p) => ({ ...p, tutorial: e.target.value }))}
                           placeholder="0"
-                          className="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                          className="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" />
                       </div>
                       <div>
                         <label className="block text-[10px] text-gray-500 mb-0.5">Practical (P)</label>
                         <input type="number" min="0" value={newCourse.practical}
                           onChange={(e) => setNewCourse((p) => ({ ...p, practical: e.target.value }))}
                           placeholder="0"
-                          className="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                          className="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" />
                       </div>
                     </div>
                     <div className="text-[10px] text-gray-400 mt-1">
@@ -1044,7 +1044,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                   </div>
                   <button type="button" onClick={handleCreateDraftCourse}
                     disabled={!newCourse.courseCode.trim() || !newCourse.title.trim()}
-                    className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                    className="w-full rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition">
                     Create & Assign
                   </button>
                 </div>
@@ -1060,7 +1060,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
           onClick={(e) => { if (e.target === e.currentTarget) setEditingCourse(null); }}>
           <div className="bg-white rounded-xl shadow-xl w-full max-w-sm">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-900">Edit Course</h3>
+              <h3 className="text-sm font-semibold text-[#1E293B]">Edit Course</h3>
               <button onClick={() => setEditingCourse(null)}
                 className="p-1 text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
@@ -1071,13 +1071,13 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                 <label className="block text-xs font-medium text-gray-700 mb-1">Course Code</label>
                 <input type="text" value={editingCourse.courseCode}
                   onChange={(e) => setEditingCourse((p) => ({ ...p, courseCode: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Title</label>
                 <input type="text" value={editingCourse.title}
                   onChange={(e) => setEditingCourse((p) => ({ ...p, title: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Credit Points (L-T-P)</label>
@@ -1086,19 +1086,19 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                     <label className="block text-[10px] text-gray-500 mb-0.5">Lecture (L)</label>
                     <input type="number" min="0" value={editingCourse.lecture}
                       onChange={(e) => setEditingCourse((p) => ({ ...p, lecture: e.target.value }))}
-                      className="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                      className="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" />
                   </div>
                   <div>
                     <label className="block text-[10px] text-gray-500 mb-0.5">Tutorial (T)</label>
                     <input type="number" min="0" value={editingCourse.tutorial}
                       onChange={(e) => setEditingCourse((p) => ({ ...p, tutorial: e.target.value }))}
-                      className="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                      className="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" />
                   </div>
                   <div>
                     <label className="block text-[10px] text-gray-500 mb-0.5">Practical (P)</label>
                     <input type="number" min="0" value={editingCourse.practical}
                       onChange={(e) => setEditingCourse((p) => ({ ...p, practical: e.target.value }))}
-                      className="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+                      className="w-full rounded-lg border border-gray-300 px-2 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" />
                   </div>
                 </div>
                 <div className="text-[10px] text-gray-400 mt-1">
@@ -1112,7 +1112,7 @@ const StepCourseAssignment = ({ state, dispatch, goNext, goBack }) => {
                 </button>
                 <button type="button" onClick={saveEditCourse}
                   disabled={!editingCourse.courseCode.trim() || !editingCourse.title.trim()}
-                  className="flex-1 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                  className="flex-1 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition">
                   Save Changes
                 </button>
               </div>

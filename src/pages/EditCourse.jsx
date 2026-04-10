@@ -71,7 +71,7 @@ const EditCourse = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Link to="/courses/list" className="text-blue-600 hover:text-blue-800">
+          <Link to="/courses/list" className="text-purple-600 hover:text-purple-800">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <h1 className="text-2xl font-bold">Edit Course - {codeid}</h1>
@@ -79,7 +79,7 @@ const EditCourse = () => {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          className="flex items-center px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
         >
           <Save className="w-4 h-4 mr-2" />
           {saving ? 'Saving...' : 'Save'}
